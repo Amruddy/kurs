@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { requireWorkspace } from "@/app/lib/dev-auth";
+import { lessonStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
 
 export default async function AdminPage() {
   const session = await requireWorkspace("admin");
-  const [coursesCount, groupsCount, studentsCount, teachersCount] = await Promise.all([
+  const [coursesCount, groupsCount, studentsCount, teachersCount, nextLesson] = await Promise.all([
     prisma.course.count({ where: { organizationId: session.organizationId } }),
     prisma.group.count({ where: { organizationId: session.organizationId } }),
     prisma.student.count({ where: { organizationId: session.organizationId } }),
@@ -14,6 +15,19 @@ export default async function AdminPage() {
         status: "active",
         roles: { has: "teacher" },
       },
+    }),
+    prisma.lesson.findFirst({
+      where: {
+        organizationId: session.organizationId,
+        lessonStatus: "scheduled",
+        startsAt: { gte: new Date() },
+      },
+      include: {
+        group: true,
+        course: true,
+        teacher: true,
+      },
+      orderBy: { startsAt: "asc" },
     }),
   ]);
 
@@ -27,6 +41,24 @@ export default async function AdminPage() {
           журнал и оплаты будут добавлены на следующих этапах MVP.
         </p>
       </div>
+
+      <section className="panel quick-actions">
+        <h2>Быстрые действия</h2>
+        <div className="action-grid">
+          <Link className="button link-button" href="/admin/courses">
+            Добавить курс
+          </Link>
+          <Link className="button link-button" href="/admin/groups">
+            Добавить группу
+          </Link>
+          <Link className="button link-button" href="/admin/students">
+            Добавить ученика
+          </Link>
+          <Link className="button link-button" href="/admin/teachers">
+            Добавить преподавателя
+          </Link>
+        </div>
+      </section>
 
       <section className="grid">
         <div className="panel">
@@ -63,6 +95,24 @@ export default async function AdminPage() {
             Преподаватели
           </Link>
         </div>
+      </section>
+
+      <section className="panel section">
+        <h2>Ближайший урок</h2>
+        {nextLesson ? (
+          <p>
+            {nextLesson.startsAt.toLocaleString("ru-RU", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            : {nextLesson.group?.name ?? nextLesson.course.name}, {nextLesson.teacher.name},{" "}
+            {lessonStatusLabels[nextLesson.lessonStatus]}.
+          </p>
+        ) : (
+          <p>Ближайшие уроки пока не созданы.</p>
+        )}
       </section>
     </>
   );

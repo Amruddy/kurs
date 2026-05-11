@@ -1,4 +1,14 @@
-import { CourseFormat, CourseStatus, GroupStatus, GroupStudentStatus, LessonMarkScale, StudentStatus } from "@prisma/client";
+import {
+  AttendanceStatus,
+  CourseFormat,
+  CourseStatus,
+  GroupStatus,
+  GroupStudentStatus,
+  LessonMarkScale,
+  LessonStatus,
+  ScheduleRuleStatus,
+  StudentStatus,
+} from "@prisma/client";
 
 export const courseFormatLabels: Record<CourseFormat, string> = {
   group: "Группы",
@@ -35,4 +45,32 @@ export const groupStudentStatusLabels: Record<GroupStudentStatus, string> = {
   paused: "Пауза",
   removed: "Выбыл",
   completed: "Завершил",
+};
+
+export const scheduleRuleStatusLabels: Record<ScheduleRuleStatus, string> = {
+  active: "Активное",
+  archived: "Архивное",
+};
+
+export const lessonStatusLabels: Record<LessonStatus, string> = {
+  scheduled: "Запланирован",
+  in_progress: "Идет",
+  completed: "Завершен",
+  cancelled: "Отменен",
+  moved: "Перенесен",
+};
+
+export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
+  not_checked: "Не проверена",
+  confirmed: "Подтверждена",
+};
+
+export const weekdayLabels: Record<number, string> = {
+  0: "Воскресенье",
+  1: "Понедельник",
+  2: "Вторник",
+  3: "Среда",
+  4: "Четверг",
+  5: "Пятница",
+  6: "Суббота",
 };
