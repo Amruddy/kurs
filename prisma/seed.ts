@@ -208,6 +208,34 @@ async function main() {
       status: "active",
     },
   });
+
+  await prisma.scheduleRule.upsert({
+    where: { id: "seed-schedule-rule" },
+    update: {
+      organizationId: organization.id,
+      targetType: "group",
+      targetId: group.id,
+      weekday: 0,
+      startTime: "10:00",
+      endTime: "11:00",
+      timezone: "Europe/Moscow",
+      startsOn: new Date("2026-05-10T00:00:00.000Z"),
+      endsOn: null,
+      status: "active",
+    },
+    create: {
+      id: "seed-schedule-rule",
+      organizationId: organization.id,
+      targetType: "group",
+      targetId: group.id,
+      weekday: 0,
+      startTime: "10:00",
+      endTime: "11:00",
+      timezone: "Europe/Moscow",
+      startsOn: new Date("2026-05-10T00:00:00.000Z"),
+      status: "active",
+    },
+  });
 }
 
 main()

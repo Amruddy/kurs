@@ -1,23 +1,47 @@
+import Link from "next/link";
 import { requireWorkspace } from "@/app/lib/dev-auth";
-import { groupStatusLabels } from "@/app/lib/learning-labels";
+import { groupStatusLabels, lessonStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
 
 export default async function TeacherPage() {
   const session = await requireWorkspace("teacher");
-  const groups = await prisma.group.findMany({
-    where: {
-      organizationId: session.organizationId,
-      teacherId: session.userId,
-      status: { not: "archived" },
-    },
-    include: {
-      course: true,
-      students: {
-        where: { status: "active" },
+  const [groups, nextLesson] = await Promise.all([
+    prisma.group.findMany({
+      where: {
+        organizationId: session.organizationId,
+        teacherId: session.userId,
+        status: { not: "archived" },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      include: {
+        course: true,
+        students: {
+          where: { status: "active" },
+        },
+        lessons: {
+          where: {
+            lessonStatus: "scheduled",
+            startsAt: { gte: new Date() },
+          },
+          orderBy: { startsAt: "asc" },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.lesson.findFirst({
+      where: {
+        organizationId: session.organizationId,
+        teacherId: session.userId,
+        lessonStatus: "scheduled",
+        startsAt: { gte: new Date() },
+      },
+      include: {
+        group: true,
+        course: true,
+      },
+      orderBy: { startsAt: "asc" },
+    }),
+  ]);
 
   return (
     <>
@@ -46,7 +70,29 @@ export default async function TeacherPage() {
       </section>
 
       <section className="panel section">
-        <h2>Мои группы</h2>
+        <h2>Ближайший урок</h2>
+        {nextLesson ? (
+          <p>
+            {nextLesson.startsAt.toLocaleString("ru-RU", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            : {nextLesson.group?.name ?? nextLesson.course.name}, {lessonStatusLabels[nextLesson.lessonStatus]}.
+          </p>
+        ) : (
+          <p>Ближайшие уроки пока не созданы.</p>
+        )}
+      </section>
+
+      <section className="panel section">
+        <div className="section-heading">
+          <h2>Мои группы</h2>
+          <Link className="secondary-button link-button" href="/teacher/groups">
+            Открыть список
+          </Link>
+        </div>
         {groups.length === 0 ? (
           <p>Пока нет назначенных групп.</p>
         ) : (
@@ -57,15 +103,28 @@ export default async function TeacherPage() {
                   <th>Группа</th>
                   <th>Курс</th>
                   <th>Ученики</th>
+                  <th>Ближайший урок</th>
                   <th>Статус</th>
                 </tr>
               </thead>
               <tbody>
                 {groups.map((group) => (
                   <tr key={group.id}>
-                    <td>{group.name}</td>
+                    <td>
+                      <Link href={`/teacher/groups/${group.id}`}>{group.name}</Link>
+                    </td>
                     <td>{group.course.name}</td>
                     <td>{group.students.length}</td>
+                    <td>
+                      {group.lessons[0]
+                        ? group.lessons[0].startsAt.toLocaleString("ru-RU", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Нет"}
+                    </td>
                     <td>{groupStatusLabels[group.status]}</td>
                   </tr>
                 ))}

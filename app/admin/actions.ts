@@ -1,12 +1,16 @@
 "use server";
 
 import {
+  AttendanceStatus,
   CourseFormat,
   GroupStatus,
   GroupStudentStatus,
+  LessonStatus,
   LessonMarkScale,
   Permission,
   Role,
+  ScheduleRuleStatus,
+  ScheduleTargetType,
   StudentStatus,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -78,6 +82,70 @@ function readStudentStatus(formData: FormData) {
   }
 
   return StudentStatus.active;
+}
+
+function readWeekday(formData: FormData) {
+  const value = Number(formData.get("weekday"));
+
+  if (Number.isInteger(value) && value >= 0 && value <= 6) {
+    return value;
+  }
+
+  throw new Error("Неверный день недели.");
+}
+
+function readDate(formData: FormData, name: string) {
+  const value = readRequiredText(formData, name);
+  const date = new Date(`${value}T00:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Неверная дата.");
+  }
+
+  return date;
+}
+
+function readOptionalDate(formData: FormData, name: string) {
+  const value = readOptionalText(formData, name);
+
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Неверная дата.");
+  }
+
+  return date;
+}
+
+function assertTime(value: string) {
+  if (!/^\d{2}:\d{2}$/.test(value)) {
+    throw new Error("Неверное время.");
+  }
+
+  const [hours, minutes] = value.split(":").map(Number);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    throw new Error("Неверное время.");
+  }
+}
+
+function moscowDateTime(day: Date, time: string) {
+  const datePart = day.toISOString().slice(0, 10);
+  return new Date(`${datePart}T${time}:00+03:00`);
+}
+
+function startOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
 }
 
 function requirePermission(permissions: Permission[], permission: Permission) {
@@ -263,6 +331,49 @@ export async function createStudent(formData: FormData) {
   redirect(`/admin/students/${student.id}`);
 }
 
+export async function createStudentInGroup(groupId: string, formData: FormData) {
+  const session = await requireAdminPermission(Permission.students_write);
+  const name = readRequiredText(formData, "name");
+  const phone = readOptionalText(formData, "phone");
+  const email = readOptionalText(formData, "email");
+
+  const group = await prisma.group.findFirst({
+    where: {
+      id: groupId,
+      organizationId: session.organizationId,
+      status: { not: "archived" },
+    },
+    select: { id: true },
+  });
+
+  if (!group) {
+    notFound();
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const student = await tx.student.create({
+      data: {
+        organizationId: session.organizationId,
+        name,
+        phone,
+        email,
+        status: StudentStatus.active,
+      },
+    });
+
+    await tx.groupStudent.create({
+      data: {
+        groupId: group.id,
+        studentId: student.id,
+        status: GroupStudentStatus.active,
+      },
+    });
+  });
+
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/groups/${group.id}`);
+}
+
 export async function updateStudent(studentId: string, formData: FormData) {
   const session = await requireAdminPermission(Permission.students_write);
   const name = readRequiredText(formData, "name");
@@ -305,7 +416,7 @@ export async function createGroup(formData: FormData) {
   });
 
   if (!course) {
-    redirect("/not-found");
+    notFound();
   }
 
   if (teacherId) {
@@ -356,7 +467,7 @@ export async function updateGroup(groupId: string, formData: FormData) {
     });
 
     if (!teacher) {
-      redirect("/not-found");
+      notFound();
     }
   }
 
@@ -375,6 +486,183 @@ export async function updateGroup(groupId: string, formData: FormData) {
 
   revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+}
+
+export async function createGroupScheduleRule(groupId: string, formData: FormData) {
+  const session = await requireAdminPermission(Permission.groups_write);
+  const weekday = readWeekday(formData);
+  const startTime = readRequiredText(formData, "startTime");
+  const endTime = readOptionalText(formData, "endTime");
+  const startsOn = readDate(formData, "startsOn");
+  const endsOn = readOptionalDate(formData, "endsOn");
+
+  assertTime(startTime);
+
+  if (endTime) {
+    assertTime(endTime);
+
+    if (endTime <= startTime) {
+      throw new Error("Время окончания должно быть позже начала.");
+    }
+  }
+
+  if (endsOn && endsOn < startsOn) {
+    throw new Error("Дата окончания не может быть раньше даты начала.");
+  }
+
+  const group = await prisma.group.findFirst({
+    where: {
+      id: groupId,
+      organizationId: session.organizationId,
+      status: { not: "archived" },
+    },
+    select: { id: true },
+  });
+
+  if (!group) {
+    notFound();
+  }
+
+  await prisma.scheduleRule.create({
+    data: {
+      organizationId: session.organizationId,
+      targetType: ScheduleTargetType.group,
+      targetId: group.id,
+      weekday,
+      startTime,
+      endTime,
+      startsOn,
+      endsOn,
+      timezone: "Europe/Moscow",
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/groups/${group.id}`);
+}
+
+export async function deleteScheduleRule(scheduleRuleId: string, groupId: string) {
+  const session = await requireAdminPermission(Permission.groups_write);
+  const rule = await prisma.scheduleRule.findFirst({
+    where: {
+      id: scheduleRuleId,
+      organizationId: session.organizationId,
+      targetType: ScheduleTargetType.group,
+      targetId: groupId,
+    },
+    select: { id: true },
+  });
+
+  if (!rule) {
+    notFound();
+  }
+
+  const protectedLesson = await prisma.lesson.findFirst({
+    where: {
+      organizationId: session.organizationId,
+      scheduleRuleId: rule.id,
+      OR: [
+        { lessonStatus: { not: LessonStatus.scheduled } },
+        { attendanceStatus: { not: AttendanceStatus.not_checked } },
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (protectedLesson) {
+    throw new Error("Нельзя удалить расписание, по которому уже созданы уроки.");
+  }
+
+  await prisma.$transaction([
+    prisma.lesson.deleteMany({
+      where: {
+        organizationId: session.organizationId,
+        scheduleRuleId: rule.id,
+        lessonStatus: LessonStatus.scheduled,
+        attendanceStatus: AttendanceStatus.not_checked,
+      },
+    }),
+    prisma.scheduleRule.delete({
+      where: { id: rule.id },
+    }),
+  ]);
+
+  revalidatePath("/admin");
+  revalidatePath("/teacher");
+  revalidatePath("/teacher/groups");
+  revalidatePath(`/teacher/groups/${groupId}`);
+  revalidatePath(`/admin/groups/${groupId}`);
+}
+
+export async function generateLessonsForGroup(groupId: string) {
+  const session = await requireAdminPermission(Permission.groups_write);
+  const group = await prisma.group.findFirst({
+    where: {
+      id: groupId,
+      organizationId: session.organizationId,
+      status: { not: "archived" },
+    },
+    include: {
+      course: true,
+    },
+  });
+
+  if (!group || !group.teacherId) {
+    notFound();
+  }
+
+  const rules = await prisma.scheduleRule.findMany({
+    where: {
+      organizationId: session.organizationId,
+      targetType: ScheduleTargetType.group,
+      targetId: group.id,
+      status: ScheduleRuleStatus.active,
+    },
+  });
+
+  const today = startOfUtcDay(new Date());
+  const windowEnd = addDays(today, 30);
+
+  for (const rule of rules) {
+    const startsOn = startOfUtcDay(rule.startsOn);
+    const endsOn = rule.endsOn ? startOfUtcDay(rule.endsOn) : windowEnd;
+    const firstDay = startsOn > today ? startsOn : today;
+    const lastDay = endsOn < windowEnd ? endsOn : windowEnd;
+
+    for (let day = firstDay; day <= lastDay; day = addDays(day, 1)) {
+      if (day.getUTCDay() !== rule.weekday) {
+        continue;
+      }
+
+      const startsAt = moscowDateTime(day, rule.startTime);
+      const endsAt = rule.endTime ? moscowDateTime(day, rule.endTime) : null;
+
+      await prisma.lesson.upsert({
+        where: {
+          organizationId_scheduleRuleId_startsAt: {
+            organizationId: session.organizationId,
+            scheduleRuleId: rule.id,
+            startsAt,
+          },
+        },
+        update: {},
+        create: {
+          organizationId: session.organizationId,
+          courseId: group.courseId,
+          groupId: group.id,
+          teacherId: group.teacherId,
+          scheduleRuleId: rule.id,
+          scheduledAt: startsAt,
+          startsAt,
+          endsAt,
+        },
+      });
+    }
+  }
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/groups/${group.id}`);
+  revalidatePath("/teacher");
 }
 
 export async function addStudentToGroup(groupId: string, formData: FormData) {

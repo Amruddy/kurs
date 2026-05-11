@@ -28,6 +28,7 @@ export default function RootLayout({
                 <Link href="/admin/groups">Группы</Link>
                 <Link href="/admin/students">Ученики</Link>
                 <Link href="/teacher">Преподаватель</Link>
+                <Link href="/teacher/groups">Мои группы</Link>
                 <Link href="/student">Ученик</Link>
               </nav>
             </div>

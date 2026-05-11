@@ -1,7 +1,22 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
-import { addStudentToGroup, removeStudentFromGroup, updateGroup } from "@/app/admin/actions";
-import { groupStatusLabels, groupStudentStatusLabels } from "@/app/lib/learning-labels";
+import {
+  addStudentToGroup,
+  createGroupScheduleRule,
+  createStudentInGroup,
+  deleteScheduleRule,
+  generateLessonsForGroup,
+  removeStudentFromGroup,
+  updateGroup,
+} from "@/app/admin/actions";
+import {
+  attendanceStatusLabels,
+  groupStatusLabels,
+  groupStudentStatusLabels,
+  lessonStatusLabels,
+  scheduleRuleStatusLabels,
+  weekdayLabels,
+} from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 
@@ -24,6 +39,14 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
         students: {
           include: { student: true },
           orderBy: { joinedAt: "desc" },
+        },
+        lessons: {
+          where: {
+            lessonStatus: "scheduled",
+            startsAt: { gte: new Date() },
+          },
+          orderBy: { startsAt: "asc" },
+          take: 10,
         },
       },
     }),
@@ -58,6 +81,14 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
     group.students.filter((link) => link.status === "active").map((link) => link.studentId),
   );
   const availableStudents = students.filter((student) => !activeStudentIds.has(student.id));
+  const scheduleRules = await prisma.scheduleRule.findMany({
+    where: {
+      organizationId: session.organizationId,
+      targetType: "group",
+      targetId: group.id,
+    },
+    orderBy: [{ status: "asc" }, { weekday: "asc" }, { startTime: "asc" }],
+  });
 
   return (
     <>
@@ -124,6 +155,145 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           </button>
         </form>
         {availableStudents.length === 0 ? <p className="form-note">Нет доступных учеников для добавления.</p> : null}
+
+        <h3 className="subsection-title">Новый ученик</h3>
+        <form className="form-grid" action={createStudentInGroup.bind(null, group.id)}>
+          <label>
+            Имя
+            <input name="name" required placeholder="Имя ученика" />
+          </label>
+          <label>
+            Телефон
+            <input name="phone" placeholder="+7..." />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" placeholder="student@example.test" />
+          </label>
+          <button className="button" type="submit">
+            Создать и добавить
+          </button>
+        </form>
+      </section>
+
+      <section className="panel section">
+        <h2>Расписание</h2>
+        <form className="form-grid" action={createGroupScheduleRule.bind(null, group.id)}>
+          <label>
+            День недели
+            <select name="weekday" defaultValue="0">
+              <option value="1">Понедельник</option>
+              <option value="2">Вторник</option>
+              <option value="3">Среда</option>
+              <option value="4">Четверг</option>
+              <option value="5">Пятница</option>
+              <option value="6">Суббота</option>
+              <option value="0">Воскресенье</option>
+            </select>
+          </label>
+          <label>
+            Начало
+            <input name="startTime" required type="time" defaultValue="10:00" />
+          </label>
+          <label>
+            Окончание
+            <input name="endTime" type="time" defaultValue="11:00" />
+          </label>
+          <label>
+            Действует с
+            <input name="startsOn" required type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+          </label>
+          <label>
+            Действует до
+            <input name="endsOn" type="date" />
+          </label>
+          <button className="button" type="submit">
+            Добавить расписание
+          </button>
+        </form>
+
+        {scheduleRules.length === 0 ? (
+          <p className="form-note">Расписание пока не задано.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>День</th>
+                  <th>Время</th>
+                  <th>Период</th>
+                  <th>Статус</th>
+                  <th>Действие</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scheduleRules.map((rule) => (
+                  <tr key={rule.id}>
+                    <td>{weekdayLabels[rule.weekday]}</td>
+                    <td>
+                      {rule.startTime}
+                      {rule.endTime ? `-${rule.endTime}` : ""}
+                    </td>
+                    <td>
+                      {rule.startsOn.toLocaleDateString("ru-RU")}
+                      {rule.endsOn ? ` - ${rule.endsOn.toLocaleDateString("ru-RU")}` : ""}
+                    </td>
+                    <td>{scheduleRuleStatusLabels[rule.status]}</td>
+                    <td>
+                      <form action={deleteScheduleRule.bind(null, rule.id, group.id)}>
+                        <button className="secondary-button compact-button" type="submit">
+                          Удалить
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <form className="section" action={generateLessonsForGroup.bind(null, group.id)}>
+          <button className="button compact-button" type="submit" disabled={!group.teacherId || scheduleRules.length === 0}>
+            Создать уроки на 30 дней
+          </button>
+        </form>
+        {!group.teacherId ? <p className="form-note">Чтобы создать уроки, назначьте преподавателя.</p> : null}
+      </section>
+
+      <section className="panel section">
+        <h2>Ближайшие уроки</h2>
+        {group.lessons.length === 0 ? (
+          <p>Ближайшие уроки пока не созданы.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Дата</th>
+                  <th>Время</th>
+                  <th>Статус урока</th>
+                  <th>Посещаемость</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.lessons.map((lesson) => (
+                  <tr key={lesson.id}>
+                    <td>{lesson.startsAt.toLocaleDateString("ru-RU")}</td>
+                    <td>
+                      {lesson.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+                      {lesson.endsAt
+                        ? `-${lesson.endsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
+                        : ""}
+                    </td>
+                    <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
+                    <td>{attendanceStatusLabels[lesson.attendanceStatus]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="panel section">
