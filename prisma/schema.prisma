@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrganizationType {
+  school
+  learning_center
+  private_teacher
+  other
+}
+
+enum OrganizationStatus {
+  active
+  archived
+}
+
+enum UserStatus {
+  active
+  paused
+  archived
+}
+
+enum OrganizationMemberStatus {
+  active
+  paused
+  archived
+}
+
+enum Role {
+  student
+  teacher
+  admin
+  director
+}
+
+enum Permission {
+  payments_write
+  courses_write
+  groups_write
+  students_write
+  materials_write
+  journal_write_any
+  admin_access
+}
+
+model Organization {
+  id        String             @id @default(cuid())
+  name      String
+  type      OrganizationType
+  status    OrganizationStatus @default(active)
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  members OrganizationMember[]
+
+  @@map("organizations")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  phone     String?
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  memberships OrganizationMember[]
+
+  @@map("users")
+}
+
+model OrganizationMember {
+  id             String                   @id @default(cuid())
+  organizationId String                   @map("organization_id")
+  userId         String                   @map("user_id")
+  roles          Role[]                   @default([])
+  permissions    Permission[]             @default([])
+  status         OrganizationMemberStatus @default(active)
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
