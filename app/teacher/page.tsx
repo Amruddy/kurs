@@ -5,7 +5,7 @@ export default function TeacherPage() {
     <WorkspacePage
       title="Рабочая область преподавателя"
       expectedRole="teacher"
-      description="Базовая страница преподавателя для Stage 0. Журнал, группы и уроки будут добавлены по плану MVP."
+      description="Защищенная рабочая область преподавателя. Журнал, группы и уроки будут добавлены по плану MVP."
       items={[
         "Преподаватель создается seed-скриптом.",
         "Пользователь получает роль teacher.",
@@ -14,4 +14,3 @@ export default function TeacherPage() {
     />
   );
 }
-

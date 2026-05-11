@@ -34,6 +34,25 @@ const seedUsers = [
     roles: [Role.student],
     permissions: [],
   },
+  {
+    name: "Преподаватель-одиночка",
+    email: "solo-teacher@example.test",
+    roles: [Role.teacher, Role.admin],
+    permissions: [
+      Permission.admin_access,
+      Permission.courses_write,
+      Permission.groups_write,
+      Permission.students_write,
+      Permission.materials_write,
+      Permission.payments_write,
+    ],
+  },
+  {
+    name: "Пользователь без роли",
+    email: "no-role@example.test",
+    roles: [],
+    permissions: [],
+  },
 ];
 
 async function main() {

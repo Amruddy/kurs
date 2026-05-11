@@ -1,8 +1,9 @@
-import { getDevSession } from "@/app/lib/dev-auth";
+import { requireWorkspace, workspaceConfig, type WorkspaceRole } from "@/app/lib/dev-auth";
+import { switchWorkspace } from "@/app/login/actions";
 
 type WorkspacePageProps = {
   title: string;
-  expectedRole: "admin" | "teacher" | "student";
+  expectedRole: WorkspaceRole;
   description: string;
   items: string[];
 };
@@ -13,13 +14,13 @@ export async function WorkspacePage({
   description,
   items,
 }: WorkspacePageProps) {
-  const session = await getDevSession();
-  const hasAccess = session?.role === expectedRole;
+  const session = await requireWorkspace(expectedRole);
+  const otherWorkspaces = session.roles.filter((role) => role !== expectedRole);
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">{hasAccess ? "Доступ открыт" : "Пустое состояние"}</span>
+        <span className="status">Доступ открыт</span>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
@@ -27,17 +28,34 @@ export async function WorkspacePage({
       <section className="grid">
         <div className="panel">
           <h2>Текущий вход</h2>
-          <p>{session ? `${session.label}: ${session.email}` : "Пользователь не выбран."}</p>
+          <p>
+            {session.name}: {session.email}
+          </p>
         </div>
         <div className="panel">
-          <h2>Stage 0</h2>
-          <p>Страница открывается и готова к подключению следующих данных MVP.</p>
+          <h2>Организация</h2>
+          <p>{session.organizationName}</p>
         </div>
         <div className="panel">
-          <h2>Дальше</h2>
-          <p>Защита маршрутов и полноценная ролевая маршрутизация относятся к Stage 1.</p>
+          <h2>Рабочая область</h2>
+          <p>{workspaceConfig[session.activeWorkspace].label}</p>
         </div>
       </section>
+
+      {otherWorkspaces.length > 0 ? (
+        <section className="panel workspace-switcher">
+          <h2>Доступные рабочие области</h2>
+          <div className="button-row">
+            {otherWorkspaces.map((workspace) => (
+              <form key={workspace} action={switchWorkspace.bind(null, workspace)}>
+                <button className="secondary-button" type="submit">
+                  Перейти: {workspaceConfig[workspace].label}
+                </button>
+              </form>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="panel" style={{ marginTop: 16 }}>
         <h2>Минимальная рабочая область</h2>
@@ -50,4 +68,3 @@ export async function WorkspacePage({
     </>
   );
 }
-

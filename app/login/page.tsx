@@ -1,4 +1,4 @@
-import { loginAsAdmin, loginAsStudent, loginAsTeacher } from "./actions";
+import { loginAsAdmin, loginAsPrivateTeacher, loginAsStudent, loginAsTeacher } from "./actions";
 
 export default async function LoginPage({
   searchParams,
@@ -41,14 +41,19 @@ export default async function LoginPage({
               Войти как ученик
             </button>
           </form>
+          <form action={loginAsPrivateTeacher}>
+            <button className="button" type="submit">
+              Войти как преподаватель-одиночка
+            </button>
+          </form>
         </div>
         <ul className="muted-list">
           <li>Админ: admin@example.test</li>
           <li>Преподаватель: teacher@example.test</li>
           <li>Ученик: student@example.test</li>
+          <li>Преподаватель-одиночка: solo-teacher@example.test</li>
         </ul>
       </section>
     </>
   );
 }
-

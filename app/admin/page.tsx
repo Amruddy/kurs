@@ -5,7 +5,7 @@ export default function AdminPage() {
     <WorkspacePage
       title="Административная область"
       expectedRole="admin"
-      description="Базовая страница администратора для Stage 0. Бизнес-действия начнутся на следующих этапах."
+      description="Защищенная рабочая область администратора. Бизнес-действия начнутся на следующих этапах."
       items={[
         "Организация создается seed-скриптом.",
         "Админ получает роль admin и административные права.",
@@ -14,4 +14,3 @@ export default function AdminPage() {
     />
   );
 }
-

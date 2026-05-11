@@ -5,7 +5,7 @@ export default function StudentPage() {
     <WorkspacePage
       title="Кабинет ученика"
       expectedRole="student"
-      description="Базовая страница ученика для Stage 0. Учебные данные появятся после реализации групп, расписания и уроков."
+      description="Защищенная рабочая область ученика. Учебные данные появятся после реализации групп, расписания и уроков."
       items={[
         "Ученик создается seed-скриптом.",
         "Пользователь получает роль student.",
@@ -14,4 +14,3 @@ export default function StudentPage() {
     />
   );
 }
-
