@@ -137,23 +137,46 @@ input {
 
 .login-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.button {
+.button,
+.secondary-button {
   min-height: 44px;
   border: 1px solid var(--primary);
   border-radius: var(--radius);
-  background: var(--primary);
-  color: #ffffff;
   cursor: pointer;
   padding: 0 16px;
   font-weight: 700;
 }
 
+.button {
+  background: var(--primary);
+  color: #ffffff;
+}
+
 .button:hover {
   background: var(--primary-strong);
+}
+
+.secondary-button {
+  background: var(--surface);
+  color: var(--primary);
+}
+
+.secondary-button:hover {
+  background: var(--surface-muted);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.workspace-switcher {
+  margin-top: 16px;
 }
 
 .muted-list {
@@ -200,4 +223,3 @@ input {
     padding-top: 24px;
   }
 }
-
