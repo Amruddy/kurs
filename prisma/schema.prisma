@@ -47,6 +47,47 @@ enum Permission {
   admin_access
 }
 
+enum CourseType {
+  tajweed
+}
+
+enum CourseFormat {
+  group
+  individual
+  both
+}
+
+enum LessonMarkScale {
+  five_point
+  ten_point
+}
+
+enum CourseStatus {
+  active
+  archived
+}
+
+enum StudentStatus {
+  active
+  paused
+  archived
+}
+
+enum GroupStatus {
+  recruiting
+  active
+  paused
+  completed
+  archived
+}
+
+enum GroupStudentStatus {
+  active
+  paused
+  removed
+  completed
+}
+
 model Organization {
   id        String             @id @default(cuid())
   name      String
@@ -55,7 +96,10 @@ model Organization {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
 
-  members OrganizationMember[]
+  members  OrganizationMember[]
+  courses  Course[]
+  students Student[]
+  groups   Group[]
 
   @@map("organizations")
 }
@@ -69,7 +113,10 @@ model User {
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
-  memberships OrganizationMember[]
+  memberships    OrganizationMember[]
+  createdCourses Course[]             @relation("CourseCreatedBy")
+  studentCards   Student[]
+  teachingGroups Group[]              @relation("GroupTeacher")
 
   @@map("users")
 }
@@ -90,4 +137,120 @@ model OrganizationMember {
   @@unique([organizationId, userId])
   @@index([userId])
   @@map("organization_members")
+}
+
+model Course {
+  id              String           @id @default(cuid())
+  organizationId  String           @map("organization_id")
+  name            String
+  description     String?
+  type            CourseType       @default(tajweed)
+  format          CourseFormat     @default(group)
+  lessonMarkScale LessonMarkScale? @map("lesson_mark_scale")
+  status          CourseStatus     @default(active)
+  createdById     String           @map("created_by")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  archivedAt      DateTime?        @map("archived_at")
+
+  organization     Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy        User                    @relation("CourseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  progressSettings CourseProgressSettings?
+  groups           Group[]
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@map("courses")
+}
+
+model CourseProgressSettings {
+  id                String   @id @default(cuid())
+  courseId          String   @unique @map("course_id")
+  name              String
+  isProgressEnabled Boolean  @default(true) @map("is_progress_enabled")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@map("course_progress_settings")
+}
+
+model Student {
+  id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
+  userId         String?       @map("user_id")
+  name           String
+  phone          String?
+  email          String?
+  status         StudentStatus @default(active)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  archivedAt     DateTime?     @map("archived_at")
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  contacts     StudentContact[]
+  groupLinks   GroupStudent[]
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("students")
+}
+
+model StudentContact {
+  id        String   @id @default(cuid())
+  studentId String   @map("student_id")
+  name      String
+  relation  String?
+  phone     String?
+  email     String?
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@index([studentId])
+  @@map("student_contacts")
+}
+
+model Group {
+  id             String      @id @default(cuid())
+  organizationId String      @map("organization_id")
+  courseId       String      @map("course_id")
+  teacherId      String?     @map("teacher_id")
+  name           String
+  status         GroupStatus @default(recruiting)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  archivedAt     DateTime?   @map("archived_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  teacher      User?          @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  students     GroupStudent[]
+
+  @@index([organizationId])
+  @@index([courseId])
+  @@index([teacherId])
+  @@map("groups")
+}
+
+model GroupStudent {
+  id        String             @id @default(cuid())
+  groupId   String             @map("group_id")
+  studentId String             @map("student_id")
+  status    GroupStudentStatus @default(active)
+  joinedAt  DateTime           @default(now()) @map("joined_at")
+  leftAt    DateTime?          @map("left_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([groupId, studentId])
+  @@index([studentId])
+  @@map("group_students")
 }

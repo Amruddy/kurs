@@ -1,0 +1,129 @@
+import Link from "next/link";
+import { Role } from "@prisma/client";
+import { createGroup } from "@/app/admin/actions";
+import { groupStatusLabels } from "@/app/lib/learning-labels";
+import { requireWorkspace } from "@/app/lib/dev-auth";
+import { prisma } from "@/app/lib/prisma";
+
+export default async function AdminGroupsPage() {
+  const session = await requireWorkspace("admin");
+  const [groups, courses, teachers] = await Promise.all([
+    prisma.group.findMany({
+      where: { organizationId: session.organizationId },
+      include: {
+        course: true,
+        teacher: true,
+        students: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.course.findMany({
+      where: {
+        organizationId: session.organizationId,
+        status: "active",
+      },
+      orderBy: { name: "asc" },
+    }),
+    prisma.organizationMember.findMany({
+      where: {
+        organizationId: session.organizationId,
+        status: "active",
+        roles: { has: Role.teacher },
+      },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+
+  return (
+    <>
+      <div className="page-heading">
+        <span className="status">Группы</span>
+        <h1>Управление группами</h1>
+        <p>Создайте группу, привяжите ее к курсу и назначьте основного преподавателя.</p>
+      </div>
+
+      <section className="panel">
+        <h2>Новая группа</h2>
+        <form className="form-grid" action={createGroup}>
+          <label>
+            Название
+            <input name="name" required placeholder="Таджвид, начинающие" />
+          </label>
+          <label>
+            Курс
+            <select name="courseId" required defaultValue="">
+              <option value="" disabled>
+                Выберите курс
+              </option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Преподаватель
+            <select name="teacherId" defaultValue="">
+              <option value="">Назначить позже</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.userId} value={teacher.userId}>
+                  {teacher.user.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Статус
+            <select name="status" defaultValue="recruiting">
+              <option value="recruiting">Набор</option>
+              <option value="active">Активная</option>
+              <option value="paused">Приостановлена</option>
+              <option value="completed">Завершена</option>
+              <option value="archived">Архивная</option>
+            </select>
+          </label>
+          <button className="button" type="submit" disabled={courses.length === 0}>
+            Создать группу
+          </button>
+        </form>
+        {courses.length === 0 ? <p className="form-note">Сначала создайте курс.</p> : null}
+      </section>
+
+      <section className="panel section">
+        <h2>Список групп</h2>
+        {groups.length === 0 ? (
+          <p>Групп пока нет.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Группа</th>
+                  <th>Курс</th>
+                  <th>Преподаватель</th>
+                  <th>Ученики</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groups.map((group) => (
+                  <tr key={group.id}>
+                    <td>
+                      <Link href={`/admin/groups/${group.id}`}>{group.name}</Link>
+                    </td>
+                    <td>{group.course.name}</td>
+                    <td>{group.teacher?.name ?? "Не назначен"}</td>
+                    <td>{group.students.filter((student) => student.status === "active").length}</td>
+                    <td>{groupStatusLabels[group.status]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}

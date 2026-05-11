@@ -24,6 +24,9 @@ export default function RootLayout({
               <nav className="nav" aria-label="Основная навигация">
                 <Link href="/login">Вход</Link>
                 <Link href="/admin">Админ</Link>
+                <Link href="/admin/courses">Курсы</Link>
+                <Link href="/admin/groups">Группы</Link>
+                <Link href="/admin/students">Ученики</Link>
                 <Link href="/teacher">Преподаватель</Link>
                 <Link href="/student">Ученик</Link>
               </nav>
@@ -35,4 +38,3 @@ export default function RootLayout({
     </html>
   );
 }
-
