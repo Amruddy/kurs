@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, Role, Permission } from "@prisma/client";
+import { CourseFormat, LessonMarkScale, Permission, PrismaClient, Role } from "@prisma/client";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -106,6 +106,108 @@ async function main() {
       },
     });
   }
+
+  const adminUser = await prisma.user.findUniqueOrThrow({
+    where: { email: "admin@example.test" },
+  });
+  const teacherUser = await prisma.user.findUniqueOrThrow({
+    where: { email: "teacher@example.test" },
+  });
+  const studentUser = await prisma.user.findUniqueOrThrow({
+    where: { email: "student@example.test" },
+  });
+
+  const course = await prisma.course.upsert({
+    where: { id: "seed-course-tajweed" },
+    update: {
+      organizationId: organization.id,
+      name: "Таджвид для начинающих",
+      description: "Базовый курс чтения и правил таджвида.",
+      format: CourseFormat.group,
+      lessonMarkScale: LessonMarkScale.five_point,
+      status: "active",
+      createdById: adminUser.id,
+    },
+    create: {
+      id: "seed-course-tajweed",
+      organizationId: organization.id,
+      name: "Таджвид для начинающих",
+      description: "Базовый курс чтения и правил таджвида.",
+      format: CourseFormat.group,
+      lessonMarkScale: LessonMarkScale.five_point,
+      status: "active",
+      createdById: adminUser.id,
+    },
+  });
+
+  await prisma.courseProgressSettings.upsert({
+    where: { courseId: course.id },
+    update: {
+      name: "Таджвид-прогресс",
+      isProgressEnabled: true,
+    },
+    create: {
+      courseId: course.id,
+      name: "Таджвид-прогресс",
+      isProgressEnabled: true,
+    },
+  });
+
+  const student = await prisma.student.upsert({
+    where: { id: "seed-student" },
+    update: {
+      organizationId: organization.id,
+      userId: studentUser.id,
+      name: "Ученик",
+      email: studentUser.email,
+      status: "active",
+    },
+    create: {
+      id: "seed-student",
+      organizationId: organization.id,
+      userId: studentUser.id,
+      name: "Ученик",
+      email: studentUser.email,
+      status: "active",
+    },
+  });
+
+  const group = await prisma.group.upsert({
+    where: { id: "seed-group" },
+    update: {
+      organizationId: organization.id,
+      courseId: course.id,
+      teacherId: teacherUser.id,
+      name: "Группа начинающих",
+      status: "active",
+    },
+    create: {
+      id: "seed-group",
+      organizationId: organization.id,
+      courseId: course.id,
+      teacherId: teacherUser.id,
+      name: "Группа начинающих",
+      status: "active",
+    },
+  });
+
+  await prisma.groupStudent.upsert({
+    where: {
+      groupId_studentId: {
+        groupId: group.id,
+        studentId: student.id,
+      },
+    },
+    update: {
+      status: "active",
+      leftAt: null,
+    },
+    create: {
+      groupId: group.id,
+      studentId: student.id,
+      status: "active",
+    },
+  });
 }
 
 main()

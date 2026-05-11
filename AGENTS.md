@@ -23,8 +23,9 @@ Codex must use the project specifications as the source of truth before making c
 1. Spec
 2. Plan
 3. Code
-4. Verify
-5. Commit
+4. Automated verify
+5. Manual review gate
+6. Commit
 
 ## Development Rules
 
@@ -32,6 +33,8 @@ Codex must use the project specifications as the source of truth before making c
 - Do not mix unrelated MVP stages in one commit.
 - Prefer existing project patterns once the application code exists.
 - Run available checks after changes.
+- Before committing or pushing an MVP stage, provide a short Russian manual smoke-check checklist for the user.
+- Do not commit, push, or move to the next MVP stage after that checklist until the user explicitly confirms to continue.
 - Do not revert user changes unless explicitly requested.
 
 ## Branch Workflow For MVP Stages
@@ -39,15 +42,17 @@ Codex must use the project specifications as the source of truth before making c
 - Новый MVP stage нельзя реализовывать напрямую в `master`.
 - Когда пользователь явно говорит начать код для stage, нужно создать отдельную ветку от актуального `master`.
 - В ветку stage коммитится только завершенная и проверенная работа этого stage.
-- После проверки ветка stage пушится в GitHub и готовится к pull request.
+- После автоматической проверки Codex дает пользователю ручной smoke-чеклист для текущего stage.
+- Ветка stage коммитится и пушится только после явной команды пользователя продолжать после ручной проверки.
+- После подтверждения пользователя ветка stage пушится в GitHub и готовится к pull request.
 - Следующий stage нельзя начинать, пока предыдущий stage не смержен.
 - Перед началом следующего stage нужно вернуться в `master` и обновить его из GitHub, чтобы новая ветка начиналась от последнего смерженного состояния.
 - Цикл для каждого stage: обновить `master`, создать ветку stage, реализовать, проверить, закоммитить, запушить, открыть pull request, смержить, снова обновить `master`.
 
 ## Current MVP Direction
 
-The next implementation step is Stage 0 from:
+The current implementation source of truth is:
 
 `docs/specs/06-work-plans/active/01-mvp-implementation-plan.md`
 
-Stage 0 creates the technical foundation: Next.js, TypeScript, App Router, Prisma, development database, base layout, minimal role pages, and seed data.
+Use the current status section in that active work plan to determine the next MVP stage.
