@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   attendanceStatusLabels,
   groupStatusLabels,
@@ -84,6 +85,17 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
       </section>
 
       <section className="panel section">
+        <div className="button-row">
+          <Link className="button link-button compact-button" href={`/teacher/groups/${group.id}/journal`}>
+            Открыть журнал
+          </Link>
+          <Link className="secondary-button link-button compact-button" href="/teacher/attendance">
+            Посещаемость
+          </Link>
+        </div>
+      </section>
+
+      <section className="panel section">
         <h2>Расписание</h2>
         {scheduleRules.length === 0 ? (
           <p>Расписание пока не задано.</p>
@@ -132,6 +144,7 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
                   <th>Время</th>
                   <th>Статус урока</th>
                   <th>Посещаемость</th>
+                  <th>Действие</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,6 +159,11 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
                     </td>
                     <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
                     <td>{attendanceStatusLabels[lesson.attendanceStatus]}</td>
+                    <td>
+                      <Link className="secondary-button link-button compact-button" href={`/teacher/lessons/${lesson.id}`}>
+                        Открыть
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

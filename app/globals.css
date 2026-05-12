@@ -258,6 +258,31 @@ input {
   margin-top: 20px !important;
 }
 
+.journal-month + .journal-month {
+  margin-top: 20px;
+}
+
+.journal-month h2 {
+  text-transform: capitalize;
+}
+
+.table-wrap th a {
+  display: grid;
+  gap: 2px;
+  color: var(--primary);
+}
+
+.table-wrap th a span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.table-wrap th a strong {
+  font-size: 16px;
+}
+
 .action-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

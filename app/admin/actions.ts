@@ -148,6 +148,14 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
+function startOfUtcMonth(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
+function startOfNextUtcMonth(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
+}
+
 function requirePermission(permissions: Permission[], permission: Permission) {
   if (!permissions.includes(permission) && !permissions.includes(Permission.admin_access)) {
     redirect(`/forbidden?required=${permission}`);
@@ -621,15 +629,16 @@ export async function generateLessonsForGroup(groupId: string) {
   });
 
   const today = startOfUtcDay(new Date());
-  const windowEnd = addDays(today, 30);
+  const monthStart = startOfUtcMonth(today);
+  const monthEnd = startOfNextUtcMonth(today);
 
   for (const rule of rules) {
     const startsOn = startOfUtcDay(rule.startsOn);
-    const endsOn = rule.endsOn ? startOfUtcDay(rule.endsOn) : windowEnd;
-    const firstDay = startsOn > today ? startsOn : today;
-    const lastDay = endsOn < windowEnd ? endsOn : windowEnd;
+    const endsOn = rule.endsOn ? startOfUtcDay(rule.endsOn) : monthEnd;
+    const firstDay = startsOn > monthStart ? startsOn : monthStart;
+    const lastDay = endsOn < monthEnd ? endsOn : monthEnd;
 
-    for (let day = firstDay; day <= lastDay; day = addDays(day, 1)) {
+    for (let day = firstDay; day < lastDay; day = addDays(day, 1)) {
       if (day.getUTCDay() !== rule.weekday) {
         continue;
       }
