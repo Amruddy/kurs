@@ -1,13 +1,13 @@
-import Link from "next/link";
-import { attendanceMarkLabels, attendanceStatusLabels, lessonStatusLabels } from "@/app/lib/learning-labels";
+import { attendanceMarkLabels, lessonStatusLabels } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
+import { saveGroupJournal } from "@/app/teacher/actions";
 
 type TeacherGroupJournalPageProps = {
   params: Promise<{ groupId: string }>;
 };
 
-function entryLabel(entry: { mark: "present" | "absent" | "excused" | null; score: number | null } | undefined) {
+function entryValue(entry: { mark: "present" | "absent" | "excused" | null; score: number | null } | undefined) {
   if (!entry) {
     return "";
   }
@@ -25,6 +25,18 @@ function monthKey(date: Date) {
 
 function monthLabel(date: Date) {
   return date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+}
+
+function isWeekStart(index: number, lessonDate: Date, previousLessonDate?: Date) {
+  if (index === 0) {
+    return false;
+  }
+
+  if (!previousLessonDate) {
+    return false;
+  }
+
+  return lessonDate.getDay() < previousLessonDate.getDay();
 }
 
 export default async function TeacherGroupJournalPage({ params }: TeacherGroupJournalPageProps) {
@@ -77,35 +89,38 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
       <div className="page-heading">
         <span className="status">Журнал</span>
         <h1>{group.name}</h1>
-        <p>{group.course.name}{selectedMonthLabel ? `, ${selectedMonthLabel}` : ""}.</p>
+        <p>
+          {group.course.name}
+          {selectedMonthLabel ? `, ${selectedMonthLabel}` : ""}. В ячейку можно ввести оценку или статус: Б, Н, У.
+        </p>
       </div>
 
-      <section className="panel">
-        <div className="button-row">
-          <Link className="secondary-button link-button compact-button" href={`/teacher/groups/${group.id}`}>
-            Группа
-          </Link>
+      <form className="journal-sheet" action={saveGroupJournal.bind(null, group.id)}>
+        <div className="section-heading">
+          <div>
+            <h2>Журнал</h2>
+            <p>Оценка: число. Посещаемость: Б - был, Н - не был, У - уважительная причина.</p>
+          </div>
+          <button className="button compact-button" type="submit">
+            Сохранить журнал
+          </button>
         </div>
-      </section>
 
-      <section className="panel section">
-        <h2>Журнал</h2>
         {group.students.length === 0 || journalLessons.length === 0 ? (
           <p>Для журнала нужны активные ученики и созданные уроки.</p>
         ) : (
-          <div className="table-wrap">
-            <table>
+          <div className="journal-table-wrap">
+            <table className="journal-table">
               <thead>
                 <tr>
-                  <th>Ученик</th>
-                  {journalLessons.map((lesson) => (
-                    <th key={lesson.id}>
-                      <Link href={`/teacher/lessons/${lesson.id}`} title="Открыть урок">
-                        <span>{lesson.startsAt.toLocaleDateString("ru-RU", { weekday: "short" })}</span>
-                        <strong>
-                          {lesson.startsAt.toLocaleDateString("ru-RU", { day: "2-digit" })}
-                        </strong>
-                      </Link>
+                  <th className="journal-student-head">Ученик</th>
+                  {journalLessons.map((lesson, index) => (
+                    <th
+                      key={lesson.id}
+                      className={isWeekStart(index, lesson.startsAt, journalLessons[index - 1]?.startsAt) ? "week-start" : ""}
+                    >
+                      <span>{lesson.startsAt.toLocaleDateString("ru-RU", { weekday: "short" })}</span>
+                      <strong>{lesson.startsAt.toLocaleDateString("ru-RU", { day: "2-digit" })}</strong>
                     </th>
                   ))}
                 </tr>
@@ -113,11 +128,25 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
               <tbody>
                 {group.students.map((link) => (
                   <tr key={link.id}>
-                    <td>{link.student.name}</td>
-                    {journalLessons.map((lesson) => {
+                    <th className="journal-student-name" scope="row">
+                      {link.student.name}
+                    </th>
+                    {journalLessons.map((lesson, index) => {
                       const entry = lesson.journalEntries.find((item) => item.studentId === link.studentId);
 
-                      return <td key={lesson.id}>{entryLabel(entry)}</td>;
+                      return (
+                        <td
+                          key={lesson.id}
+                          className={isWeekStart(index, lesson.startsAt, journalLessons[index - 1]?.startsAt) ? "week-start" : ""}
+                        >
+                          <input
+                            aria-label={`${link.student.name}, ${lesson.startsAt.toLocaleDateString("ru-RU")}`}
+                            className="journal-cell-input"
+                            name={`cell-${lesson.id}-${link.studentId}`}
+                            defaultValue={entryValue(entry)}
+                          />
+                        </td>
+                      );
                     })}
                   </tr>
                 ))}
@@ -125,9 +154,9 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
             </table>
           </div>
         )}
-      </section>
+      </form>
 
-      <section className="panel section">
+      <section className="journal-meta section">
         <h2>Уроки</h2>
         {journalLessons.length === 0 ? (
           <p>Уроки пока не созданы.</p>
@@ -138,8 +167,6 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
                 <tr>
                   <th>Дата</th>
                   <th>Статус</th>
-                  <th>Посещаемость</th>
-                  <th>Действие</th>
                 </tr>
               </thead>
               <tbody>
@@ -154,12 +181,6 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
                       })}
                     </td>
                     <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
-                    <td>{attendanceStatusLabels[lesson.attendanceStatus]}</td>
-                    <td>
-                      <Link className="secondary-button link-button compact-button" href={`/teacher/lessons/${lesson.id}`}>
-                        Открыть
-                      </Link>
-                    </td>
                   </tr>
                 ))}
               </tbody>

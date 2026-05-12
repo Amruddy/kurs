@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  attendanceStatusLabels,
   groupStatusLabels,
   groupStudentStatusLabels,
   lessonStatusLabels,
@@ -143,7 +142,6 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
                   <th>Дата</th>
                   <th>Время</th>
                   <th>Статус урока</th>
-                  <th>Посещаемость</th>
                   <th>Действие</th>
                 </tr>
               </thead>
@@ -158,7 +156,6 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
                         : ""}
                     </td>
                     <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
-                    <td>{attendanceStatusLabels[lesson.attendanceStatus]}</td>
                     <td>
                       <Link className="secondary-button link-button compact-button" href={`/teacher/lessons/${lesson.id}`}>
                         Открыть

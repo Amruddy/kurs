@@ -31,8 +31,7 @@ export default async function TeacherAttendancePage() {
       lessons: {
         where: {
           startsAt: { gte: from, lt: to },
-          lessonStatus: { in: ["completed", "in_progress"] },
-          attendanceStatus: "confirmed",
+          lessonStatus: "completed",
         },
         include: { journalEntries: true },
         orderBy: { startsAt: "asc" },
@@ -69,7 +68,7 @@ export default async function TeacherAttendancePage() {
       <div className="page-heading">
         <span className="status">Посещаемость</span>
         <h1>Сводная посещаемость</h1>
-        <p>Текущий месяц. Учитываются уроки с подтвержденной посещаемостью.</p>
+        <p>Текущий месяц. Учитываются завершенные уроки.</p>
       </div>
 
       <section className="panel">
