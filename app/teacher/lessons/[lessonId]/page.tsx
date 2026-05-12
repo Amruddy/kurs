@@ -1,12 +1,15 @@
 import Link from "next/link";
-import {
-  attendanceMarkFullLabels,
-  attendanceStatusLabels,
-  lessonStatusLabels,
-} from "@/app/lib/learning-labels";
+import { lessonStatusLabels, materialTypeLabels } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
-import { completeLesson, confirmAttendance, saveLessonJournal, startLesson } from "@/app/teacher/actions";
+import {
+  completeLesson,
+  createLessonHomework,
+  createLessonMaterial,
+  createLessonProgress,
+  saveLessonDetails,
+  startLesson,
+} from "@/app/teacher/actions";
 
 type TeacherLessonPageProps = {
   params: Promise<{ lessonId: string }>;
@@ -22,7 +25,6 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
       teacherId: session.userId,
     },
     include: {
-      course: true,
       group: {
         include: {
           students: {
@@ -32,7 +34,15 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
           },
         },
       },
-      journalEntries: true,
+      homeworks: {
+        where: { status: "active" },
+        include: { student: true },
+        orderBy: { createdAt: "desc" },
+      },
+      materials: {
+        where: { status: "active" },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -44,10 +54,6 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
       </section>
     );
   }
-
-  const entriesByStudentId = new Map(lesson.journalEntries.map((entry) => [entry.studentId, entry]));
-  const maxScore =
-    lesson.course.lessonMarkScale === "five_point" ? 5 : lesson.course.lessonMarkScale === "ten_point" ? 10 : null;
 
   return (
     <>
@@ -62,23 +68,18 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
             hour: "2-digit",
             minute: "2-digit",
           })}
-          . Посещаемость: {attendanceStatusLabels[lesson.attendanceStatus]}.
+          . Посещаемость редактируется в журнале группы.
         </p>
       </div>
 
       <section className="panel">
         <div className="button-row">
-          <Link className="secondary-button link-button compact-button" href={`/teacher/groups/${lesson.group.id}/journal`}>
-            Журнал группы
+          <Link className="button link-button compact-button" href={`/teacher/groups/${lesson.group.id}/journal`}>
+            Открыть журнал
           </Link>
           <form action={startLesson.bind(null, lesson.id)}>
             <button className="secondary-button compact-button" type="submit" disabled={lesson.lessonStatus !== "scheduled"}>
               Начать урок
-            </button>
-          </form>
-          <form action={confirmAttendance.bind(null, lesson.id)}>
-            <button className="secondary-button compact-button" type="submit">
-              Подтвердить посещаемость
             </button>
           </form>
           <form action={completeLesson.bind(null, lesson.id)}>
@@ -89,7 +90,7 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
         </div>
       </section>
 
-      <form className="panel section" action={saveLessonJournal.bind(null, lesson.id)}>
+      <form className="panel section" action={saveLessonDetails.bind(null, lesson.id)}>
         <h2>Запись урока</h2>
         <div className="form-grid">
           <label>
@@ -101,58 +102,131 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
             <input name="summary" defaultValue={lesson.summary ?? ""} placeholder="Короткий комментарий" />
           </label>
         </div>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Ученик</th>
-                <th>Отметка</th>
-                <th>Оценка</th>
-                <th>Комментарий</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lesson.group.students.map((link) => {
-                const entry = entriesByStudentId.get(link.studentId);
-
-                return (
-                  <tr key={link.id}>
-                    <td>{link.student.name}</td>
-                    <td>
-                      <select name={`mark-${link.studentId}`} defaultValue={entry?.mark ?? ""}>
-                        <option value="">Пусто</option>
-                        {Object.entries(attendanceMarkFullLabels).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        name={`score-${link.studentId}`}
-                        type="number"
-                        min="1"
-                        max={maxScore ?? undefined}
-                        defaultValue={entry?.score ?? ""}
-                        disabled={!maxScore}
-                      />
-                    </td>
-                    <td>
-                      <input name={`comment-${link.studentId}`} defaultValue={entry?.comment ?? ""} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
         <button className="button compact-button section" type="submit">
-          Сохранить журнал
+          Сохранить запись
         </button>
       </form>
+
+      <section className="lesson-workspace-grid section">
+        <form className="panel lesson-workspace-card" action={createLessonProgress.bind(null, lesson.id)}>
+          <h2>Прогресс</h2>
+          <div className="form-grid">
+            <label>
+              Ученик
+              <select name="studentId" required>
+                <option value="">Выберите</option>
+                {lesson.group.students.map((link) => (
+                  <option key={link.studentId} value={link.studentId}>
+                    {link.student.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Повторить
+              <input name="repeatText" placeholder="Например: мадды" />
+            </label>
+            <label>
+              Комментарий для ученика
+              <input name="studentComment" />
+            </label>
+            <label>
+              Внутренний комментарий
+              <input name="internalComment" />
+            </label>
+            <label className="checkbox-label">
+              <input name="showRules" type="checkbox" defaultChecked /> Показать правила
+            </label>
+            <label className="checkbox-label">
+              <input name="showErrors" type="checkbox" defaultChecked /> Показать ошибки
+            </label>
+            <label className="checkbox-label">
+              <input name="showRepeatText" type="checkbox" defaultChecked /> Показать повтор
+            </label>
+            <label className="checkbox-label">
+              <input name="showStudentComment" type="checkbox" defaultChecked /> Показать комментарий
+            </label>
+          </div>
+          <button className="button compact-button section" type="submit">
+            Добавить прогресс
+          </button>
+        </form>
+
+        <form className="panel lesson-workspace-card" action={createLessonHomework.bind(null, lesson.id)}>
+          <h2>Домашнее задание</h2>
+          <div className="form-grid">
+            <label>
+              Название
+              <input name="title" required />
+            </label>
+            <label>
+              Срок
+              <input name="dueAt" type="date" />
+            </label>
+            <label>
+              Ученик
+              <select name="studentId">
+                <option value="">Вся группа</option>
+                {lesson.group.students.map((link) => (
+                  <option key={link.studentId} value={link.studentId}>
+                    {link.student.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Текст
+              <input name="text" required />
+            </label>
+            <label className="checkbox-label">
+              <input name="isVisibleToStudent" type="checkbox" defaultChecked /> Видно ученику
+            </label>
+          </div>
+          <button className="button compact-button section" type="submit">
+            Задать
+          </button>
+        </form>
+      </section>
+
+      <section className="lesson-workspace-grid section">
+        <form className="panel lesson-workspace-card" action={createLessonMaterial.bind(null, lesson.id)}>
+          <h2>Материал</h2>
+          <div className="form-grid">
+            <label>
+              Текст или ссылка
+              <input name="material" required placeholder="Вставьте ссылку или короткий текст" />
+            </label>
+            <label className="checkbox-label">
+              <input name="isVisibleToStudent" type="checkbox" defaultChecked /> Видно ученику
+            </label>
+          </div>
+          <button className="button compact-button section" type="submit">
+            Добавить материал
+          </button>
+        </form>
+
+        <div className="panel lesson-workspace-card">
+          <h2>Уже добавлено</h2>
+          {lesson.homeworks.length === 0 && lesson.materials.length === 0 ? (
+            <p>Домашних заданий и материалов пока нет.</p>
+          ) : (
+            <ul className="muted-list">
+              {lesson.homeworks.map((homework) => (
+                <li key={homework.id}>
+                  ДЗ: {homework.title}
+                  {homework.student ? ` (${homework.student.name})` : ""}
+                </li>
+              ))}
+              {lesson.materials.map((material) => (
+                <li key={material.id}>
+                  {materialTypeLabels[material.type]}: {material.title}
+                  {material.isVisibleToStudent ? "" : " (скрыто)"}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
     </>
   );
 }

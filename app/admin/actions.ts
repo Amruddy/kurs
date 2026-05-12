@@ -1,7 +1,6 @@
 "use server";
 
 import {
-  AttendanceStatus,
   CourseFormat,
   GroupStatus,
   GroupStudentStatus,
@@ -569,10 +568,7 @@ export async function deleteScheduleRule(scheduleRuleId: string, groupId: string
     where: {
       organizationId: session.organizationId,
       scheduleRuleId: rule.id,
-      OR: [
-        { lessonStatus: { not: LessonStatus.scheduled } },
-        { attendanceStatus: { not: AttendanceStatus.not_checked } },
-      ],
+      lessonStatus: { not: LessonStatus.scheduled },
     },
     select: { id: true },
   });
@@ -587,7 +583,6 @@ export async function deleteScheduleRule(scheduleRuleId: string, groupId: string
         organizationId: session.organizationId,
         scheduleRuleId: rule.id,
         lessonStatus: LessonStatus.scheduled,
-        attendanceStatus: AttendanceStatus.not_checked,
       },
     }),
     prisma.scheduleRule.delete({

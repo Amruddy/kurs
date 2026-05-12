@@ -10,7 +10,6 @@ import {
   updateGroup,
 } from "@/app/admin/actions";
 import {
-  attendanceStatusLabels,
   groupStatusLabels,
   groupStudentStatusLabels,
   lessonStatusLabels,
@@ -273,7 +272,6 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                   <th>Дата</th>
                   <th>Время</th>
                   <th>Статус урока</th>
-                  <th>Посещаемость</th>
                 </tr>
               </thead>
               <tbody>
@@ -287,7 +285,6 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                         : ""}
                     </td>
                     <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
-                    <td>{attendanceStatusLabels[lesson.attendanceStatus]}</td>
                   </tr>
                 ))}
               </tbody>

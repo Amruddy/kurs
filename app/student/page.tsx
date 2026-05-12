@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { groupStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
@@ -48,6 +49,24 @@ export default async function StudentPage() {
       </section>
 
       <section className="panel section">
+        <h2>Учебные разделы</h2>
+        <div className="student-dashboard-links">
+          <Link className="secondary-button link-button" href="#student-groups">
+            Мои группы
+          </Link>
+          <Link className="secondary-button link-button" href="/student/homework">
+            Домашнее задание
+          </Link>
+          <Link className="secondary-button link-button" href="/student/materials">
+            Материалы
+          </Link>
+          <Link className="secondary-button link-button" href="/student/progress">
+            Прогресс
+          </Link>
+        </div>
+      </section>
+
+      <section className="panel section" id="student-groups">
         <h2>Мои группы</h2>
         {!student || student.groupLinks.length === 0 ? (
           <p>Учебные группы пока не назначены.</p>

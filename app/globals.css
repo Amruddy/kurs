@@ -228,6 +228,20 @@ input {
   gap: 12px;
 }
 
+.student-dashboard-links {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.student-dashboard-links .link-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 12px;
+  text-align: center;
+}
+
 .workspace-switcher {
   margin-top: 16px;
 }
@@ -266,6 +280,102 @@ input {
   text-transform: capitalize;
 }
 
+.journal-sheet {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 14px;
+}
+
+.journal-sheet h2 {
+  margin: 0 0 4px;
+}
+
+.journal-sheet p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.journal-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.journal-table {
+  min-width: 720px;
+  margin-top: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.journal-table th,
+.journal-table td {
+  border: 1px solid var(--border);
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.journal-table thead th {
+  height: 52px;
+  background: var(--surface-muted);
+}
+
+.journal-table thead th span,
+.journal-table thead th strong {
+  display: block;
+}
+
+.journal-table thead th span {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.journal-table thead th strong {
+  margin-top: 2px;
+  font-size: 16px;
+}
+
+.journal-student-head,
+.journal-student-name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 220px;
+  min-width: 220px;
+  background: #ffffff;
+  text-align: left !important;
+}
+
+.journal-student-head {
+  z-index: 2;
+  padding: 0 12px !important;
+  background: var(--surface-muted) !important;
+}
+
+.journal-student-name {
+  padding: 0 12px !important;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.journal-table tbody tr:nth-child(even) .journal-student-name,
+.journal-table tbody tr:nth-child(even) td {
+  background: #fbfcfa;
+}
+
+.journal-table .week-start {
+  border-left: 3px solid var(--primary);
+}
+
+.journal-meta {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
 .table-wrap th a {
   display: grid;
   gap: 2px;
@@ -287,6 +397,62 @@ input {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+}
+
+.lesson-workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.lesson-workspace-card {
+  display: flex;
+  min-width: 0;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.lesson-workspace-card h2 {
+  min-height: 82px;
+  margin-bottom: 14px;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.lesson-workspace-card .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.lesson-workspace-card .form-grid label {
+  min-width: 0;
+}
+
+.lesson-workspace-card input,
+.lesson-workspace-card select {
+  min-width: 0;
+}
+
+.lesson-workspace-card .checkbox-label {
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  align-items: start;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.lesson-workspace-card .checkbox-label input {
+  margin-top: 3px;
+}
+
+.lesson-workspace-card .button {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: auto;
+  white-space: normal;
 }
 
 .form-grid {
@@ -313,6 +479,23 @@ select {
   background: var(--surface);
   color: var(--text);
   padding: 0 12px;
+}
+
+.journal-cell-input {
+  min-height: 42px;
+  width: 100%;
+  min-width: 44px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 8px;
+  background: transparent;
+  text-align: center;
+  font-weight: 700;
+}
+
+.journal-cell-input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 
 .checkbox-label {
@@ -398,7 +581,18 @@ td a {
   .grid,
   .login-grid,
   .action-grid,
+  .lesson-workspace-grid,
+  .student-dashboard-links,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-workspace-card h2 {
+    min-height: auto;
+    font-size: 28px;
+  }
+
+  .lesson-workspace-card .form-grid {
     grid-template-columns: 1fr;
   }
 

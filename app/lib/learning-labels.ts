@@ -1,12 +1,14 @@
 import {
   AttendanceMark,
-  AttendanceStatus,
   CourseFormat,
   CourseStatus,
   GroupStatus,
   GroupStudentStatus,
   LessonMarkScale,
   LessonStatus,
+  MaterialStatus,
+  MaterialType,
+  ProgressLevel,
   ScheduleRuleStatus,
   StudentStatus,
 } from "@prisma/client";
@@ -61,11 +63,6 @@ export const lessonStatusLabels: Record<LessonStatus, string> = {
   moved: "Перенесен",
 };
 
-export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
-  not_checked: "Не проверена",
-  confirmed: "Подтверждена",
-};
-
 export const attendanceMarkLabels: Record<AttendanceMark, string> = {
   present: "П",
   absent: "Н",
@@ -76,6 +73,23 @@ export const attendanceMarkFullLabels: Record<AttendanceMark, string> = {
   present: "Присутствовал",
   absent: "Отсутствовал",
   excused: "Уважительная причина",
+};
+
+export const progressLevelLabels: Record<ProgressLevel, string> = {
+  excellent: "Отлично",
+  good: "Хорошо",
+  satisfactory: "Удовлетворительно",
+  poor: "Плохо",
+};
+
+export const materialTypeLabels: Record<MaterialType, string> = {
+  text: "Текст",
+  link: "Ссылка",
+};
+
+export const materialStatusLabels: Record<MaterialStatus, string> = {
+  active: "Активный",
+  archived: "Архивный",
 };
 
 export const weekdayLabels: Record<number, string> = {

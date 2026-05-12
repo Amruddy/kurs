@@ -103,6 +103,12 @@ export default async function TeacherPage() {
           <Link className="secondary-button link-button" href="/teacher/students">
             Ученики
           </Link>
+          <Link className="secondary-button link-button" href="/teacher/homework">
+            ДЗ
+          </Link>
+          <Link className="secondary-button link-button" href="/teacher/materials">
+            Материалы
+          </Link>
         </div>
         {groups.length === 0 ? (
           <p>Пока нет назначенных групп.</p>

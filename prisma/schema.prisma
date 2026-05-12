@@ -106,15 +106,32 @@ enum LessonStatus {
   moved
 }
 
-enum AttendanceStatus {
-  not_checked
-  confirmed
-}
-
 enum AttendanceMark {
   present
   absent
   excused
+}
+
+enum ProgressLevel {
+  excellent
+  good
+  satisfactory
+  poor
+}
+
+enum HomeworkStatus {
+  active
+  archived
+}
+
+enum MaterialType {
+  text
+  link
+}
+
+enum MaterialStatus {
+  active
+  archived
 }
 
 model Organization {
@@ -132,6 +149,11 @@ model Organization {
   scheduleRules  ScheduleRule[]
   lessons        Lesson[]
   journalEntries JournalEntry[]
+  progressRecords       ProgressRecord[]
+  studentProgressRules  StudentProgressRule[]
+  studentProgressErrors StudentProgressError[]
+  homeworks             Homework[]
+  materials             Material[]
 
   @@map("organizations")
 }
@@ -150,6 +172,9 @@ model User {
   studentCards   Student[]
   teachingGroups Group[]              @relation("GroupTeacher")
   lessons        Lesson[]             @relation("LessonTeacher")
+  progressRecords ProgressRecord[]    @relation("ProgressTeacher")
+  homeworks        Homework[]          @relation("HomeworkAuthor")
+  materials        Material[]          @relation("MaterialAuthor")
 
   @@map("users")
 }
@@ -191,6 +216,11 @@ model Course {
   progressSettings CourseProgressSettings?
   groups           Group[]
   lessons          Lesson[]
+  progressRecords  ProgressRecord[]
+  progressRules    StudentProgressRule[]
+  progressErrors   StudentProgressError[]
+  homeworks        Homework[]
+  materials        Material[]
 
   @@index([organizationId])
   @@index([createdById])
@@ -227,6 +257,11 @@ model Student {
   contacts       StudentContact[]
   groupLinks     GroupStudent[]
   journalEntries JournalEntry[]
+  progressRecords ProgressRecord[]
+  progressRules   StudentProgressRule[]
+  progressErrors  StudentProgressError[]
+  homeworks       Homework[]
+  materials       Material[]
 
   @@index([organizationId])
   @@index([userId])
@@ -266,6 +301,8 @@ model Group {
   teacher      User?          @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
   students     GroupStudent[]
   lessons      Lesson[]
+  homeworks    Homework[]
+  materials    Material[]
 
   @@index([organizationId])
   @@index([courseId])
@@ -309,7 +346,6 @@ model Lesson {
   topic            String?
   summary          String?
   lessonStatus     LessonStatus     @default(scheduled) @map("lesson_status")
-  attendanceStatus AttendanceStatus @default(not_checked) @map("attendance_status")
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
@@ -319,6 +355,9 @@ model Lesson {
   teacher        User           @relation("LessonTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
   scheduleRule   ScheduleRule?  @relation(fields: [scheduleRuleId], references: [id], onDelete: Restrict)
   journalEntries JournalEntry[]
+  progressRecords ProgressRecord[]
+  homeworks        Homework[]
+  materials        Material[]
 
   @@unique([organizationId, scheduleRuleId, startsAt])
   @@index([organizationId])
@@ -366,4 +405,147 @@ model GroupStudent {
   @@unique([groupId, studentId])
   @@index([studentId])
   @@map("group_students")
+}
+
+model ProgressRecord {
+  id                 String   @id @default(cuid())
+  organizationId     String   @map("organization_id")
+  studentId          String   @map("student_id")
+  courseId           String?  @map("course_id")
+  lessonId           String?  @map("lesson_id")
+  teacherId          String   @map("teacher_id")
+  repeatText         String?  @map("repeat_text")
+  studentComment     String?  @map("student_comment")
+  internalComment    String?  @map("internal_comment")
+  showRules          Boolean  @default(true) @map("show_rules")
+  showErrors         Boolean  @default(true) @map("show_errors")
+  showRepeatText     Boolean  @default(true) @map("show_repeat_text")
+  showStudentComment Boolean  @default(true) @map("show_student_comment")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  teacher      User         @relation("ProgressTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([studentId])
+  @@index([lessonId])
+  @@map("progress_records")
+}
+
+model StudentProgressRule {
+  id                 String         @id @default(cuid())
+  organizationId     String         @map("organization_id")
+  studentId          String         @map("student_id")
+  courseId           String?        @map("course_id")
+  name               String
+  level              ProgressLevel?
+  note               String?
+  isVisibleToStudent Boolean        @default(true) @map("is_visible_to_student")
+  sortOrder          Int            @default(0) @map("sort_order")
+  isActive           Boolean        @default(true) @map("is_active")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([studentId])
+  @@map("student_progress_rules")
+}
+
+model StudentProgressError {
+  id                 String   @id @default(cuid())
+  organizationId     String   @map("organization_id")
+  studentId          String   @map("student_id")
+  courseId           String?  @map("course_id")
+  name               String
+  note               String?
+  isRepeated         Boolean  @default(false) @map("is_repeated")
+  isVisibleToStudent Boolean  @default(true) @map("is_visible_to_student")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([studentId])
+  @@map("student_progress_errors")
+}
+
+model Homework {
+  id                 String         @id @default(cuid())
+  organizationId     String         @map("organization_id")
+  courseId           String         @map("course_id")
+  groupId            String?        @map("group_id")
+  lessonId           String?        @map("lesson_id")
+  studentId          String?        @map("student_id")
+  authorId           String         @map("author_id")
+  title              String
+  text               String
+  dueAt              DateTime?      @map("due_at") @db.Date
+  isVisibleToStudent Boolean        @default(true) @map("is_visible_to_student")
+  status             HomeworkStatus @default(active)
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  archivedAt         DateTime?      @map("archived_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  group        Group?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  student      Student?     @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  author       User         @relation("HomeworkAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  materials    Material[]
+
+  @@index([organizationId])
+  @@index([groupId])
+  @@index([studentId])
+  @@index([lessonId])
+  @@map("homeworks")
+}
+
+model Material {
+  id                 String         @id @default(cuid())
+  organizationId     String         @map("organization_id")
+  courseId           String?        @map("course_id")
+  groupId            String?        @map("group_id")
+  lessonId           String?        @map("lesson_id")
+  homeworkId         String?        @map("homework_id")
+  studentId          String?        @map("student_id")
+  authorId           String         @map("author_id")
+  title              String
+  type               MaterialType
+  content            String?
+  url                String?
+  description        String?
+  isVisibleToStudent Boolean        @default(true) @map("is_visible_to_student")
+  status             MaterialStatus @default(active)
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  archivedAt         DateTime?      @map("archived_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  group        Group?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  homework     Homework?    @relation(fields: [homeworkId], references: [id], onDelete: SetNull)
+  student      Student?     @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  author       User         @relation("MaterialAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([courseId])
+  @@index([groupId])
+  @@index([studentId])
+  @@index([lessonId])
+  @@index([homeworkId])
+  @@map("materials")
 }
