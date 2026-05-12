@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   attendanceMarkFullLabels,
-  lessonStatusLabels,
   progressLevelLabels,
 } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
@@ -67,7 +66,7 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
       organizationId: session.organizationId,
       teacherId: session.userId,
       groupId: { in: groupIds },
-      lessonStatus: "completed",
+      startsAt: { lt: new Date() },
     },
     include: {
       group: true,
@@ -292,7 +291,6 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
                   <th>Группа</th>
                   <th>Урок</th>
                   <th>Посещаемость</th>
-                  <th>Статус урока</th>
                 </tr>
               </thead>
               <tbody>
@@ -304,9 +302,6 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
                       <Link href={`/teacher/lessons/${lesson.id}`}>{lesson.topic || "Открыть урок"}</Link>
                     </td>
                     <td>{markText(lesson.journalEntries[0] ?? null)}</td>
-                    <td>
-                      {lessonStatusLabels[lesson.lessonStatus]}
-                    </td>
                   </tr>
                 ))}
               </tbody>

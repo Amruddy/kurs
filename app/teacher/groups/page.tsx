@@ -18,7 +18,6 @@ export default async function TeacherGroupsPage() {
       },
       lessons: {
         where: {
-          lessonStatus: "scheduled",
           startsAt: { gte: new Date() },
         },
         orderBy: { startsAt: "asc" },

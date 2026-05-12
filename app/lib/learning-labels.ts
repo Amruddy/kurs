@@ -5,7 +5,6 @@ import {
   GroupStatus,
   GroupStudentStatus,
   LessonMarkScale,
-  LessonStatus,
   MaterialStatus,
   MaterialType,
   ProgressLevel,
@@ -53,14 +52,6 @@ export const groupStudentStatusLabels: Record<GroupStudentStatus, string> = {
 export const scheduleRuleStatusLabels: Record<ScheduleRuleStatus, string> = {
   active: "Активное",
   archived: "Архивное",
-};
-
-export const lessonStatusLabels: Record<LessonStatus, string> = {
-  scheduled: "Запланирован",
-  in_progress: "Идет",
-  completed: "Завершен",
-  cancelled: "Отменен",
-  moved: "Перенесен",
 };
 
 export const attendanceMarkLabels: Record<AttendanceMark, string> = {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireWorkspace } from "@/app/lib/dev-auth";
-import { groupStatusLabels, lessonStatusLabels } from "@/app/lib/learning-labels";
+import { groupStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
 
 export default async function TeacherPage() {
@@ -19,7 +19,6 @@ export default async function TeacherPage() {
         },
         lessons: {
           where: {
-            lessonStatus: "scheduled",
             startsAt: { gte: new Date() },
           },
           orderBy: { startsAt: "asc" },
@@ -32,7 +31,6 @@ export default async function TeacherPage() {
       where: {
         organizationId: session.organizationId,
         teacherId: session.userId,
-        lessonStatus: "scheduled",
         startsAt: { gte: new Date() },
       },
       include: {
@@ -80,7 +78,7 @@ export default async function TeacherPage() {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
-              : {nextLesson.group?.name ?? nextLesson.course.name}, {lessonStatusLabels[nextLesson.lessonStatus]}.
+              : {nextLesson.group?.name ?? nextLesson.course.name}.
             </p>
             <Link className="button link-button compact-button" href={`/teacher/lessons/${nextLesson.id}`}>
               Открыть урок

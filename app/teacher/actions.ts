@@ -1,6 +1,6 @@
 "use server";
 
-import { AttendanceMark, LessonStatus, MaterialType, ProgressLevel } from "@prisma/client";
+import { AttendanceMark, MaterialType, ProgressLevel } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { requireWorkspace } from "@/app/lib/dev-auth";
@@ -224,6 +224,8 @@ function revalidateLessonViews(groupId: string, lessonId: string) {
   revalidatePath("/teacher/homework");
   revalidatePath("/teacher/materials");
   revalidatePath("/student");
+  revalidatePath("/student/schedule");
+  revalidatePath("/student/attendance");
   revalidatePath("/student/homework");
   revalidatePath("/student/materials");
   revalidatePath("/student/progress");
@@ -233,22 +235,11 @@ function revalidateStudentViews(studentId: string) {
   revalidatePath(`/teacher/students/${studentId}`);
   revalidatePath("/teacher/students");
   revalidatePath("/student");
+  revalidatePath("/student/schedule");
+  revalidatePath("/student/attendance");
   revalidatePath("/student/progress");
   revalidatePath("/student/homework");
   revalidatePath("/student/materials");
-}
-
-export async function startLesson(lessonId: string) {
-  const { lesson } = await requireTeacherLesson(lessonId);
-
-  await prisma.lesson.update({
-    where: { id: lesson.id },
-    data: {
-      lessonStatus: LessonStatus.in_progress,
-    },
-  });
-
-  revalidateLessonViews(lesson.groupId!, lesson.id);
 }
 
 export async function saveLessonJournal(lessonId: string, formData: FormData) {
@@ -332,9 +323,6 @@ export async function saveGroupJournal(groupId: string, formData: FormData) {
         orderBy: { joinedAt: "asc" },
       },
       lessons: {
-        where: {
-          lessonStatus: { notIn: ["cancelled", "moved"] },
-        },
         orderBy: { startsAt: "asc" },
       },
     },
@@ -390,19 +378,8 @@ export async function saveGroupJournal(groupId: string, formData: FormData) {
   revalidatePath(`/teacher/groups/${group.id}/journal`);
   revalidatePath(`/teacher/groups/${group.id}`);
   revalidatePath("/teacher/attendance");
-}
-
-export async function completeLesson(lessonId: string) {
-  const { lesson } = await requireTeacherLesson(lessonId);
-
-  await prisma.lesson.update({
-    where: { id: lesson.id },
-    data: {
-      lessonStatus: LessonStatus.completed,
-    },
-  });
-
-  revalidateLessonViews(lesson.groupId!, lesson.id);
+  revalidatePath("/student");
+  revalidatePath("/student/attendance");
 }
 
 export async function createProgressRule(studentId: string, formData: FormData) {

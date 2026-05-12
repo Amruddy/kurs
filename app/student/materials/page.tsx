@@ -28,12 +28,12 @@ export default async function StudentMaterialsPage() {
       <div className="page-heading">
         <span className="status">Ученик</span>
         <h1>Материалы</h1>
-        <p>Открытые тексты и ссылки для ваших групп, уроков и домашних заданий.</p>
+        <p>Тексты и ссылки для ваших групп, уроков и домашних заданий.</p>
       </div>
 
       <section className="panel">
         {materials.length === 0 ? (
-          <p>Открытых материалов пока нет.</p>
+          <p>Материалов пока нет.</p>
         ) : (
           <div className="table-wrap">
             <table>

@@ -98,14 +98,6 @@ enum ScheduleRuleStatus {
   archived
 }
 
-enum LessonStatus {
-  scheduled
-  in_progress
-  completed
-  cancelled
-  moved
-}
-
 enum AttendanceMark {
   present
   absent
@@ -345,7 +337,6 @@ model Lesson {
   endsAt           DateTime?        @map("ends_at")
   topic            String?
   summary          String?
-  lessonStatus     LessonStatus     @default(scheduled) @map("lesson_status")
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 

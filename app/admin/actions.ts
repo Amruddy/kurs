@@ -4,7 +4,6 @@ import {
   CourseFormat,
   GroupStatus,
   GroupStudentStatus,
-  LessonStatus,
   LessonMarkScale,
   Permission,
   Role,
@@ -564,25 +563,12 @@ export async function deleteScheduleRule(scheduleRuleId: string, groupId: string
     notFound();
   }
 
-  const protectedLesson = await prisma.lesson.findFirst({
-    where: {
-      organizationId: session.organizationId,
-      scheduleRuleId: rule.id,
-      lessonStatus: { not: LessonStatus.scheduled },
-    },
-    select: { id: true },
-  });
-
-  if (protectedLesson) {
-    throw new Error("Нельзя удалить расписание, по которому уже созданы уроки.");
-  }
-
   await prisma.$transaction([
     prisma.lesson.deleteMany({
       where: {
         organizationId: session.organizationId,
         scheduleRuleId: rule.id,
-        lessonStatus: LessonStatus.scheduled,
+        startsAt: { gte: new Date() },
       },
     }),
     prisma.scheduleRule.delete({
