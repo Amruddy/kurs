@@ -304,7 +304,7 @@ input {
 
 .student-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -350,6 +350,62 @@ input {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 12px;
+}
+
+.inline-create {
+  position: relative;
+}
+
+.inline-create summary {
+  list-style: none;
+}
+
+.inline-create summary::-webkit-details-marker {
+  display: none;
+}
+
+.inline-create-panel {
+  position: absolute;
+  right: 0;
+  z-index: 4;
+  width: min(720px, calc(100vw - 32px));
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+  box-shadow: 0 12px 28px rgb(29 36 31 / 14%);
+}
+
+.group-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.settings-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-stack summary {
+  cursor: pointer;
+  list-style-position: inside;
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-form select {
+  width: min(220px, 100%);
 }
 
 .subsection-title {
@@ -666,6 +722,7 @@ td a {
   .login-grid,
   .action-grid,
   .lesson-workspace-grid,
+  .group-workspace,
   .student-tabs,
   .student-dashboard-links,
   .form-grid {
