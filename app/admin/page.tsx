@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireWorkspace } from "@/app/lib/dev-auth";
-import { lessonStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
 
 export default async function AdminPage() {
@@ -19,7 +18,6 @@ export default async function AdminPage() {
     prisma.lesson.findFirst({
       where: {
         organizationId: session.organizationId,
-        lessonStatus: "scheduled",
         startsAt: { gte: new Date() },
       },
       include: {
@@ -107,8 +105,7 @@ export default async function AdminPage() {
               hour: "2-digit",
               minute: "2-digit",
             })}
-            : {nextLesson.group?.name ?? nextLesson.course.name}, {nextLesson.teacher.name},{" "}
-            {lessonStatusLabels[nextLesson.lessonStatus]}.
+            : {nextLesson.group?.name ?? nextLesson.course.name}, {nextLesson.teacher.name}.
           </p>
         ) : (
           <p>Ближайшие уроки пока не созданы.</p>

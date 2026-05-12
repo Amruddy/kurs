@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { lessonStatusLabels, materialTypeLabels } from "@/app/lib/learning-labels";
+import { materialTypeLabels } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 import {
-  completeLesson,
   createLessonHomework,
   createLessonMaterial,
   createLessonProgress,
   saveLessonDetails,
-  startLesson,
 } from "@/app/teacher/actions";
 
 type TeacherLessonPageProps = {
@@ -58,7 +56,7 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
   return (
     <>
       <div className="page-heading">
-        <span className="status">{lessonStatusLabels[lesson.lessonStatus]}</span>
+        <span className="status">Урок</span>
         <h1>{lesson.group.name}</h1>
         <p>
           {lesson.startsAt.toLocaleString("ru-RU", {
@@ -73,21 +71,9 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
       </div>
 
       <section className="panel">
-        <div className="button-row">
-          <Link className="button link-button compact-button" href={`/teacher/groups/${lesson.group.id}/journal`}>
-            Открыть журнал
-          </Link>
-          <form action={startLesson.bind(null, lesson.id)}>
-            <button className="secondary-button compact-button" type="submit" disabled={lesson.lessonStatus !== "scheduled"}>
-              Начать урок
-            </button>
-          </form>
-          <form action={completeLesson.bind(null, lesson.id)}>
-            <button className="button compact-button" type="submit">
-              Завершить урок
-            </button>
-          </form>
-        </div>
+        <Link className="button link-button compact-button" href={`/teacher/groups/${lesson.group.id}/journal`}>
+          Открыть журнал
+        </Link>
       </section>
 
       <form className="panel section" action={saveLessonDetails.bind(null, lesson.id)}>

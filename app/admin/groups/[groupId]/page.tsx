@@ -12,7 +12,6 @@ import {
 import {
   groupStatusLabels,
   groupStudentStatusLabels,
-  lessonStatusLabels,
   scheduleRuleStatusLabels,
   weekdayLabels,
 } from "@/app/lib/learning-labels";
@@ -41,7 +40,6 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
         },
         lessons: {
           where: {
-            lessonStatus: "scheduled",
             startsAt: { gte: new Date() },
           },
           orderBy: { startsAt: "asc" },
@@ -271,7 +269,6 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                 <tr>
                   <th>Дата</th>
                   <th>Время</th>
-                  <th>Статус урока</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,7 +281,6 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                         ? `-${lesson.endsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
                         : ""}
                     </td>
-                    <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
                   </tr>
                 ))}
               </tbody>

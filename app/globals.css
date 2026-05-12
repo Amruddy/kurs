@@ -230,7 +230,7 @@ input {
 
 .student-dashboard-links {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -240,6 +240,90 @@ input {
   min-height: 52px;
   padding: 0 12px;
   text-align: center;
+}
+
+.student-heading {
+  position: relative;
+}
+
+.student-menu {
+  position: relative;
+  justify-self: end;
+}
+
+.student-menu summary {
+  display: inline-flex;
+  width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  list-style: none;
+}
+
+.student-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.hamburger-icon {
+  display: grid;
+  width: 20px;
+  gap: 4px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.student-menu .student-dashboard-links {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  z-index: 5;
+  width: min(320px, calc(100vw - 32px));
+  grid-template-columns: 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px;
+  box-shadow: 0 12px 28px rgb(29 36 31 / 14%);
+}
+
+.student-next-lesson {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.student-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-tab {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0 14px;
+  color: var(--primary);
+  font-weight: 700;
+  text-align: center;
+}
+
+.student-tab:hover {
+  background: var(--surface-muted);
 }
 
 .workspace-switcher {
@@ -582,8 +666,13 @@ td a {
   .login-grid,
   .action-grid,
   .lesson-workspace-grid,
+  .student-tabs,
   .student-dashboard-links,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-next-lesson {
     grid-template-columns: 1fr;
   }
 

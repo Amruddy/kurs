@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   groupStatusLabels,
   groupStudentStatusLabels,
-  lessonStatusLabels,
   scheduleRuleStatusLabels,
   weekdayLabels,
 } from "@/app/lib/learning-labels";
@@ -141,7 +140,6 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
                 <tr>
                   <th>Дата</th>
                   <th>Время</th>
-                  <th>Статус урока</th>
                   <th>Действие</th>
                 </tr>
               </thead>
@@ -155,7 +153,6 @@ export default async function TeacherGroupPage({ params }: TeacherGroupPageProps
                         ? `-${lesson.endsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
                         : ""}
                     </td>
-                    <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
                     <td>
                       <Link className="secondary-button link-button compact-button" href={`/teacher/lessons/${lesson.id}`}>
                         Открыть

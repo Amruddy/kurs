@@ -6,15 +6,11 @@ function monthStart(date: Date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
-function nextMonth(date: Date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
-}
-
 export default async function TeacherAttendancePage() {
   const session = await requireWorkspace("teacher");
   const now = new Date();
   const from = monthStart(now);
-  const to = nextMonth(now);
+  const to = now;
   const groups = await prisma.group.findMany({
     where: {
       organizationId: session.organizationId,
@@ -31,7 +27,6 @@ export default async function TeacherAttendancePage() {
       lessons: {
         where: {
           startsAt: { gte: from, lt: to },
-          lessonStatus: "completed",
         },
         include: { journalEntries: true },
         orderBy: { startsAt: "asc" },
@@ -68,7 +63,7 @@ export default async function TeacherAttendancePage() {
       <div className="page-heading">
         <span className="status">Посещаемость</span>
         <h1>Сводная посещаемость</h1>
-        <p>Текущий месяц. Учитываются завершенные уроки.</p>
+        <p>Текущий месяц. Учитываются прошедшие уроки.</p>
       </div>
 
       <section className="panel">

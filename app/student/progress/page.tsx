@@ -38,8 +38,8 @@ export default async function StudentProgressPage() {
   return (
     <>
       <div className="page-heading">
-        <span className="status">Прогресс</span>
-        <h1>Мой прогресс</h1>
+        <span className="status">Ученик</span>
+        <h1>Прогресс</h1>
         <p>Видны только данные, открытые преподавателем.</p>
       </div>
 
@@ -54,7 +54,7 @@ export default async function StudentProgressPage() {
         </div>
         <div className="panel">
           <h2>{records.length}</h2>
-          <p>Записей прогресса</p>
+          <p>Открытый прогресс</p>
         </div>
       </section>
 

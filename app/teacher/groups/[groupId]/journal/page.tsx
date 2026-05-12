@@ -1,4 +1,4 @@
-import { attendanceMarkLabels, lessonStatusLabels } from "@/app/lib/learning-labels";
+import { attendanceMarkLabels } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 import { saveGroupJournal } from "@/app/teacher/actions";
@@ -57,9 +57,6 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
         orderBy: { joinedAt: "asc" },
       },
       lessons: {
-        where: {
-          lessonStatus: { notIn: ["cancelled", "moved"] },
-        },
         include: {
           journalEntries: true,
         },
@@ -158,35 +155,7 @@ export default async function TeacherGroupJournalPage({ params }: TeacherGroupJo
 
       <section className="journal-meta section">
         <h2>Уроки</h2>
-        {journalLessons.length === 0 ? (
-          <p>Уроки пока не созданы.</p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Дата</th>
-                  <th>Статус</th>
-                </tr>
-              </thead>
-              <tbody>
-                {journalLessons.map((lesson) => (
-                  <tr key={lesson.id}>
-                    <td>
-                      {lesson.startsAt.toLocaleString("ru-RU", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td>{lessonStatusLabels[lesson.lessonStatus]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <p>{journalLessons.length === 0 ? "Уроки пока не созданы." : `Уроков в месяце: ${journalLessons.length}.`}</p>
       </section>
     </>
   );
