@@ -35,8 +35,9 @@ Codex must use the project specifications as the source of truth before making c
 - Prefer existing project patterns once the application code exists.
 - Run available checks after changes.
 - After automated checks, Codex should run a basic smoke-check itself whenever the project can be checked locally.
-- Before committing or pushing an MVP stage, summarize in Russian what Codex already checked and provide a short optional manual smoke-check checklist for the user.
+- Before committing and pushing an MVP stage, summarize in Russian what Codex already checked and provide a short optional manual smoke-check checklist for the user.
 - The user may skip manual review and explicitly tell Codex to continue. If the user asks to review manually, do not commit, push, or move to the next MVP stage until the user explicitly confirms to continue.
+- When the user gives permission to finish the stage after checks, Codex should commit and push the stage branch. Codex does not open the pull request unless the user explicitly asks.
 - Do not revert user changes unless explicitly requested.
 
 ## Branch Workflow For MVP Stages
@@ -47,6 +48,7 @@ Codex must use the project specifications as the source of truth before making c
 - После автоматической проверки Codex сам выполняет базовую smoke-проверку stage, если это возможно локально.
 - После своей smoke-проверки Codex кратко пишет пользователю, что уже проверено, и дает ручной smoke-чеклист только как необязательную финальную проверку.
 - Ветка stage коммитится и пушится после явной команды пользователя продолжать; ручная проверка пользователя не обязательна, если пользователь ее пропускает.
+- Pull request открывает пользователь. После merge пользователь сообщает Codex, Codex возвращается на `master`, обновляет его из GitHub и только потом начинает следующую stage-ветку.
 - После подтверждения пользователя ветка stage пушится в GitHub и готовится к pull request.
 - Следующий stage нельзя начинать, пока предыдущий stage не смержен.
 - Перед началом следующего stage нужно вернуться в `master` и обновить его из GitHub, чтобы новая ветка начиналась от последнего смерженного состояния.
