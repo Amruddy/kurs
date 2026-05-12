@@ -72,15 +72,20 @@ export default async function TeacherPage() {
       <section className="panel section">
         <h2>Ближайший урок</h2>
         {nextLesson ? (
-          <p>
-            {nextLesson.startsAt.toLocaleString("ru-RU", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-            : {nextLesson.group?.name ?? nextLesson.course.name}, {lessonStatusLabels[nextLesson.lessonStatus]}.
-          </p>
+          <div className="section-heading">
+            <p>
+              {nextLesson.startsAt.toLocaleString("ru-RU", {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              : {nextLesson.group?.name ?? nextLesson.course.name}, {lessonStatusLabels[nextLesson.lessonStatus]}.
+            </p>
+            <Link className="button link-button compact-button" href={`/teacher/lessons/${nextLesson.id}`}>
+              Открыть урок
+            </Link>
+          </div>
         ) : (
           <p>Ближайшие уроки пока не созданы.</p>
         )}
@@ -91,6 +96,12 @@ export default async function TeacherPage() {
           <h2>Мои группы</h2>
           <Link className="secondary-button link-button" href="/teacher/groups">
             Открыть список
+          </Link>
+          <Link className="secondary-button link-button" href="/teacher/attendance">
+            Посещаемость
+          </Link>
+          <Link className="secondary-button link-button" href="/teacher/students">
+            Ученики
           </Link>
         </div>
         {groups.length === 0 ? (

@@ -111,6 +111,12 @@ enum AttendanceStatus {
   confirmed
 }
 
+enum AttendanceMark {
+  present
+  absent
+  excused
+}
+
 model Organization {
   id        String             @id @default(cuid())
   name      String
@@ -119,12 +125,13 @@ model Organization {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
 
-  members       OrganizationMember[]
-  courses       Course[]
-  students      Student[]
-  groups        Group[]
-  scheduleRules ScheduleRule[]
-  lessons       Lesson[]
+  members        OrganizationMember[]
+  courses        Course[]
+  students       Student[]
+  groups         Group[]
+  scheduleRules  ScheduleRule[]
+  lessons        Lesson[]
+  journalEntries JournalEntry[]
 
   @@map("organizations")
 }
@@ -215,10 +222,11 @@ model Student {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   archivedAt     DateTime?     @map("archived_at")
 
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  contacts     StudentContact[]
-  groupLinks   GroupStudent[]
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  contacts       StudentContact[]
+  groupLinks     GroupStudent[]
+  journalEntries JournalEntry[]
 
   @@index([organizationId])
   @@index([userId])
@@ -305,11 +313,12 @@ model Lesson {
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  course       Course        @relation(fields: [courseId], references: [id], onDelete: Restrict)
-  group        Group?        @relation(fields: [groupId], references: [id], onDelete: Restrict)
-  teacher      User          @relation("LessonTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
-  scheduleRule ScheduleRule? @relation(fields: [scheduleRuleId], references: [id], onDelete: Restrict)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course         Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  group          Group?         @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  teacher        User           @relation("LessonTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
+  scheduleRule   ScheduleRule?  @relation(fields: [scheduleRuleId], references: [id], onDelete: Restrict)
+  journalEntries JournalEntry[]
 
   @@unique([organizationId, scheduleRuleId, startsAt])
   @@index([organizationId])
@@ -318,6 +327,27 @@ model Lesson {
   @@index([teacherId])
   @@index([startsAt])
   @@map("lessons")
+}
+
+model JournalEntry {
+  id             String          @id @default(cuid())
+  organizationId String          @map("organization_id")
+  lessonId       String          @map("lesson_id")
+  studentId      String          @map("student_id")
+  mark           AttendanceMark?
+  score          Int?
+  comment        String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  lesson       Lesson       @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([lessonId, studentId])
+  @@index([organizationId])
+  @@index([studentId])
+  @@map("journal_entries")
 }
 
 model GroupStudent {

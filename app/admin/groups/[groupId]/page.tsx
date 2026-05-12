@@ -255,7 +255,7 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
 
         <form className="section" action={generateLessonsForGroup.bind(null, group.id)}>
           <button className="button compact-button" type="submit" disabled={!group.teacherId || scheduleRules.length === 0}>
-            Создать уроки на 30 дней
+            Создать уроки на месяц
           </button>
         </form>
         {!group.teacherId ? <p className="form-note">Чтобы создать уроки, назначьте преподавателя.</p> : null}

@@ -1,4 +1,5 @@
 import {
+  AttendanceMark,
   AttendanceStatus,
   CourseFormat,
   CourseStatus,
@@ -63,6 +64,18 @@ export const lessonStatusLabels: Record<LessonStatus, string> = {
 export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
   not_checked: "Не проверена",
   confirmed: "Подтверждена",
+};
+
+export const attendanceMarkLabels: Record<AttendanceMark, string> = {
+  present: "П",
+  absent: "Н",
+  excused: "У",
+};
+
+export const attendanceMarkFullLabels: Record<AttendanceMark, string> = {
+  present: "Присутствовал",
+  absent: "Отсутствовал",
+  excused: "Уважительная причина",
 };
 
 export const weekdayLabels: Record<number, string> = {
