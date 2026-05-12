@@ -5,8 +5,13 @@ import { groupStatusLabels } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 
-export default async function AdminGroupsPage() {
+type AdminGroupsPageProps = {
+  searchParams?: Promise<{ courseId?: string }>;
+};
+
+export default async function AdminGroupsPage({ searchParams }: AdminGroupsPageProps) {
   const session = await requireWorkspace("admin");
+  const selectedCourseId = (await searchParams)?.courseId ?? "";
   const [groups, courses, teachers] = await Promise.all([
     prisma.group.findMany({
       where: { organizationId: session.organizationId },
@@ -40,59 +45,63 @@ export default async function AdminGroupsPage() {
       <div className="page-heading">
         <span className="status">Группы</span>
         <h1>Управление группами</h1>
-        <p>Создайте группу, привяжите ее к курсу и назначьте основного преподавателя.</p>
+        <p>Сначала виден список групп. Новую группу можно создать из действия рядом со списком.</p>
       </div>
 
-      <section className="panel">
-        <h2>Новая группа</h2>
-        <form className="form-grid" action={createGroup}>
-          <label>
-            Название
-            <input name="name" required placeholder="Таджвид, начинающие" />
-          </label>
-          <label>
-            Курс
-            <select name="courseId" required defaultValue="">
-              <option value="" disabled>
-                Выберите курс
-              </option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Преподаватель
-            <select name="teacherId" defaultValue="">
-              <option value="">Назначить позже</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.userId} value={teacher.userId}>
-                  {teacher.user.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Статус
-            <select name="status" defaultValue="recruiting">
-              <option value="recruiting">Набор</option>
-              <option value="active">Активная</option>
-              <option value="paused">Приостановлена</option>
-              <option value="completed">Завершена</option>
-              <option value="archived">Архивная</option>
-            </select>
-          </label>
-          <button className="button" type="submit" disabled={courses.length === 0}>
-            Создать группу
-          </button>
-        </form>
-        {courses.length === 0 ? <p className="form-note">Сначала создайте курс.</p> : null}
-      </section>
-
       <section className="panel section">
-        <h2>Список групп</h2>
+        <div className="section-heading">
+          <h2>Список групп</h2>
+          <details className="inline-create" open={Boolean(selectedCourseId)}>
+            <summary className="secondary-button link-button">+ Создать группу</summary>
+            <div className="inline-create-panel">
+              <form className="form-grid" action={createGroup}>
+                <label>
+                  Название
+                  <input name="name" required placeholder="Таджвид, начинающие" />
+                </label>
+                <label>
+                  Курс
+                  <select name="courseId" required defaultValue={selectedCourseId}>
+                    <option value="" disabled>
+                      Выберите курс
+                    </option>
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Преподаватель
+                  <select name="teacherId" defaultValue="">
+                    <option value="">Назначить позже</option>
+                    {teachers.map((teacher) => (
+                      <option key={teacher.userId} value={teacher.userId}>
+                        {teacher.user.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Статус
+                  <select name="status" defaultValue="recruiting">
+                    <option value="recruiting">Набор</option>
+                    <option value="active">Активная</option>
+                    <option value="paused">Приостановлена</option>
+                    <option value="completed">Завершена</option>
+                    <option value="archived">Архивная</option>
+                  </select>
+                </label>
+                <button className="button" type="submit" disabled={courses.length === 0}>
+                  Создать группу
+                </button>
+              </form>
+              {courses.length === 0 ? <p className="form-note">Сначала создайте курс.</p> : null}
+              <p className="form-note">Оплату группе можно создать в карточке группы после добавления учеников.</p>
+            </div>
+          </details>
+        </div>
         {groups.length === 0 ? (
           <p>Групп пока нет.</p>
         ) : (

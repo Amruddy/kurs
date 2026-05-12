@@ -69,6 +69,9 @@ export default async function StudentPage() {
             <Link className="secondary-button link-button" href="/student/attendance">
               Оценки и посещаемость
             </Link>
+            <Link className="secondary-button link-button" href="/student/payments">
+              Оплата
+            </Link>
           </div>
         </details>
       </div>
@@ -107,6 +110,9 @@ export default async function StudentPage() {
         </Link>
         <Link className="student-tab" href="/student/attendance">
           Оценки и посещаемость
+        </Link>
+        <Link className="student-tab" href="/student/payments">
+          Оплата
         </Link>
       </section>
 

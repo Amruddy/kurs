@@ -7,6 +7,8 @@ import {
   LessonMarkScale,
   MaterialStatus,
   MaterialType,
+  PaymentPeriodType,
+  PaymentStatus,
   ProgressLevel,
   ScheduleRuleStatus,
   StudentStatus,
@@ -81,6 +83,19 @@ export const materialTypeLabels: Record<MaterialType, string> = {
 export const materialStatusLabels: Record<MaterialStatus, string> = {
   active: "Активный",
   archived: "Архивный",
+};
+
+export const paymentStatusLabels: Record<PaymentStatus, string> = {
+  paid: "Оплачен",
+  pending: "Ожидает оплаты",
+  overdue: "Просрочено",
+  exempt: "Освобожден",
+};
+
+export const paymentPeriodTypeLabels: Record<PaymentPeriodType, string> = {
+  month: "Месяц",
+  course: "Курс",
+  manual: "Произвольный период",
 };
 
 export const weekdayLabels: Record<number, string> = {

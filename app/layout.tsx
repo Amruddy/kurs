@@ -32,7 +32,8 @@ export default function RootLayout({
                 <Link href="/teacher/attendance">Посещаемость</Link>
                 <Link href="/student">Ученик</Link>
                 <Link href="/student/schedule">Расписание</Link>
-                <Link href="/student/attendance">Посещаемость</Link>
+                <Link href="/student/attendance">Оценки</Link>
+                <Link href="/student/payments">Оплата</Link>
               </nav>
             </div>
           </header>
