@@ -60,15 +60,22 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
   }
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">{studentStatusLabels[student.status]}</span>
-        <h1>{student.name}</h1>
-        <p>Карточка ученика, контакты, группы и индивидуальные изменения оплаты.</p>
-      </div>
+    <div className="admin-workspace">
+      <header className="admin-page-header">
+        <div className="admin-page-header-copy">
+          <span className={`admin-badge status-${student.status}`}>{studentStatusLabels[student.status]}</span>
+          <h1>{student.name}</h1>
+          <p>Карточка ученика, контакты, группы и индивидуальные изменения оплаты.</p>
+        </div>
+      </header>
 
-      <section className="panel">
-        <h2>Основные данные</h2>
+      <section className="panel admin-panel admin-form-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Карточка</span>
+            <h2>Основные данные</h2>
+          </div>
+        </div>
         <form className="form-grid" action={updateStudent.bind(null, student.id)}>
           <label>
             Имя
@@ -96,8 +103,13 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
         </form>
       </section>
 
-      <section className="panel section">
-        <h2>Оплата</h2>
+      <section className="panel admin-panel admin-payment-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Ручной учет</span>
+            <h2>Оплата</h2>
+          </div>
+        </div>
         {student.payments.length === 0 ? (
           <p>Для ученика пока нет записей оплаты.</p>
         ) : (
@@ -120,7 +132,11 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
                       {payment.amount} {payment.currency}
                     </td>
                     <td>{payment.dueAt.toLocaleDateString("ru-RU")}</td>
-                    <td>{paymentStatusLabels[payment.status]}</td>
+                    <td>
+                      <span className={`admin-badge status-${payment.status}`}>
+                        {paymentStatusLabels[payment.status]}
+                      </span>
+                    </td>
                     <td>{payment.history.length}</td>
                   </tr>
                 ))}
@@ -130,9 +146,9 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
         )}
       </section>
 
-      <section className="section">
+      <section className="admin-settings-stack">
         {student.payments.map((payment) => (
-          <details className="panel section" key={payment.id}>
+          <details className="panel admin-panel admin-payment-panel" key={payment.id}>
             <summary>
               Изменить оплату: {payment.course.name}, {payment.amount} {payment.currency}
             </summary>
@@ -195,9 +211,12 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
         ))}
       </section>
 
-      <section className="panel section">
-        <div className="section-heading">
-          <h2>Группы ученика</h2>
+      <section className="panel admin-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Обучение</span>
+            <h2>Группы ученика</h2>
+          </div>
           <Link className="secondary-button link-button" href="/admin/groups">
             Назначить в группу
           </Link>
@@ -223,7 +242,11 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
                     </td>
                     <td>{link.group.course.name}</td>
                     <td>{link.group.teacher?.name ?? "Не назначен"}</td>
-                    <td>{groupStudentStatusLabels[link.status]}</td>
+                    <td>
+                      <span className={`admin-badge status-${link.status}`}>
+                        {groupStudentStatusLabels[link.status]}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -231,6 +254,6 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

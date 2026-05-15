@@ -37,15 +37,13 @@ body {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgb(113 72 245 / 10%), transparent 30vw),
-    linear-gradient(180deg, #fbfcff 0%, var(--background) 240px);
+  background: linear-gradient(180deg, #fbfcff 0%, var(--background) 240px);
   color: var(--text);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
+    "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial,
     sans-serif;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 a {
@@ -236,8 +234,8 @@ select {
 .page-heading h1 {
   margin: 0;
   color: var(--text);
-  font-size: clamp(30px, 4vw, 42px);
-  line-height: 1.08;
+  font-size: 30px;
+  line-height: 1.14;
   letter-spacing: 0;
 }
 
@@ -292,7 +290,7 @@ select {
 }
 
 .panel h2 {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.25;
 }
 
@@ -321,13 +319,19 @@ select {
 
 .button,
 .secondary-button {
-  min-height: 42px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
-  padding: 0 18px;
-  font-weight: 700;
+  padding: 0 16px;
+  font-weight: 650;
   letter-spacing: 0;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .form-grid .button,
@@ -930,12 +934,12 @@ td a {
 .role-hero h1 {
   margin: 0;
   max-width: 780px;
-  font-size: clamp(34px, 5vw, 54px);
-  line-height: 1.02;
+  font-size: 42px;
+  line-height: 1.08;
 }
 
 .role-hero-compact h1 {
-  font-size: clamp(28px, 4vw, 38px);
+  font-size: 32px;
 }
 
 .role-hero p {
@@ -1028,7 +1032,7 @@ td a {
 .role-state-card strong {
   grid-row: span 2;
   color: var(--text);
-  font-size: clamp(26px, 3vw, 34px);
+  font-size: 30px;
   line-height: 1.05;
 }
 
@@ -1081,6 +1085,10 @@ td a {
 
 .role-panel-heading h2 {
   margin: 0;
+}
+
+.role-panel-heading span {
+  display: none;
 }
 
 .role-action-grid {
@@ -1188,7 +1196,7 @@ td a {
 
 .role-feature strong {
   color: var(--text);
-  font-size: clamp(24px, 3vw, 34px);
+  font-size: 30px;
   line-height: 1.1;
 }
 
@@ -1242,6 +1250,314 @@ td a {
   border-color: var(--role-border);
   background: var(--role-accent-soft);
   color: var(--role-accent-strong);
+}
+
+.admin-workspace {
+  --role-accent: #2f6f9f;
+  --role-accent-strong: #265a82;
+  --role-accent-soft: #eef6fb;
+  --role-border: rgb(47 111 159 / 18%);
+  --role-shadow: rgb(47 111 159 / 16%);
+  display: grid;
+  gap: 18px;
+}
+
+.admin-workspace .button {
+  background: var(--role-accent);
+  color: #ffffff;
+  box-shadow: 0 8px 18px var(--role-shadow);
+}
+
+.admin-workspace .button:hover {
+  background: var(--role-accent-strong);
+  box-shadow: 0 10px 22px var(--role-shadow);
+}
+
+.admin-workspace .secondary-button {
+  color: var(--role-accent);
+}
+
+.admin-workspace .secondary-button:hover {
+  border-color: var(--role-border);
+  background: var(--role-accent-soft);
+  color: var(--role-accent-strong);
+}
+
+.admin-page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  border-left: 5px solid var(--role-accent);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  padding: 22px;
+  box-shadow: var(--shadow-md);
+}
+
+.admin-page-header-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-page-header h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.14;
+}
+
+.admin-page-header p {
+  margin: 0;
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.admin-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.admin-page-header .create-disclosure {
+  justify-self: end;
+  width: min(640px, calc(100vw - 320px));
+}
+
+.admin-page-header .create-disclosure summary {
+  float: none;
+  margin-left: auto;
+}
+
+.admin-page-header .create-panel {
+  position: absolute;
+  right: 0;
+  z-index: 5;
+  width: min(720px, calc(100vw - 320px));
+  margin-top: 12px;
+  clear: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-kicker {
+  display: none;
+}
+
+.admin-panel-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.admin-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-panel h2,
+.admin-panel h3 {
+  margin-bottom: 0;
+}
+
+.admin-form-panel {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.admin-payment-panel {
+  border-color: rgb(183 121 31 / 18%);
+  border-left: 4px solid rgb(183 121 31 / 38%);
+  background: linear-gradient(180deg, #ffffff 0%, #fffaf0 100%);
+}
+
+.admin-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.admin-section-heading div {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-create-disclosure {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-create-disclosure summary {
+  width: fit-content;
+  justify-self: end;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-create-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-panel-toolbar .admin-create-disclosure[open] {
+  grid-column: 1 / -1;
+}
+
+.admin-panel-toolbar .admin-create-disclosure[open] summary {
+  margin-left: auto;
+}
+
+.admin-create-panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-summary-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-summary-card strong {
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.admin-summary-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-summary-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.admin-workspace .table-wrap {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-workspace table {
+  min-width: 760px;
+}
+
+.admin-workspace th {
+  background: #f7f9ff;
+  color: #596579;
+  font-weight: 800;
+}
+
+.admin-workspace td {
+  color: #263244;
+}
+
+.admin-workspace td:first-child a {
+  font-weight: 800;
+}
+
+.admin-workspace tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.admin-badge {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid var(--role-border);
+  border-radius: 999px;
+  background: var(--role-accent-soft);
+  color: var(--role-accent-strong);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-badge.status-active,
+.admin-badge.status-paid {
+  border-color: rgb(19 148 95 / 18%);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.admin-badge.status-recruiting,
+.admin-badge.status-pending,
+.admin-badge.status-paused {
+  border-color: rgb(183 121 31 / 20%);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.admin-badge.status-overdue {
+  border-color: rgb(194 65 93 / 18%);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.admin-badge.status-archived,
+.admin-badge.status-removed {
+  border-color: var(--border);
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.admin-badge.status-completed,
+.admin-badge.status-exempt,
+.admin-badge.status-enabled {
+  border-color: var(--role-border);
+  background: var(--role-accent-soft);
+  color: var(--role-accent-strong);
+}
+
+.admin-badge.status-disabled {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.admin-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-settings-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-settings-stack summary {
+  cursor: pointer;
+  list-style-position: inside;
+  color: var(--role-accent);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.admin-muted {
+  color: var(--muted);
 }
 
 .error-message {
@@ -1440,8 +1756,38 @@ td a {
   .role-work-header,
   .role-work-grid,
   .role-work-grid-admin,
-  .role-work-grid-student {
+  .role-work-grid-student,
+  .admin-page-header,
+  .admin-detail-layout,
+  .admin-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-page-actions,
+  .admin-section-heading {
+    justify-content: flex-start;
+  }
+
+  .admin-panel-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel-toolbar .admin-create-disclosure[open] {
+    grid-column: auto;
+  }
+
+  .admin-create-disclosure summary {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .admin-page-header .create-disclosure,
+  .admin-page-header .create-panel {
+    width: 100%;
+  }
+
+  .admin-page-header .create-panel {
+    position: static;
   }
 
   .role-work-header {
@@ -1453,12 +1799,28 @@ td a {
     padding: 22px;
   }
 
+  .page-heading h1,
+  .admin-page-header h1 {
+    font-size: 26px;
+  }
+
+  .role-hero h1 {
+    font-size: 32px;
+  }
+
+  .role-hero-compact h1,
+  .role-feature strong,
+  .role-state-card strong {
+    font-size: 26px;
+  }
+
   .role-panel-wide {
     grid-column: auto;
   }
 
   .role-panel-heading,
-  .role-soft-item {
+  .role-soft-item,
+  .admin-section-heading {
     grid-template-columns: 1fr;
   }
 

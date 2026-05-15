@@ -21,15 +21,22 @@ export default async function AdminStudentsPage() {
   });
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">Ученики</span>
-        <h1>Управление учениками</h1>
-        <p>Создайте учебную карточку ученика. Аккаунт пользователя для ученика пока необязателен.</p>
-      </div>
+    <div className="admin-workspace">
+      <header className="admin-page-header">
+        <div className="admin-page-header-copy">
+          <span className="admin-badge">Ученики</span>
+          <h1>Управление учениками</h1>
+          <p>Учебные карточки, контактные данные, группы и текущий статус учеников.</p>
+        </div>
+      </header>
 
-      <section className="panel">
-        <h2>Новый ученик</h2>
+      <section className="panel admin-panel admin-form-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Создание</span>
+            <h2>Новый ученик</h2>
+          </div>
+        </div>
         <form className="form-grid" action={createStudent}>
           <label>
             Имя
@@ -57,8 +64,13 @@ export default async function AdminStudentsPage() {
         </form>
       </section>
 
-      <section className="panel section">
-        <h2>Список учеников</h2>
+      <section className="panel admin-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Состав школы</span>
+            <h2>Список учеников</h2>
+          </div>
+        </div>
         {students.length === 0 ? (
           <p>Учеников пока нет.</p>
         ) : (
@@ -85,7 +97,11 @@ export default async function AdminStudentsPage() {
                         .map((link) => link.group.name)
                         .join(", ") || "Не назначен"}
                     </td>
-                    <td>{studentStatusLabels[student.status]}</td>
+                    <td>
+                      <span className={`admin-badge status-${student.status}`}>
+                        {studentStatusLabels[student.status]}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -93,6 +109,6 @@ export default async function AdminStudentsPage() {
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

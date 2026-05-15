@@ -24,15 +24,22 @@ export default async function AdminTeachersPage() {
   });
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">Преподаватели</span>
-        <h1>Управление преподавателями</h1>
-        <p>Добавьте преподавателя в организацию, чтобы назначать его на группы.</p>
-      </div>
+    <div className="admin-workspace">
+      <header className="admin-page-header">
+        <div className="admin-page-header-copy">
+          <span className="admin-badge">Преподаватели</span>
+          <h1>Управление преподавателями</h1>
+          <p>Активные преподаватели организации и количество назначенных групп.</p>
+        </div>
+      </header>
 
-      <section className="panel">
-        <h2>Новый преподаватель</h2>
+      <section className="panel admin-panel admin-form-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Создание</span>
+            <h2>Новый преподаватель</h2>
+          </div>
+        </div>
         <form className="form-grid" action={createTeacher}>
           <label>
             Имя
@@ -52,8 +59,13 @@ export default async function AdminTeachersPage() {
         </form>
       </section>
 
-      <section className="panel section">
-        <h2>Список преподавателей</h2>
+      <section className="panel admin-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Команда</span>
+            <h2>Список преподавателей</h2>
+          </div>
+        </div>
         {teachers.length === 0 ? (
           <p>Преподавателей пока нет.</p>
         ) : (
@@ -73,7 +85,9 @@ export default async function AdminTeachersPage() {
                     <td>{teacher.user.name}</td>
                     <td>{teacher.user.email}</td>
                     <td>{teacher.user.phone ?? "Не указан"}</td>
-                    <td>{teacher.user.teachingGroups.length}</td>
+                    <td>
+                      <span className="admin-badge">{teacher.user.teachingGroups.length}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -81,6 +95,6 @@ export default async function AdminTeachersPage() {
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

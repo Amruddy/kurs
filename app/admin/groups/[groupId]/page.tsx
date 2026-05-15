@@ -33,6 +33,17 @@ function paymentState(payment: { status: PaymentStatus; dueAt: Date }) {
   return paymentStatusLabels[payment.status];
 }
 
+function paymentToneClass(payment: { status: PaymentStatus; dueAt: Date }) {
+  if (
+    payment.status === PaymentStatus.overdue ||
+    (payment.status === PaymentStatus.pending && payment.dueAt < new Date())
+  ) {
+    return "status-overdue";
+  }
+
+  return `status-${payment.status}`;
+}
+
 function dateValue(date: Date | null) {
   return date ? date.toISOString().slice(0, 10) : "";
 }
@@ -110,20 +121,25 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
   });
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">{groupStatusLabels[group.status]}</span>
-        <h1>{group.name}</h1>
-        <p>
-          {group.course.name}. Преподаватель: {group.teacher?.name ?? "не назначен"}.
-        </p>
-      </div>
+    <div className="admin-workspace">
+      <header className="admin-page-header">
+        <div className="admin-page-header-copy">
+          <span className={`admin-badge status-${group.status}`}>{groupStatusLabels[group.status]}</span>
+          <h1>{group.name}</h1>
+          <p>
+            {group.course.name}. Преподаватель: {group.teacher?.name ?? "не назначен"}.
+          </p>
+        </div>
+      </header>
 
-      <section className="group-workspace">
-        <div className="panel">
-          <div className="section-heading">
-            <h2>Состав группы</h2>
-            <span className="status">{activeStudentIds.size} активных</span>
+      <section className="admin-detail-layout">
+        <div className="panel admin-panel">
+          <div className="admin-section-heading">
+            <div>
+              <span className="admin-kicker">Состав</span>
+              <h2>Состав группы</h2>
+            </div>
+            <span className="admin-badge status-active">{activeStudentIds.size} активных</span>
           </div>
           {group.students.length === 0 ? (
             <p>В группе пока нет учеников.</p>
@@ -145,7 +161,11 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                         <Link href={`/admin/students/${link.student.id}`}>{link.student.name}</Link>
                       </td>
                       <td>{[link.student.phone, link.student.email].filter(Boolean).join(", ") || "Не указаны"}</td>
-                      <td>{groupStudentStatusLabels[link.status]}</td>
+                      <td>
+                        <span className={`admin-badge status-${link.status}`}>
+                          {groupStudentStatusLabels[link.status]}
+                        </span>
+                      </td>
                       <td>
                         {link.status === "active" ? (
                           <form action={removeStudentFromGroup.bind(null, link.id, group.id)}>
@@ -165,8 +185,13 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           )}
         </div>
 
-        <div className="panel">
-          <h2>Ближайшие уроки</h2>
+        <div className="panel admin-panel">
+          <div className="admin-section-heading">
+            <div>
+              <span className="admin-kicker">Расписание</span>
+              <h2>Ближайшие уроки</h2>
+            </div>
+          </div>
           {group.lessons.length === 0 ? (
             <p>Ближайшие уроки пока не созданы.</p>
           ) : (
@@ -197,8 +222,13 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
         </div>
       </section>
 
-      <section className="panel section">
-        <h2>Оплаты учеников группы</h2>
+      <section className="panel admin-panel admin-payment-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Оплата группы</span>
+            <h2>Оплаты учеников группы</h2>
+          </div>
+        </div>
         {group.payments.length === 0 ? (
           <p>Оплаты по этой группе пока не созданы.</p>
         ) : (
@@ -223,7 +253,11 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                       {payment.amount} {payment.currency}
                     </td>
                     <td>{payment.dueAt.toLocaleDateString("ru-RU")}</td>
-                    <td>{paymentState(payment)}</td>
+                    <td>
+                      <span className={`admin-badge ${paymentToneClass(payment)}`}>
+                        {paymentState(payment)}
+                      </span>
+                    </td>
                     <td>
                       <form className="inline-form" action={updateStudentPayment.bind(null, payment.studentId, payment.id)}>
                         <input name="groupId" type="hidden" value={payment.groupId ?? ""} />
@@ -256,8 +290,8 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
         )}
       </section>
 
-      <section className="settings-stack section">
-        <details className="panel">
+      <section className="admin-settings-stack">
+        <details className="panel admin-panel admin-form-panel">
           <summary>Настройки группы</summary>
           <form className="form-grid section" action={updateGroup.bind(null, group.id)}>
             <label>
@@ -291,7 +325,7 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           </form>
         </details>
 
-        <details className="panel">
+        <details className="panel admin-panel admin-form-panel">
           <summary>Добавить ученика</summary>
           <form className="form-grid section" action={addStudentToGroup.bind(null, group.id)}>
             <label>
@@ -333,7 +367,7 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           </form>
         </details>
 
-        <details className="panel">
+        <details className="panel admin-panel admin-form-panel">
           <summary>Расписание</summary>
           <form className="form-grid section" action={createGroupScheduleRule.bind(null, group.id)}>
             <label>
@@ -395,7 +429,11 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                         {rule.startsOn.toLocaleDateString("ru-RU")}
                         {rule.endsOn ? ` - ${rule.endsOn.toLocaleDateString("ru-RU")}` : ""}
                       </td>
-                      <td>{scheduleRuleStatusLabels[rule.status]}</td>
+                      <td>
+                        <span className={`admin-badge status-${rule.status}`}>
+                          {scheduleRuleStatusLabels[rule.status]}
+                        </span>
+                      </td>
                       <td>
                         <form action={deleteScheduleRule.bind(null, rule.id, group.id)}>
                           <button className="secondary-button compact-button" type="submit">
@@ -418,7 +456,7 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           {!group.teacherId ? <p className="form-note">Чтобы создать уроки, назначьте преподавателя.</p> : null}
         </details>
 
-        <details className="panel">
+        <details className="panel admin-panel admin-payment-panel">
           <summary>Создать оплату группе</summary>
           <p>Создайте одинаковую оплату сразу для всех активных учеников этой группы.</p>
           <form className="form-grid section" action={createGroupPayment.bind(null, group.id)}>
@@ -478,6 +516,6 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           {activeStudentIds.size === 0 ? <p className="form-note">Сначала добавьте учеников в группу.</p> : null}
         </details>
       </section>
-    </>
+    </div>
   );
 }

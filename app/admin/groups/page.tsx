@@ -41,19 +41,24 @@ export default async function AdminGroupsPage({ searchParams }: AdminGroupsPageP
   ]);
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">Группы</span>
-        <h1>Управление группами</h1>
-        <p>Сначала виден список групп. Новую группу можно создать из действия рядом со списком.</p>
-      </div>
+    <div className="admin-workspace">
+      <header className="admin-page-header">
+        <div className="admin-page-header-copy">
+          <span className="admin-badge">Группы</span>
+          <h1>Управление группами</h1>
+          <p>Состав групп, курсы, преподаватели и рабочие статусы учебного потока.</p>
+        </div>
+      </header>
 
-      <section className="panel section">
-        <div className="section-heading">
-          <h2>Список групп</h2>
+      <section className="panel admin-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Учебные группы</span>
+            <h2>Список групп</h2>
+          </div>
           <details className="inline-create" open={Boolean(selectedCourseId)}>
             <summary className="secondary-button link-button">+ Создать группу</summary>
-            <div className="inline-create-panel">
+            <div className="inline-create-panel admin-form-panel">
               <form className="form-grid" action={createGroup}>
                 <label>
                   Название
@@ -125,7 +130,11 @@ export default async function AdminGroupsPage({ searchParams }: AdminGroupsPageP
                     <td>{group.course.name}</td>
                     <td>{group.teacher?.name ?? "Не назначен"}</td>
                     <td>{group.students.filter((student) => student.status === "active").length}</td>
-                    <td>{groupStatusLabels[group.status]}</td>
+                    <td>
+                      <span className={`admin-badge status-${group.status}`}>
+                        {groupStatusLabels[group.status]}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -133,6 +142,6 @@ export default async function AdminGroupsPage({ searchParams }: AdminGroupsPageP
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

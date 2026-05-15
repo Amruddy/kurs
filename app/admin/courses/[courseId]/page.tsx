@@ -25,6 +25,17 @@ function paymentState(payment: { status: PaymentStatus; dueAt: Date }) {
   return paymentStatusLabels[payment.status];
 }
 
+function paymentToneClass(payment: { status: PaymentStatus; dueAt: Date }) {
+  if (
+    payment.status === PaymentStatus.overdue ||
+    (payment.status === PaymentStatus.pending && payment.dueAt < new Date())
+  ) {
+    return "status-overdue";
+  }
+
+  return `status-${payment.status}`;
+}
+
 export default async function AdminCoursePage({ params }: AdminCoursePageProps) {
   const { courseId } = await params;
   const session = await requireWorkspace("admin");
@@ -74,34 +85,42 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
   );
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">{courseStatusLabels[course.status]}</span>
-        <h1>{course.name}</h1>
-        <p>{course.description || "Описание пока не заполнено."}</p>
-      </div>
+    <div className="admin-workspace">
+      <header className="admin-page-header">
+        <div className="admin-page-header-copy">
+          <span className={`admin-badge status-${course.status}`}>{courseStatusLabels[course.status]}</span>
+          <h1>{course.name}</h1>
+          <p>{course.description || "Описание пока не заполнено."}</p>
+        </div>
+      </header>
 
-      <section className="grid">
-        <div className="panel">
-          <h2>{courseFormatLabels[course.format]}</h2>
-          <p>Формат обучения</p>
+      <section className="admin-summary-grid" aria-label="Сводка курса">
+        <div className="admin-summary-card">
+          <span>Формат обучения</span>
+          <strong>{courseFormatLabels[course.format]}</strong>
         </div>
-        <div className="panel">
-          <h2>{course.lessonMarkScale ? lessonMarkScaleLabels[course.lessonMarkScale] : "Нет"}</h2>
-          <p>Шкала оценки</p>
+        <div className="admin-summary-card">
+          <span>Шкала оценки</span>
+          <strong>{course.lessonMarkScale ? lessonMarkScaleLabels[course.lessonMarkScale] : "Нет"}</strong>
         </div>
-        <div className="panel">
-          <h2>{course.progressSettings?.isProgressEnabled ? "Включен" : "Выключен"}</h2>
-          <p>Таджвид-прогресс</p>
+        <div className="admin-summary-card">
+          <span>Таджвид-прогресс</span>
+          <strong>{course.progressSettings?.isProgressEnabled ? "Включен" : "Выключен"}</strong>
         </div>
-        <div className="panel">
-          <h2>{unpaid.length}</h2>
-          <p>Ожидают оплаты</p>
+        <div className="admin-summary-card">
+          <span>Ожидают оплаты</span>
+          <strong>{unpaid.length}</strong>
+          <p>Активных учеников: {courseStudentCount}</p>
         </div>
       </section>
 
-      <section className="panel section">
-        <h2>Настройки курса</h2>
+      <section className="panel admin-panel admin-form-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Параметры курса</span>
+            <h2>Настройки курса</h2>
+          </div>
+        </div>
         <form className="form-grid" action={updateCourse.bind(null, course.id)}>
           <label>
             Название
@@ -141,8 +160,13 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
         </form>
       </section>
 
-      <section className="panel section">
-        <h2>Оплата курса</h2>
+      <section className="panel admin-panel admin-payment-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Ручной учет</span>
+            <h2>Оплата курса</h2>
+          </div>
+        </div>
         <p>Создайте одинаковую оплату сразу для всех активных учеников курса. Отдельные исправления делаются в карточке ученика.</p>
         <form className="form-grid" action={createCoursePayment.bind(null, course.id)}>
           <label>
@@ -201,8 +225,13 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
         {courseStudentCount === 0 ? <p className="form-note">В курсе пока нет активных учеников.</p> : null}
       </section>
 
-      <section className="panel section">
-        <h2>Оплаты учеников</h2>
+      <section className="panel admin-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Оплаты</span>
+            <h2>Оплаты учеников</h2>
+          </div>
+        </div>
         {course.payments.length === 0 ? (
           <p>Оплаты по этому курсу пока не созданы.</p>
         ) : (
@@ -229,7 +258,11 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
                     </td>
                     <td>{paymentPeriodTypeLabels[payment.periodType]}</td>
                     <td>{payment.dueAt.toLocaleDateString("ru-RU")}</td>
-                    <td>{paymentState(payment)}</td>
+                    <td>
+                      <span className={`admin-badge ${paymentToneClass(payment)}`}>
+                        {paymentState(payment)}
+                      </span>
+                    </td>
                     <td>{payment.history.length}</td>
                   </tr>
                 ))}
@@ -239,9 +272,12 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
         )}
       </section>
 
-      <section className="panel section">
-        <div className="section-heading">
-          <h2>Группы курса</h2>
+      <section className="panel admin-panel">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">Связанные группы</span>
+            <h2>Группы курса</h2>
+          </div>
           <Link className="secondary-button link-button" href={`/admin/groups?courseId=${course.id}`}>
             + Создать группу
           </Link>
@@ -267,7 +303,11 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
                     </td>
                     <td>{group.teacher?.name ?? "Не назначен"}</td>
                     <td>{group.students.filter((student) => student.status === "active").length}</td>
-                    <td>{groupStatusLabels[group.status]}</td>
+                    <td>
+                      <span className={`admin-badge status-${group.status}`}>
+                        {groupStatusLabels[group.status]}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -277,12 +317,12 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
       </section>
 
       {course.status === "active" ? (
-        <form className="section" action={archiveCourse.bind(null, course.id)}>
+        <form action={archiveCourse.bind(null, course.id)}>
           <button className="secondary-button" type="submit">
             Архивировать курс
           </button>
         </form>
       ) : null}
-    </>
+    </div>
   );
 }
