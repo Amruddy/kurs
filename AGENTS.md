@@ -4,17 +4,6 @@ This project is developed with Codex assistance.
 
 Codex must use the project specifications as the source of truth before making code changes.
 
-## Local Codex Notifications
-
-- VS Code starts the watcher through `.vscode\tasks.json` when the project folder is opened; watcher startup must be silent.
-- Do not trigger a local Codex notification at the start of a session or before substantial work.
-- Local Codex notifications are only for approval requests and task completion.
-- If notification tooling is used, it must not play a sound for session start events.
-- The watcher must ignore historical session log content and must only react to Codex sessions whose `cwd` is this project.
-- The watcher is local runtime tooling only; do not commit `.codex-completion-sound.pid`.
-- To start it manually outside Codex, run `scripts\start-codex-completion-sound.cmd`.
-- To stop it manually, run `scripts\stop-codex-completion-sound.cmd`.
-
 ## Project Language
 
 - The project language is Russian.

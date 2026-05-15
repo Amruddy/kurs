@@ -6,5 +6,4 @@ coverage
 .env
 .env*.local
 *.log
-.codex-completion-sound.pid
 
