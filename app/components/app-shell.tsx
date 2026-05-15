@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="brand-mark" aria-hidden="true">
             К
           </span>
-          <span>Курс</span>
+          <span className="brand-name">Курс</span>
         </Link>
 
         <nav className="sidebar-nav">
@@ -105,23 +105,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="app-content">
         <header className="mobile-header">
-          <Link className="brand" href="/login">
-            <span className="brand-mark" aria-hidden="true">
-              К
-            </span>
-            <span>Курс</span>
-          </Link>
-          <nav className="nav mobile-nav" aria-label="Быстрая навигация">
-            {currentNavGroup.items.map((item) => (
-              <Link
-                aria-current={isActivePath(pathname, item.href) ? "page" : undefined}
-                href={item.href}
-                key={`mobile-${currentNavGroup.label}-${item.href}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="mobile-header-row">
+            <Link className="brand mobile-brand" href="/login">
+              <span className="brand-mark" aria-hidden="true">
+                К
+              </span>
+              <span className="brand-name">Курс</span>
+            </Link>
+            <span className="mobile-role-label">{currentNavGroup.label}</span>
+            <details className="mobile-menu">
+              <summary aria-label="Открыть навигацию">
+                <span className="mobile-menu-icon" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </summary>
+              <nav className="nav mobile-nav" aria-label="Быстрая навигация">
+                {currentNavGroup.items.map((item) => (
+                  <Link
+                    aria-current={isActivePath(pathname, item.href) ? "page" : undefined}
+                    className={isActivePath(pathname, item.href) ? "active" : undefined}
+                    href={item.href}
+                    key={`mobile-${currentNavGroup.label}-${item.href}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </details>
+          </div>
         </header>
         <main className="main">{children}</main>
       </div>
