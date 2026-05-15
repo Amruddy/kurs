@@ -114,7 +114,7 @@ Sub CheckFile(path)
 
   positions(path) = CLng(file.Size)
 
-  If HasApprovalRequest(text) Or HasTaskComplete(text) Then
+  If HasTaskComplete(text) Then
     PlayNotificationSound
   End If
 End Sub
