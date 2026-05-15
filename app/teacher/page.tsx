@@ -3,9 +3,19 @@ import { requireWorkspace } from "@/app/lib/dev-auth";
 import { groupStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
 
+function formatDateTime(date: Date) {
+  return date.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function TeacherPage() {
   const session = await requireWorkspace("teacher");
-  const [groups, nextLesson] = await Promise.all([
+  const now = new Date();
+  const [groups, nextLesson, homeworksCount, materialsCount] = await Promise.all([
     prisma.group.findMany({
       where: {
         organizationId: session.organizationId,
@@ -19,7 +29,7 @@ export default async function TeacherPage() {
         },
         lessons: {
           where: {
-            startsAt: { gte: new Date() },
+            startsAt: { gte: now },
           },
           orderBy: { startsAt: "asc" },
           take: 1,
@@ -31,7 +41,7 @@ export default async function TeacherPage() {
       where: {
         organizationId: session.organizationId,
         teacherId: session.userId,
-        startsAt: { gte: new Date() },
+        startsAt: { gte: now },
       },
       include: {
         group: true,
@@ -39,115 +49,114 @@ export default async function TeacherPage() {
       },
       orderBy: { startsAt: "asc" },
     }),
+    prisma.homework.count({
+      where: {
+        organizationId: session.organizationId,
+        authorId: session.userId,
+        status: "active",
+      },
+    }),
+    prisma.material.count({
+      where: {
+        organizationId: session.organizationId,
+        authorId: session.userId,
+        status: "active",
+      },
+    }),
   ]);
+  const studentsCount = groups.reduce((total, group) => total + group.students.length, 0);
 
   return (
-    <>
-      <div className="page-heading">
-        <span className="status">Преподаватель</span>
-        <h1>Рабочая область преподавателя</h1>
+    <div className="role-main role-main-teacher">
+      <header className="role-work-header">
+        <div>
+          <span className="status role-status">Главная страница</span>
+          <p>Организация: {session.organizationName}</p>
+        </div>
         <p>
-          Здесь показываются группы, назначенные текущему преподавателю. Журнал, расписание и уроки
-          будут добавлены на следующих этапах.
+          {session.name} · {session.email}
         </p>
+      </header>
+
+      <section className="role-state-grid role-state-grid-five" aria-label="Рабочее состояние преподавателя">
+        <Link className="role-state-card role-state-link" href="/teacher/groups">
+          <span className="role-state-label">Группы</span>
+          <strong>{groups.length}</strong>
+          <p>Назначенных</p>
+        </Link>
+        <Link className="role-state-card role-state-link" href="/teacher/students">
+          <span className="role-state-label">Ученики</span>
+          <strong>{studentsCount}</strong>
+          <p>Активных</p>
+        </Link>
+        <Link className="role-state-card role-state-link" href={nextLesson ? `/teacher/lessons/${nextLesson.id}` : "/teacher/attendance"}>
+          <span className="role-state-label">Урок</span>
+          <strong>{nextLesson ? 1 : 0}</strong>
+          <p>{nextLesson ? formatDateTime(nextLesson.startsAt) : "Нет ближайшего"}</p>
+        </Link>
+        <Link className="role-state-card role-state-link" href="/teacher/homework">
+          <span className="role-state-label">ДЗ</span>
+          <strong>{homeworksCount}</strong>
+          <p>Активных</p>
+        </Link>
+        <Link className="role-state-card role-state-link" href="/teacher/materials">
+          <span className="role-state-label">Материалы</span>
+          <strong>{materialsCount}</strong>
+          <p>Активных</p>
+        </Link>
+      </section>
+
+      <div className="role-work-grid">
+        <section className="panel role-panel role-primary-panel">
+          <div className="role-panel-heading">
+            <div>
+              <span>Что требует внимания</span>
+              <h2>Ближайший урок</h2>
+            </div>
+          </div>
+          {nextLesson ? (
+            <div className="role-feature">
+              <strong>{formatDateTime(nextLesson.startsAt)}</strong>
+              <p>{nextLesson.group?.name ?? nextLesson.course.name}</p>
+              <span>{nextLesson.course.name}</span>
+              <Link className="button link-button compact-button" href={`/teacher/lessons/${nextLesson.id}`}>
+                Открыть урок
+              </Link>
+            </div>
+          ) : (
+            <p className="role-empty">Ближайшие уроки пока не созданы.</p>
+          )}
+        </section>
+
+        <section className="panel role-panel role-panel-wide">
+          <div className="role-panel-heading">
+            <div>
+              <span>Группы</span>
+              <h2>Мои группы</h2>
+            </div>
+          </div>
+          {groups.length === 0 ? (
+            <p className="role-empty">Пока нет назначенных групп.</p>
+          ) : (
+            <div className="role-soft-list">
+              {groups.map((group) => (
+                <Link className="role-soft-item role-soft-item-link" href={`/teacher/groups/${group.id}`} key={group.id}>
+                  <div>
+                    <strong>{group.name}</strong>
+                    <p>
+                      {group.course.name}, {group.students.length} учеников
+                    </p>
+                  </div>
+                  <div className="role-soft-meta">
+                    <span>{group.lessons[0] ? formatDateTime(group.lessons[0].startsAt) : "Нет уроков"}</span>
+                    <span className="role-badge neutral">{groupStatusLabels[group.status]}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-
-      <section className="grid">
-        <div className="panel">
-          <h2>{session.name}</h2>
-          <p>{session.email}</p>
-        </div>
-        <div className="panel">
-          <h2>{groups.length}</h2>
-          <p>Назначенных групп</p>
-        </div>
-        <div className="panel">
-          <h2>{session.organizationName}</h2>
-          <p>Организация</p>
-        </div>
-      </section>
-
-      <section className="panel section">
-        <h2>Ближайший урок</h2>
-        {nextLesson ? (
-          <div className="section-heading">
-            <p>
-              {nextLesson.startsAt.toLocaleString("ru-RU", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-              : {nextLesson.group?.name ?? nextLesson.course.name}.
-            </p>
-            <Link className="button link-button compact-button" href={`/teacher/lessons/${nextLesson.id}`}>
-              Открыть урок
-            </Link>
-          </div>
-        ) : (
-          <p>Ближайшие уроки пока не созданы.</p>
-        )}
-      </section>
-
-      <section className="panel section">
-        <div className="section-heading">
-          <h2>Мои группы</h2>
-          <Link className="secondary-button link-button" href="/teacher/groups">
-            Открыть список
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/attendance">
-            Посещаемость
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/students">
-            Ученики
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/homework">
-            ДЗ
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/materials">
-            Материалы
-          </Link>
-        </div>
-        {groups.length === 0 ? (
-          <p>Пока нет назначенных групп.</p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Группа</th>
-                  <th>Курс</th>
-                  <th>Ученики</th>
-                  <th>Ближайший урок</th>
-                  <th>Статус</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map((group) => (
-                  <tr key={group.id}>
-                    <td>
-                      <Link href={`/teacher/groups/${group.id}`}>{group.name}</Link>
-                    </td>
-                    <td>{group.course.name}</td>
-                    <td>{group.students.length}</td>
-                    <td>
-                      {group.lessons[0]
-                        ? group.lessons[0].startsAt.toLocaleString("ru-RU", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "Нет"}
-                    </td>
-                    <td>{groupStatusLabels[group.status]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </>
+    </div>
   );
 }
