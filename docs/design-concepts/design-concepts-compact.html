@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kurs compact design concepts</title>
+    <style>
+      :root {
+        --bg: #f6f8f7;
+        --paper: #ffffff;
+        --paper-2: #f0f4f2;
+        --ink: #17201c;
+        --muted: #66736d;
+        --line: #d9e2dd;
+        --main: #1f6049;
+        --second: #2d6f93;
+        --gold: #b47721;
+        --red: #b53649;
+        --green: #2c7a52;
+        --radius: 8px;
+        --shadow: 0 24px 70px rgba(20, 30, 26, 0.12);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      svg {
+        display: block;
+      }
+
+      .board {
+        width: 1440px;
+        min-height: 1080px;
+        padding: 28px 32px 32px;
+      }
+
+      .title-row {
+        height: 70px;
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+      }
+
+      .title-row h1 {
+        margin: 0;
+        font-size: 38px;
+        line-height: 1;
+      }
+
+      .title-row span {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--main);
+        font-size: 13px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .swatches {
+        display: flex;
+        gap: 8px;
+        padding-top: 18px;
+      }
+
+      .swatch {
+        width: 28px;
+        height: 28px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 50%;
+        background: var(--c);
+      }
+
+      .stage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 304px;
+        gap: 20px;
+      }
+
+      .window {
+        min-height: 946px;
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr);
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        border-right: 1px solid var(--line);
+        background: var(--side-bg, var(--paper-2));
+        color: var(--side-ink, var(--ink));
+        padding: 22px 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .mark {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius);
+        background: var(--main);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 17px;
+      }
+
+      .brand small {
+        color: var(--side-muted, var(--muted));
+      }
+
+      .role {
+        width: fit-content;
+        border: 1px solid var(--side-line, var(--line));
+        border-radius: 999px;
+        background: var(--role-bg, var(--paper));
+        color: var(--side-muted, var(--muted));
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .nav {
+        display: grid;
+        gap: 6px;
+      }
+
+      .nav div {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        border-radius: calc(var(--radius) - 1px);
+        color: var(--side-muted, var(--muted));
+        padding: 0 12px;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .nav svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .nav .active {
+        background: var(--main);
+        color: #fff;
+      }
+
+      .day-box {
+        margin-top: auto;
+        border: 1px solid var(--side-line, var(--line));
+        border-radius: var(--radius);
+        background: var(--role-bg, var(--paper));
+        padding: 14px;
+      }
+
+      .day-box strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .day-box div {
+        display: grid;
+        gap: 7px;
+        color: var(--side-muted, var(--muted));
+        font-size: 13px;
+      }
+
+      .main {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: 70px 1fr;
+        background: var(--bg);
+      }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper);
+        padding: 0 24px;
+      }
+
+      .bar strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .bar small {
+        color: var(--muted);
+      }
+
+      .user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: calc(var(--radius) - 1px);
+        background: var(--paper);
+        padding: 0 12px;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .avatar {
+        width: 24px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--main);
+        color: #fff;
+        font-size: 11px;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+      }
+
+      .hero,
+      .card,
+      .panel,
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 176px;
+        gap: 16px;
+        align-items: center;
+        min-height: 190px;
+        padding: 22px;
+      }
+
+      .hero h2 {
+        margin: 0 0 10px;
+        font-size: 35px;
+        line-height: 1.02;
+      }
+
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        min-height: 28px;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--paper-2);
+        color: var(--muted);
+        padding: 0 10px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .pill.main {
+        border-color: color-mix(in srgb, var(--main) 34%, var(--line));
+        color: var(--main);
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      .btn {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--main);
+        border-radius: calc(var(--radius) - 1px);
+        background: var(--main);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .btn.light {
+        border-color: var(--line);
+        background: var(--paper);
+        color: var(--main);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .card small {
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .card strong {
+        display: block;
+        margin: 8px 0 4px;
+        font-size: 28px;
+      }
+
+      .card span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .panel {
+        overflow: hidden;
+      }
+
+      .panel-head {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 0 16px;
+      }
+
+      .panel-head h3 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .panel-head span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 11px 10px;
+        text-align: center;
+      }
+
+      th:first-child,
+      td:first-child {
+        width: 190px;
+        text-align: left;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      th strong {
+        display: block;
+        color: var(--ink);
+        font-size: 15px;
+      }
+
+      td strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      td small {
+        color: var(--muted);
+      }
+
+      .grade {
+        min-width: 31px;
+        min-height: 29px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--paper-2);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .g {
+        border-color: color-mix(in srgb, var(--green) 32%, var(--line));
+        background: color-mix(in srgb, var(--green) 12%, var(--paper));
+        color: var(--green);
+      }
+
+      .w {
+        border-color: color-mix(in srgb, var(--gold) 36%, var(--line));
+        background: color-mix(in srgb, var(--gold) 13%, var(--paper));
+        color: var(--gold);
+      }
+
+      .r {
+        border-color: color-mix(in srgb, var(--red) 34%, var(--line));
+        background: color-mix(in srgb, var(--red) 12%, var(--paper));
+        color: var(--red);
+      }
+
+      .mini-list {
+        display: grid;
+        gap: 10px;
+        padding: 13px;
+      }
+
+      .mini {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+      }
+
+      .mini strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .mini span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .state {
+        min-height: 24px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0 8px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .state.g {
+        background: color-mix(in srgb, var(--green) 14%, var(--paper));
+      }
+
+      .state.w {
+        background: color-mix(in srgb, var(--gold) 16%, var(--paper));
+      }
+
+      .state.r {
+        background: color-mix(in srgb, var(--red) 13%, var(--paper));
+      }
+
+      .phone-wrap {
+        min-height: 946px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: color-mix(in srgb, var(--paper-2) 80%, var(--main) 20%);
+        box-shadow: var(--shadow);
+      }
+
+      .phone {
+        width: 250px;
+        min-height: 640px;
+        overflow: hidden;
+        border: 8px solid #151a18;
+        border-radius: 34px;
+        background: var(--bg);
+      }
+
+      .phone-bar {
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper);
+        padding: 0 14px;
+      }
+
+      .phone-bar strong {
+        font-size: 14px;
+      }
+
+      .phone-main {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .phone-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        padding: 12px;
+      }
+
+      .phone-card h4 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      .phone-card span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .phone-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .phone-action {
+        min-height: 66px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        color: var(--main);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .bottom {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border-top: 1px solid var(--line);
+        background: var(--paper);
+        padding: 8px;
+      }
+
+      .bottom div {
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 900;
+      }
+
+      .bottom svg {
+        width: 18px;
+        height: 18px;
+        margin-bottom: 4px;
+      }
+
+      .v7 {
+        --bg: #f5f6f4;
+        --paper: #ffffff;
+        --paper-2: #ebefed;
+        --ink: #121a18;
+        --muted: #63706b;
+        --line: #d5ded9;
+        --main: #0f4b43;
+        --second: #315d8c;
+        --gold: #b1741c;
+        --red: #b53a45;
+        --green: #267650;
+        --side-bg: #111a18;
+        --side-ink: #ffffff;
+        --side-muted: rgba(255, 255, 255, 0.7);
+        --side-line: rgba(255, 255, 255, 0.14);
+        --role-bg: rgba(255, 255, 255, 0.08);
+      }
+
+      .v7 .mark,
+      .v7 .nav .active {
+        background: #ffffff;
+        color: var(--main);
+      }
+
+      .v8 {
+        --bg: #f7f8fa;
+        --paper: #ffffff;
+        --paper-2: #eef2f5;
+        --ink: #16202a;
+        --muted: #62707a;
+        --line: #d5dfe5;
+        --main: #245c77;
+        --second: #6b5aa6;
+        --gold: #bb7226;
+        --red: #ad3948;
+        --green: #2b7854;
+        --radius: 6px;
+      }
+
+      .v8 .window {
+        grid-template-columns: 1fr;
+      }
+
+      .v8 .side {
+        min-height: 74px;
+        display: grid;
+        grid-template-columns: 190px 120px minmax(0, 1fr) 160px;
+        align-items: center;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .v8 .day-box {
+        margin-top: 0;
+      }
+
+      .v8 .nav {
+        grid-template-columns: repeat(7, max-content);
+        overflow: hidden;
+      }
+
+      .v8 .nav div {
+        min-height: 38px;
+      }
+
+      .v8 .nav div:nth-child(n + 6) {
+        display: none;
+      }
+
+      .v8 .content {
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .v8 .stack {
+        gap: 10px;
+      }
+
+      .v8 .hero {
+        min-height: 155px;
+        padding: 18px 22px;
+      }
+
+      .v8 .hero h2 {
+        font-size: 33px;
+      }
+
+      .v8 .card {
+        padding: 12px;
+      }
+
+      .v8 .mini-list {
+        gap: 8px;
+        padding: 10px 12px;
+      }
+
+      .v8 .mini {
+        padding: 10px;
+      }
+
+      .v8 th,
+      .v8 td {
+        padding: 9px 10px;
+      }
+
+      .v9 {
+        --bg: #f6f7f2;
+        --paper: #ffffff;
+        --paper-2: #eef2e9;
+        --ink: #20231d;
+        --muted: #6c7167;
+        --line: #dcdfd4;
+        --main: #4d6736;
+        --second: #3f6d88;
+        --gold: #b46f2d;
+        --red: #aa3b4a;
+        --green: #38794f;
+        --radius: 14px;
+      }
+
+      .v9 .hero {
+        min-height: 250px;
+      }
+
+      .v9 .hero h2 {
+        font-size: 42px;
+      }
+
+      .v10 {
+        --bg: #f8f8f7;
+        --paper: #ffffff;
+        --paper-2: #ededeb;
+        --ink: #191d1b;
+        --muted: #676d68;
+        --line: #dcdeda;
+        --main: #23533f;
+        --second: #6a5c99;
+        --gold: #b56829;
+        --red: #ad3947;
+        --green: #2a7651;
+        --radius: 2px;
+        --shadow: 0 16px 42px rgba(20, 24, 22, 0.1);
+      }
+
+      .v10 .hero,
+      .v10 .card,
+      .v10 .panel,
+      .v10 .mini,
+      .v10 .phone-card,
+      .v10 .phone-action,
+      .v10 .btn,
+      .v10 .nav div,
+      .v10 .mark,
+      .v10 .role,
+      .v10 .day-box {
+        border-radius: var(--radius);
+      }
+
+      .v10 .grade,
+      .v10 .pill,
+      .v10 .state {
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" aria-hidden="true">
+      <symbol id="home" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></symbol>
+      <symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><circle cx="17" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="2" /><path d="M14 18.5A4 4 0 0 1 20.5 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><path d="M7 3v4M17 3v4M3 10h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="book" viewBox="0 0 24 24"><path d="M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" fill="none" stroke="currentColor" stroke-width="2" /><path d="M8 8h6M8 12h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3 10h18M7 15h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="doc" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M14 3.5V8h4M8 13h8M8 17h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+    </svg>
+
+    <div id="app"></div>
+
+    <script>
+      const variants = [
+        {
+          n: 6,
+          cls: "",
+          name: "Чистый день",
+          role: "Преподаватель",
+          active: "Главная",
+          page: "Сегодня",
+          sub: "2 урока",
+          hero: "Группа Нур",
+          colors: ["#f6f8f7", "#ffffff", "#1f6049", "#2d6f93", "#b47721", "#b53649"]
+        },
+        {
+          n: 7,
+          cls: "v7",
+          name: "Темный контур",
+          role: "Админ",
+          active: "Группы",
+          page: "Группы",
+          sub: "14 активных",
+          hero: "Без расписания: 2",
+          colors: ["#f5f6f4", "#111a18", "#0f4b43", "#315d8c", "#b1741c", "#b53a45"]
+        },
+        {
+          n: 8,
+          cls: "v8",
+          name: "Верхняя навигация",
+          role: "Директор",
+          active: "Журнал",
+          page: "Журнал",
+          sub: "май",
+          hero: "Журнал Нур",
+          colors: ["#f7f8fa", "#ffffff", "#245c77", "#6b5aa6", "#bb7226", "#ad3948"]
+        },
+        {
+          n: 9,
+          cls: "v9",
+          name: "Мобильный приоритет",
+          role: "Ученик",
+          active: "Домашнее",
+          page: "Кабинет",
+          sub: "сегодня",
+          hero: "Домашнее",
+          colors: ["#f6f7f2", "#ffffff", "#4d6736", "#3f6d88", "#b46f2d", "#aa3b4a"]
+        },
+        {
+          n: 10,
+          cls: "v10",
+          name: "Сухой учет",
+          role: "Преподаватель",
+          active: "Оплата",
+          page: "Оплата",
+          sub: "май",
+          hero: "3 ожидают",
+          colors: ["#f8f8f7", "#ffffff", "#23533f", "#6a5c99", "#b56829", "#ad3947"]
+        }
+      ];
+
+      const nav = [
+        ["Главная", "home"],
+        ["Группы", "users"],
+        ["Журнал", "cal"],
+        ["Ученики", "users"],
+        ["Домашнее", "book"],
+        ["Материалы", "doc"],
+        ["Оплата", "card"]
+      ];
+
+      const rows = [
+        ["Амина", "Нур", "П", "5", "Н", "П", "У"],
+        ["Юсуф", "Нур", "П", "4", "П", "П", "5"],
+        ["Самира", "Нур", "У", "П", "3", "П", "П"],
+        ["Ильяс", "Нур", "П", "Н", "П", "4", "П"],
+        ["Мариям", "Нур", "5", "П", "П", "П", "4"]
+      ];
+
+      function icon(id) {
+        return `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
+      }
+
+      function gradeClass(value) {
+        if (value === "Н") return "r";
+        if (value === "У" || value === "3") return "w";
+        return "g";
+      }
+
+      function render() {
+        const n = Math.max(6, Math.min(10, Number(new URLSearchParams(location.search).get("variant") || "6")));
+        const v = variants.find((item) => item.n === n);
+        document.body.className = v.cls;
+
+        const navHtml = nav
+          .map(([label, id]) => `<div class="${label === v.active ? "active" : ""}">${icon(id)}${label}</div>`)
+          .join("");
+
+        const rowsHtml = rows
+          .map((row) => `
+            <tr>
+              <td><strong>${row[0]}</strong><small>${row[1]}</small></td>
+              ${row.slice(2).map((cell) => `<td><span class="grade ${gradeClass(cell)}">${cell}</span></td>`).join("")}
+            </tr>
+          `)
+          .join("");
+
+        const swatches = v.colors.map((c) => `<span class="swatch" style="--c:${c}"></span>`).join("");
+
+        document.getElementById("app").innerHTML = `
+          <main class="board">
+            <header class="title-row">
+              <div>
+                <span>Вариант ${v.n}</span>
+                <h1>${v.name}</h1>
+              </div>
+              <div class="swatches">${swatches}</div>
+            </header>
+
+            <section class="stage">
+              <div class="window">
+                <aside class="side">
+                  <div class="brand">
+                    <div class="mark">ك</div>
+                    <div><strong>Kurs</strong><small>таджвид</small></div>
+                  </div>
+                  <div class="role">${v.role}</div>
+                  <nav class="nav">${navHtml}</nav>
+                  <div class="day-box">
+                    <strong>Сегодня</strong>
+                    <div>
+                      <span>18:30 · Нур</span>
+                      <span>20:00 · Ихсан</span>
+                      <span>3 оплаты</span>
+                    </div>
+                  </div>
+                </aside>
+
+                <section class="main">
+                  <header class="bar">
+                    <div><strong>${v.page}</strong><small>${v.sub}</small></div>
+                    <div class="user"><span class="avatar">АС</span> Айша С.</div>
+                  </header>
+
+                  <section class="content">
+                    <div class="stack">
+                      <div class="hero">
+                        <div>
+                          <h2>${v.hero}</h2>
+                          <div class="facts">
+                            <span class="pill main">18:30</span>
+                            <span class="pill">8 учеников</span>
+                            <span class="pill">1 пропуск</span>
+                            <span class="pill">3 оплаты</span>
+                          </div>
+                        </div>
+                        <div class="actions">
+                          <div class="btn">Открыть</div>
+                          <div class="btn light">Журнал</div>
+                        </div>
+                      </div>
+
+                      <div class="cards">
+                        <div class="card"><small>Ученики</small><strong>42</strong><span>активные</span></div>
+                        <div class="card"><small>Уроки</small><strong>2</strong><span>сегодня</span></div>
+                        <div class="card"><small>Пропуски</small><strong>5</strong><span>май</span></div>
+                        <div class="card"><small>Оплата</small><strong>3</strong><span>ожидают</span></div>
+                      </div>
+
+                      <div class="panel">
+                        <div class="panel-head"><h3>Журнал</h3><span>май</span></div>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Ученик</th>
+                              <th><strong>06</strong>ср</th>
+                              <th><strong>09</strong>сб</th>
+                              <th><strong>13</strong>ср</th>
+                              <th><strong>16</strong>сб</th>
+                              <th><strong>20</strong>ср</th>
+                            </tr>
+                          </thead>
+                          <tbody>${rowsHtml}</tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <aside class="stack">
+                      <div class="panel">
+                        <div class="panel-head"><h3>Сигналы</h3><span>3</span></div>
+                        <div class="mini-list">
+                          <div class="mini"><div><strong>Ильяс</strong><span>2 пропуска</span></div><span class="state r">Н</span></div>
+                          <div class="mini"><div><strong>Оплата</strong><span>срок сегодня</span></div><span class="state w">3</span></div>
+                          <div class="mini"><div><strong>Самира</strong><span>повторить мадд</span></div><span class="state g">цель</span></div>
+                        </div>
+                      </div>
+
+                      <div class="panel">
+                        <div class="panel-head"><h3>Домашнее</h3><span>2</span></div>
+                        <div class="mini-list">
+                          <div class="mini"><div><strong>Суры 91-93</strong><span>до 20 мая</span></div><span class="state g">видно</span></div>
+                          <div class="mini"><div><strong>Ихфа</strong><span>ссылка</span></div><span class="state w">новое</span></div>
+                        </div>
+                      </div>
+
+                      <div class="panel">
+                        <div class="panel-head"><h3>Оплата</h3><span>май</span></div>
+                        <div class="mini-list">
+                          <div class="mini"><div><strong>Амина</strong><span>2 500 ₽</span></div><span class="state w">pending</span></div>
+                          <div class="mini"><div><strong>Ильяс</strong><span>2 500 ₽</span></div><span class="state r">overdue</span></div>
+                          <div class="mini"><div><strong>Юсуф</strong><span>2 500 ₽</span></div><span class="state g">paid</span></div>
+                        </div>
+                      </div>
+                    </aside>
+                  </section>
+                </section>
+              </div>
+
+              <aside class="phone-wrap">
+                <div class="phone">
+                  <div class="phone-bar"><strong>Kurs</strong><span class="avatar">АС</span></div>
+                  <div class="phone-main">
+                    <div class="phone-card"><h4>${v.hero}</h4><span>18:30 · Нур</span></div>
+                    <div class="phone-grid">
+                      <div class="phone-action">Урок</div>
+                      <div class="phone-action">Журнал</div>
+                      <div class="phone-action">Домашнее</div>
+                      <div class="phone-action">Оплата</div>
+                    </div>
+                    <div class="phone-card"><h4>Сигналы</h4><span>Н · 3 · цель</span></div>
+                    <div class="phone-card"><h4>Май</h4><span>06 · 09 · 13 · 16 · 20</span></div>
+                  </div>
+                  <div class="bottom">
+                    <div>${icon("home")}Главная</div>
+                    <div>${icon("cal")}Журнал</div>
+                    <div>${icon("book")}ДЗ</div>
+                    <div>${icon("card")}Оплата</div>
+                  </div>
+                </div>
+              </aside>
+            </section>
+          </main>
+        `;
+      }
+
+      render();
+    </script>
+  </body>
+</html>

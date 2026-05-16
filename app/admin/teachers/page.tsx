@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { createTeacher } from "@/app/admin/actions";
+import { PageCreateAction } from "@/app/components/page-create-action";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 
@@ -25,34 +26,34 @@ export default async function AdminTeachersPage() {
 
   return (
     <>
-      <div className="page-heading">
-        <span className="status">Преподаватели</span>
-        <h1>Управление преподавателями</h1>
-        <p>Добавьте преподавателя в организацию, чтобы назначать его на группы.</p>
+      <div className="page-heading page-heading-with-action">
+        <div>
+          <span className="status">Преподаватели</span>
+          <h1>Управление преподавателями</h1>
+          <p>Добавьте преподавателя в организацию, чтобы назначить его на группы.</p>
+        </div>
+        <PageCreateAction buttonLabel="Добавить преподавателя" title="Новый преподаватель">
+          <form className="form-grid" action={createTeacher}>
+            <label>
+              Имя
+              <input name="name" required placeholder="Имя преподавателя" />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" required placeholder="teacher@example.test" />
+            </label>
+            <label>
+              Телефон
+              <input name="phone" placeholder="+7..." />
+            </label>
+            <button className="button" type="submit">
+              Добавить преподавателя
+            </button>
+          </form>
+        </PageCreateAction>
       </div>
 
       <section className="panel">
-        <h2>Новый преподаватель</h2>
-        <form className="form-grid" action={createTeacher}>
-          <label>
-            Имя
-            <input name="name" required placeholder="Имя преподавателя" />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" required placeholder="teacher@example.test" />
-          </label>
-          <label>
-            Телефон
-            <input name="phone" placeholder="+7..." />
-          </label>
-          <button className="button" type="submit">
-            Добавить преподавателя
-          </button>
-        </form>
-      </section>
-
-      <section className="panel section">
         <h2>Список преподавателей</h2>
         {teachers.length === 0 ? (
           <p>Преподавателей пока нет.</p>

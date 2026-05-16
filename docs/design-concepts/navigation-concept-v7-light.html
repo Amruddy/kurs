@@ -1,0 +1,1512 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kurs navigation concept v7 light</title>
+    <style>
+      :root {
+        --page: #f5f7f4;
+        --shell: #ffffff;
+        --panel: #ffffff;
+        --panel-soft: #f8faf7;
+        --nav: #edf4f0;
+        --nav-strong: #dfeae4;
+        --line: #d7e0da;
+        --line-strong: #c6d3cc;
+        --text: #16201b;
+        --muted: #65736c;
+        --faint: #87938c;
+        --primary: #0f5a45;
+        --primary-dark: #0b4435;
+        --primary-soft: #e4f2ec;
+        --blue: #245f84;
+        --blue-soft: #e8f1f6;
+        --amber: #b7791f;
+        --amber-soft: #f7ead8;
+        --red: #b93645;
+        --red-soft: #f7e6e9;
+        --green: #2d7a52;
+        --green-soft: #e5f2eb;
+        --violet: #6a5b9d;
+        --violet-soft: #ece9f6;
+        --shadow: 0 18px 48px rgba(27, 38, 32, 0.1);
+        --radius: 8px;
+        --radius-sm: 6px;
+        --sidebar: 256px;
+        --kit: 324px;
+        --font: Arial, Helvetica, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--text);
+        font-family: var(--font);
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      svg {
+        display: block;
+      }
+
+      .concept-page {
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .concept-header {
+        max-width: 1500px;
+        height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin: 0 auto 18px;
+      }
+
+      .concept-title {
+        display: grid;
+        gap: 6px;
+      }
+
+      .concept-title span {
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .concept-title h1 {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1;
+      }
+
+      .role-switch {
+        display: inline-grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        padding: 4px;
+      }
+
+      .role-button {
+        min-height: 38px;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--muted);
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .role-button.active {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .workspace {
+        max-width: 1500px;
+        min-height: 830px;
+        display: grid;
+        grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--kit);
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--shell);
+        box-shadow: var(--shadow);
+        margin: 0 auto;
+      }
+
+      .sidebar {
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 22px;
+        border-right: 1px solid var(--line);
+        background: linear-gradient(180deg, #f2f7f4, var(--nav));
+        padding: 20px 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 48px;
+      }
+
+      .brand-mark {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius);
+        background: var(--primary);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .brand strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 17px;
+      }
+
+      .brand span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .role-pill {
+        width: fit-content;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--muted);
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .role-pill svg,
+      .nav-item svg,
+      .icon-button svg,
+      .bottom-nav svg {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 6px;
+        align-content: start;
+      }
+
+      .nav-item {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--muted);
+        padding: 0 12px;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 850;
+      }
+
+      .nav-item:hover {
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.62);
+        color: var(--text);
+      }
+
+      .nav-item.active {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .today-box {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        padding: 14px;
+      }
+
+      .today-box strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 15px;
+      }
+
+      .today-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 30px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .main {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: 68px 1fr;
+        background: var(--page);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.84);
+        padding: 0 22px;
+      }
+
+      .page-title {
+        display: grid;
+        gap: 3px;
+      }
+
+      .page-title strong {
+        font-size: 18px;
+      }
+
+      .page-title span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .icon-button,
+      .user-pill {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .icon-button {
+        width: 38px;
+      }
+
+      .user-pill {
+        gap: 10px;
+        padding: 0 12px;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .avatar {
+        width: 24px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .content {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 284px;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .content-wide {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .dashboard-content {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .dashboard-layout {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 14px;
+        align-items: stretch;
+        min-width: 0;
+      }
+
+      .dashboard-layout > * {
+        min-width: 0;
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+        min-width: 0;
+      }
+
+      .hero,
+      .card,
+      .panel,
+      .surface {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+        min-height: 178px;
+        padding: 22px;
+      }
+
+      .dashboard-hero {
+        grid-column: span 8;
+        min-height: 192px;
+        height: 100%;
+      }
+
+      .hero h2 {
+        margin: 0 0 12px;
+        font-size: 34px;
+        line-height: 1.04;
+      }
+
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .hero-actions {
+        display: grid;
+        gap: 10px;
+        width: 170px;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .dashboard-metrics {
+        grid-column: 1 / -1;
+      }
+
+      .card {
+        min-height: 112px;
+        padding: 14px;
+      }
+
+      .dashboard-metrics .card {
+        min-height: 118px;
+        display: grid;
+        align-content: center;
+      }
+
+      .card span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .card strong {
+        display: block;
+        margin: 8px 0 5px;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .card small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .panel {
+        overflow: hidden;
+      }
+
+      .dashboard-signals {
+        grid-column: span 4;
+        height: 100%;
+        min-height: 192px;
+      }
+
+      .dashboard-journal {
+        grid-column: span 8;
+      }
+
+      .dashboard-actions {
+        grid-column: span 4;
+        min-height: 100%;
+      }
+
+      .dashboard-signals .list,
+      .dashboard-actions .list {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .dashboard-signals .list-row {
+        min-height: 36px;
+        padding: 8px 10px;
+      }
+
+      .dashboard-actions .btn {
+        min-height: 38px;
+      }
+
+      .panel-head {
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        border-bottom: 1px solid var(--line);
+        padding: 0 16px;
+      }
+
+      .panel-head h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .panel-head span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid var(--primary);
+        border-radius: var(--radius-sm);
+        background: var(--primary);
+        color: #fff;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .btn:hover {
+        background: var(--primary-dark);
+      }
+
+      .btn.secondary {
+        border-color: var(--line-strong);
+        background: var(--panel);
+        color: var(--primary);
+      }
+
+      .btn.secondary:hover {
+        border-color: var(--primary);
+        background: var(--primary-soft);
+      }
+
+      .btn.ghost {
+        border-color: transparent;
+        background: transparent;
+        color: var(--primary);
+      }
+
+      .btn.ghost:hover {
+        background: var(--primary-soft);
+      }
+
+      .btn.danger {
+        border-color: var(--red);
+        background: var(--red);
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.48;
+      }
+
+      .chip,
+      .status {
+        min-height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0 9px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        background: var(--panel-soft);
+        color: var(--muted);
+      }
+
+      .chip.primary {
+        border-color: #b9d5c9;
+        background: var(--primary-soft);
+        color: var(--primary);
+      }
+
+      .status.good {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .status.warn {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .status.bad {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .status.neutral {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+      }
+
+      .list-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--panel-soft);
+        padding: 12px;
+      }
+
+      .list-row strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 13px;
+      }
+
+      .list-row span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 11px 10px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      td {
+        font-size: 13px;
+      }
+
+      td a {
+        color: var(--primary);
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .journal th,
+      .journal td {
+        text-align: center;
+      }
+
+      .journal th:first-child,
+      .journal td:first-child {
+        width: 190px;
+        text-align: left;
+      }
+
+      .date-head strong {
+        display: block;
+        color: var(--text);
+        font-size: 15px;
+      }
+
+      .date-head span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .student-cell strong {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .student-cell span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .mark {
+        min-width: 30px;
+        min-height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel-soft);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .mark.good {
+        border-color: #b9d8c9;
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .mark.warn {
+        border-color: #e7cfa9;
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .mark.bad {
+        border-color: #edbdc5;
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--panel);
+        color: var(--text);
+        padding: 0 10px;
+      }
+
+      textarea {
+        min-height: 84px;
+        padding-top: 10px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus,
+      button:focus-visible {
+        outline: 3px solid rgba(15, 90, 69, 0.18);
+        outline-offset: 2px;
+      }
+
+      .kit {
+        overflow-y: auto;
+        border-left: 1px solid var(--line);
+        background: var(--panel);
+        padding: 16px;
+      }
+
+      .kit-section {
+        display: grid;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding: 0 0 16px;
+        margin-bottom: 16px;
+      }
+
+      .kit-section:last-child {
+        border-bottom: 0;
+        margin-bottom: 0;
+      }
+
+      .kit h2 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .kit h3 {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .color-token {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 8px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 8px;
+      }
+
+      .swatch {
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: var(--radius-sm);
+        background: var(--color);
+      }
+
+      .color-token strong {
+        display: block;
+        font-size: 12px;
+      }
+
+      .color-token span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .component-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+      .component-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .nav-preview {
+        display: grid;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--nav);
+        padding: 10px;
+      }
+
+      .toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 20;
+        min-width: 280px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        padding: 14px;
+        transform: translateY(20px);
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.2s ease;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .toast strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .toast span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .mobile-frame {
+        display: none;
+      }
+
+      .bottom-nav {
+        display: none;
+      }
+
+      @media (max-width: 1180px) {
+        .workspace {
+          grid-template-columns: var(--sidebar) minmax(0, 1fr);
+        }
+
+        .kit {
+          display: none;
+        }
+      }
+
+      @media (max-width: 820px) {
+        .concept-page {
+          padding: 14px;
+          padding-bottom: 82px;
+        }
+
+        .concept-header {
+          height: auto;
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .role-switch {
+          width: 100%;
+        }
+
+        .workspace {
+          min-height: auto;
+          display: block;
+        }
+
+        .sidebar {
+          display: none;
+        }
+
+        .main {
+          display: block;
+        }
+
+        .topbar {
+          min-height: 68px;
+        }
+
+        .content,
+        .content-wide {
+          display: grid;
+          grid-template-columns: 1fr;
+          padding: 12px;
+        }
+
+        .hero,
+        .metrics,
+        .dashboard-layout,
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .dashboard-hero,
+        .dashboard-signals,
+        .dashboard-metrics,
+        .dashboard-journal,
+        .dashboard-actions {
+          grid-column: 1;
+        }
+
+        .hero-actions {
+          width: 100%;
+        }
+
+        .bottom-nav {
+          position: fixed;
+          left: 14px;
+          right: 14px;
+          bottom: 14px;
+          z-index: 15;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 4px;
+          border: 1px solid var(--line);
+          border-radius: var(--radius);
+          background: var(--panel);
+          box-shadow: var(--shadow);
+          padding: 6px;
+        }
+
+        .bottom-nav button {
+          min-height: 50px;
+          display: grid;
+          place-items: center;
+          gap: 2px;
+          border: 0;
+          border-radius: var(--radius-sm);
+          background: transparent;
+          color: var(--muted);
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .bottom-nav button.active {
+          background: var(--primary);
+          color: #fff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" aria-hidden="true">
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><circle cx="17" cy="9" r="2.4" fill="none" stroke="currentColor" stroke-width="2" /><path d="M14 18.5A4 4 0 0 1 20.5 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><path d="M7 3v4M17 3v4M3 10h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" fill="none" stroke="currentColor" stroke-width="2" /><path d="M8 8h6M8 12h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M14 3.5V8h4M8 13h8M8 17h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-pay" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3 10h18M7 15h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-course" viewBox="0 0 24 24"><path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" /><path d="M8 8h8M8 12h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17h12l-1.3-2.2V10a4.7 4.7 0 0 0-9.4 0v4.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M10 20h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+    </svg>
+
+    <main class="concept-page">
+      <header class="concept-header">
+        <div class="concept-title">
+          <span>Концепт навигации · вариант 7 light</span>
+          <h1>Светлая рабочая система</h1>
+        </div>
+        <div class="role-switch" id="roleSwitch"></div>
+      </header>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="brand-mark">ك</div>
+            <div>
+              <strong>Kurs</strong>
+              <span>учет таджвида</span>
+            </div>
+          </div>
+          <div class="role-pill" id="rolePill"></div>
+          <nav class="nav-list" id="sideNav"></nav>
+          <div class="today-box">
+            <strong>Сегодня</strong>
+            <div class="today-row"><span>18:30</span><span>Нур</span></div>
+            <div class="today-row"><span>20:00</span><span>Ихсан</span></div>
+            <div class="today-row"><span>Оплата</span><span>3</span></div>
+          </div>
+        </aside>
+
+        <section class="main">
+          <header class="topbar">
+            <div class="page-title">
+              <strong id="pageTitle"></strong>
+              <span id="pagePath"></span>
+            </div>
+            <div class="top-actions">
+              <button class="icon-button js-action" data-message="Сигналы открыты" aria-label="Сигналы"><svg><use href="#i-bell"></use></svg></button>
+              <div class="user-pill"><span class="avatar">АС</span> Айша С.</div>
+            </div>
+          </header>
+          <div id="pageContent"></div>
+        </section>
+
+        <aside class="kit">
+          <section class="kit-section">
+            <h2>Компоненты</h2>
+            <h3>Цвета</h3>
+            <div class="color-grid">
+              <div class="color-token"><span class="swatch" style="--color: var(--page)"></span><div><strong>Фон</strong><span>#f5f7f4</span></div></div>
+              <div class="color-token"><span class="swatch" style="--color: var(--panel)"></span><div><strong>Панель</strong><span>#ffffff</span></div></div>
+              <div class="color-token"><span class="swatch" style="--color: var(--nav)"></span><div><strong>Навигация</strong><span>#edf4f0</span></div></div>
+              <div class="color-token"><span class="swatch" style="--color: var(--primary)"></span><div><strong>Основной</strong><span>#0f5a45</span></div></div>
+              <div class="color-token"><span class="swatch" style="--color: var(--amber)"></span><div><strong>Внимание</strong><span>#b7791f</span></div></div>
+              <div class="color-token"><span class="swatch" style="--color: var(--red)"></span><div><strong>Ошибка</strong><span>#b93645</span></div></div>
+            </div>
+          </section>
+
+          <section class="kit-section">
+            <h3>Кнопки</h3>
+            <div class="component-grid">
+              <button class="btn js-action" data-message="Основное действие">Основная</button>
+              <button class="btn secondary js-action" data-message="Вторичное действие">Вторичная</button>
+              <button class="btn ghost js-action" data-message="Тихое действие">Тихая</button>
+              <button class="btn danger js-action" data-message="Опасное действие">Архивировать</button>
+              <button class="btn" disabled>Недоступна</button>
+            </div>
+          </section>
+
+          <section class="kit-section">
+            <h3>Статусы</h3>
+            <div class="component-row">
+              <span class="status good">paid</span>
+              <span class="status warn">pending</span>
+              <span class="status bad">overdue</span>
+              <span class="status neutral">exempt</span>
+            </div>
+            <div class="component-row">
+              <span class="mark good">П</span>
+              <span class="mark bad">Н</span>
+              <span class="mark warn">У</span>
+              <span class="mark good">5</span>
+            </div>
+          </section>
+
+          <section class="kit-section">
+            <h3>Поля</h3>
+            <div class="component-grid">
+              <label>Название<input value="Группа Нур" /></label>
+              <label>Статус<select><option>Активна</option><option>Архив</option></select></label>
+              <label>Комментарий<textarea>Повторить правило мадда</textarea></label>
+            </div>
+          </section>
+
+          <section class="kit-section">
+            <h3>Навигация</h3>
+            <div class="nav-preview">
+              <button class="nav-item active"><svg><use href="#i-home"></use></svg> Активный пункт</button>
+              <button class="nav-item"><svg><use href="#i-users"></use></svg> Обычный пункт</button>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" id="bottomNav"></nav>
+    <div class="toast" id="toast"><strong></strong><span></span></div>
+
+    <script>
+      const roles = {
+        teacher: {
+          label: "Преподаватель",
+          icon: "i-user",
+          user: "Айша С.",
+          nav: [
+            ["home", "Главная", "i-home", "/teacher"],
+            ["groups", "Группы", "i-users", "/teacher/groups"],
+            ["journal", "Журнал", "i-calendar", "/teacher/groups/:groupId/journal"],
+            ["students", "Ученики", "i-user", "/teacher/students"],
+            ["homework", "Домашнее", "i-book", "/teacher/homework"],
+            ["materials", "Материалы", "i-doc", "/teacher/materials"],
+            ["payments", "Оплата", "i-pay", "/teacher/payments"]
+          ]
+        },
+        student: {
+          label: "Ученик",
+          icon: "i-user",
+          user: "Юсуф К.",
+          nav: [
+            ["home", "Главная", "i-home", "/student"],
+            ["schedule", "Расписание", "i-calendar", "/student/schedule"],
+            ["homework", "Домашнее", "i-book", "/student/homework"],
+            ["materials", "Материалы", "i-doc", "/student/materials"],
+            ["progress", "Прогресс", "i-course", "/student/progress"],
+            ["attendance", "Посещаемость", "i-users", "/student/attendance"],
+            ["payments", "Оплата", "i-pay", "/student/payments"]
+          ]
+        },
+        admin: {
+          label: "Админ",
+          icon: "i-user",
+          user: "Админ",
+          nav: [
+            ["home", "Главная", "i-home", "/admin"],
+            ["courses", "Курсы", "i-course", "/admin/courses"],
+            ["groups", "Группы", "i-users", "/admin/groups"],
+            ["students", "Ученики", "i-user", "/admin/students"],
+            ["teachers", "Преподаватели", "i-users", "/admin/teachers"],
+            ["payments", "Оплата", "i-pay", "/admin/payments"]
+          ]
+        }
+      };
+
+      const state = {
+        role: "teacher",
+        page: "home"
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+
+      function icon(id) {
+        return `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
+      }
+
+      function showToast(title, text = "Это кликабельное состояние концепта.") {
+        const toast = $("#toast");
+        toast.querySelector("strong").textContent = title;
+        toast.querySelector("span").textContent = text;
+        toast.classList.add("show");
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
+      }
+
+      function bindActions(root = document) {
+        root.querySelectorAll(".js-action").forEach((button) => {
+          if (button.dataset.bound === "true") return;
+          button.dataset.bound = "true";
+          button.addEventListener("click", () => showToast(button.dataset.message || button.textContent.trim()));
+        });
+      }
+
+      function renderRoleSwitch() {
+        $("#roleSwitch").innerHTML = Object.entries(roles)
+          .map(([key, role]) => `<button class="role-button ${key === state.role ? "active" : ""}" data-role="${key}">${role.label}</button>`)
+          .join("");
+
+        $("#roleSwitch").querySelectorAll("button").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.role = button.dataset.role;
+            state.page = "home";
+            render();
+          });
+        });
+      }
+
+      function renderNav() {
+        const role = roles[state.role];
+        $("#rolePill").innerHTML = `${icon(role.icon)} ${role.label}`;
+        $("#sideNav").innerHTML = role.nav
+          .map(([key, label, itemIcon]) => `
+            <button class="nav-item ${key === state.page ? "active" : ""}" data-page="${key}">
+              ${icon(itemIcon)}
+              <span>${label}</span>
+            </button>
+          `)
+          .join("");
+
+        $("#bottomNav").innerHTML = role.nav
+          .slice(0, 4)
+          .map(([key, label, itemIcon]) => `
+            <button class="${key === state.page ? "active" : ""}" data-page="${key}">
+              ${icon(itemIcon)}
+              <span>${label}</span>
+            </button>
+          `)
+          .join("");
+
+        document.querySelectorAll("[data-page]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.page = button.dataset.page;
+            render();
+          });
+        });
+      }
+
+      function pageMeta() {
+        const role = roles[state.role];
+        const item = role.nav.find(([key]) => key === state.page) || role.nav[0];
+        return { title: item[1], path: item[3] };
+      }
+
+      function metricCards(items, className = "") {
+        return `<section class="metrics ${className}">${items.map((item) => `
+          <div class="card">
+            <span>${item[0]}</span>
+            <strong>${item[1]}</strong>
+            <small>${item[2]}</small>
+          </div>
+        `).join("")}</section>`;
+      }
+
+      function signalPanel(className = "") {
+        return `
+          <section class="panel ${className}">
+            <div class="panel-head"><h3>Сигналы</h3><span>3</span></div>
+            <div class="list">
+              <div class="list-row"><div><strong>Ильяс Р.</strong><span>2 пропуска</span></div><span class="status bad">Н</span></div>
+              <div class="list-row"><div><strong>Оплата</strong><span>срок сегодня</span></div><span class="status warn">3</span></div>
+              <div class="list-row"><div><strong>Самира М.</strong><span>повторить мадд</span></div><span class="status good">цель</span></div>
+            </div>
+          </section>
+        `;
+      }
+
+      function quickActionsPanel(className = "") {
+        return `
+          <section class="panel ${className}">
+            <div class="panel-head"><h3>Быстрые действия</h3><span>MVP</span></div>
+            <div class="list">
+              <button class="btn js-action" data-message="Открыть урок">Открыть урок</button>
+              <button class="btn secondary js-action" data-message="Открыть журнал">Открыть журнал</button>
+              <button class="btn secondary js-action" data-message="Отметить оплату">Отметить оплату</button>
+            </div>
+          </section>
+        `;
+      }
+
+      function sidePanels() {
+        return `
+          <aside class="stack">
+            ${signalPanel()}
+            ${quickActionsPanel()}
+          </aside>
+        `;
+      }
+
+      function journalTable(className = "") {
+        const rows = [
+          ["Амина С.", "Нур", ["П", "good"], ["5", "good"], ["Н", "bad"], ["П", "good"], ["У", "warn"]],
+          ["Юсуф К.", "Нур", ["П", "good"], ["4", "good"], ["П", "good"], ["П", "good"], ["5", "good"]],
+          ["Самира М.", "Нур", ["У", "warn"], ["П", "good"], ["3", "warn"], ["П", "good"], ["П", "good"]],
+          ["Ильяс Р.", "Нур", ["П", "good"], ["Н", "bad"], ["П", "good"], ["4", "good"], ["П", "good"]],
+          ["Мариям Х.", "Нур", ["5", "good"], ["П", "good"], ["П", "good"], ["П", "good"], ["4", "good"]]
+        ];
+
+        return `
+          <section class="panel ${className}">
+            <div class="panel-head"><h3>Журнал группы</h3><span>май</span></div>
+            <div class="table-wrap">
+              <table class="journal">
+                <thead>
+                  <tr>
+                    <th>Ученик</th>
+                    <th class="date-head"><strong>06</strong><span>ср</span></th>
+                    <th class="date-head"><strong>09</strong><span>сб</span></th>
+                    <th class="date-head"><strong>13</strong><span>ср</span></th>
+                    <th class="date-head"><strong>16</strong><span>сб</span></th>
+                    <th class="date-head"><strong>20</strong><span>ср</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows.map((row) => `
+                    <tr>
+                      <td><div class="student-cell"><strong>${row[0]}</strong><span>группа ${row[1]}</span></div></td>
+                      ${row.slice(2).map(([value, tone]) => `<td><button class="mark ${tone} js-action" data-message="Ячейка журнала: ${value}">${value}</button></td>`).join("")}
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        `;
+      }
+
+      function simpleTable(title, badge, columns, rows) {
+        return `
+          <section class="panel">
+            <div class="panel-head"><h3>${title}</h3><span>${badge}</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>${columns.map((col) => `<th>${col}</th>`).join("")}</tr></thead>
+                <tbody>
+                  ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        `;
+      }
+
+      function teacherPage() {
+        if (state.page === "journal") {
+          return `<div class="content">${`<div class="stack">${journalTable()}</div>`}${sidePanels()}</div>`;
+        }
+
+        if (state.page === "groups") {
+          return `<div class="content">${`<div class="stack">
+            ${simpleTable("Группы", "преподаватель", ["Группа", "Курс", "Ближайший урок", "Ученики", "Статус"], [
+              ["<a href='#'>Нур</a>", "Таджвид: основа", "Сегодня 18:30", "8", "<span class='status good'>активна</span>"],
+              ["<a href='#'>Ихсан</a>", "Таджвид: чтение", "Сегодня 20:00", "6", "<span class='status good'>активна</span>"],
+              ["<a href='#'>Фаджр</a>", "Таджвид: основа", "Завтра 17:00", "7", "<span class='status warn'>нет дз</span>"]
+            ])}
+          </div>`}${sidePanels()}</div>`;
+        }
+
+        if (state.page === "students") {
+          return `<div class="content content-wide">${simpleTable("Ученики", "посещаемость", ["Ученик", "Группа", "Посещаемость", "Прогресс", "Оплата"], [
+            ["Амина С.", "Нур", "92%", "<span class='status good'>good</span>", "<span class='status warn'>pending</span>"],
+            ["Ильяс Р.", "Нур", "75%", "<span class='status warn'>satisfactory</span>", "<span class='status bad'>overdue</span>"],
+            ["Юсуф К.", "Нур", "100%", "<span class='status good'>excellent</span>", "<span class='status good'>paid</span>"]
+          ])}</div>`;
+        }
+
+        if (state.page === "homework" || state.page === "materials" || state.page === "payments") {
+          const title = state.page === "homework" ? "Домашние задания" : state.page === "materials" ? "Материалы" : "Оплата";
+          const rows = state.page === "payments"
+            ? [["Амина С.", "2 500 ₽", "май", "<span class='status warn'>pending</span>"], ["Ильяс Р.", "2 500 ₽", "май", "<span class='status bad'>overdue</span>"], ["Юсуф К.", "2 500 ₽", "май", "<span class='status good'>paid</span>"]]
+            : [["Суры 91-93", "Нур", "20 мая", "<span class='status good'>видно</span>"], ["Правило ихфа", "Нур", "ссылка", "<span class='status neutral'>материал</span>"], ["Повторение мадда", "Ихсан", "текст", "<span class='status warn'>скрыт</span>"]];
+          const cols = state.page === "payments" ? ["Ученик", "Сумма", "Период", "Статус"] : ["Название", "Группа", "Срок/тип", "Статус"];
+          return `<div class="content content-wide">${simpleTable(title, "список", cols, rows)}</div>`;
+        }
+
+        return `
+          <div class="content dashboard-content">
+            <div class="dashboard-layout">
+              <section class="hero dashboard-hero">
+                <div>
+                  <h2>Группа Нур</h2>
+                  <div class="hero-meta">
+                    <span class="chip primary">18:30</span>
+                    <span class="chip">8 учеников</span>
+                    <span class="chip">1 пропуск</span>
+                    <span class="chip">3 оплаты</span>
+                  </div>
+                </div>
+                <div class="hero-actions">
+                  <button class="btn js-action" data-message="Открыть ближайший урок">Открыть урок</button>
+                  <button class="btn secondary js-action" data-message="Открыть журнал группы">Журнал</button>
+                </div>
+              </section>
+              ${signalPanel("dashboard-signals")}
+              ${metricCards([["Ученики", "42", "активные"], ["Уроки", "2", "сегодня"], ["Пропуски", "5", "май"], ["Оплата", "3", "ожидают"]], "dashboard-metrics")}
+              ${journalTable("dashboard-journal")}
+              ${quickActionsPanel("dashboard-actions")}
+            </div>
+          </div>
+        `;
+      }
+
+      function studentPage() {
+        const home = `
+          <div class="content">
+            <div class="stack">
+              <section class="hero">
+                <div>
+                  <h2>Урок сегодня</h2>
+                  <div class="hero-meta">
+                    <span class="chip primary">18:30</span>
+                    <span class="chip">группа Нур</span>
+                    <span class="chip">Таджвид</span>
+                    <span class="chip">домашнее есть</span>
+                  </div>
+                </div>
+                <div class="hero-actions">
+                  <button class="btn js-action" data-message="Открыто домашнее задание">Домашнее</button>
+                  <button class="btn secondary js-action" data-message="Открыты материалы">Материалы</button>
+                </div>
+              </section>
+              ${metricCards([["Ближайший урок", "18:30", "сегодня"], ["Домашнее", "2", "активные"], ["Материалы", "4", "открыты"], ["Оплата", "pending", "май"]])}
+              ${simpleTable("Мои задания", "видно ученику", ["Задание", "Срок", "Материал", "Статус"], [
+                ["Суры 91-93", "20 мая", "текст", "<span class='status good'>активно</span>"],
+                ["Правило ихфа", "22 мая", "ссылка", "<span class='status neutral'>новое</span>"]
+              ])}
+            </div>
+            <aside class="stack">
+              <section class="panel">
+                <div class="panel-head"><h3>Прогресс</h3><span>открыто</span></div>
+                <div class="list">
+                  <div class="list-row"><div><strong>Мадд</strong><span>повторить</span></div><span class="status warn">good</span></div>
+                  <div class="list-row"><div><strong>Ихфа</strong><span>стабильно</span></div><span class="status good">excellent</span></div>
+                </div>
+              </section>
+              <section class="panel">
+                <div class="panel-head"><h3>Оплата</h3><span>май</span></div>
+                <div class="list">
+                  <div class="list-row"><div><strong>2 500 ₽</strong><span>до 20 мая</span></div><span class="status warn">pending</span></div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        `;
+
+        if (state.page === "home") return home;
+        if (state.page === "schedule") return `<div class="content content-wide">${simpleTable("Расписание", "ученик", ["Дата", "Время", "Курс", "Группа", "Преподаватель"], [["16 мая", "18:30", "Таджвид", "Нур", "Айша С."], ["20 мая", "18:30", "Таджвид", "Нур", "Айша С."]])}</div>`;
+        if (state.page === "attendance") return `<div class="content content-wide">${simpleTable("Посещаемость", "только свои данные", ["Дата", "Группа", "Отметка", "Комментарий"], [["06 мая", "Нур", "<span class='mark good'>П</span>", ""], ["13 мая", "Нур", "<span class='mark bad'>Н</span>", "пропуск"], ["16 мая", "Нур", "<span class='mark warn'>У</span>", "уважительная"]])}</div>`;
+        if (state.page === "progress") return `<div class="content content-wide">${simpleTable("Прогресс", "открытая часть", ["Правило", "Уровень", "Повторить", "Комментарий"], [["Мадд", "<span class='status warn'>good</span>", "да", "короткие слова"], ["Ихфа", "<span class='status good'>excellent</span>", "нет", "стабильно"]])}</div>`;
+        if (state.page === "payments") return `<div class="content content-wide">${simpleTable("Оплата", "ученик", ["Период", "Сумма", "Срок", "Статус"], [["май", "2 500 ₽", "20 мая", "<span class='status warn'>pending</span>"], ["апрель", "2 500 ₽", "20 апреля", "<span class='status good'>paid</span>"]])}</div>`;
+        return home;
+      }
+
+      function adminPage() {
+        if (state.page === "courses") return `<div class="content content-wide">${simpleTable("Курсы", "админ", ["Курс", "Формат", "Группы", "Статус"], [["Таджвид: основа", "группа", "3", "<span class='status good'>активен</span>"], ["Таджвид: чтение", "группа", "2", "<span class='status good'>активен</span>"]])}</div>`;
+        if (state.page === "groups") return `<div class="content content-wide">${simpleTable("Группы", "админ", ["Группа", "Курс", "Преподаватель", "Расписание", "Проблема"], [["Нур", "Таджвид", "Айша С.", "ср, сб", "<span class='status good'>нет</span>"], ["Фаджр", "Таджвид", "не назначен", "нет", "<span class='status bad'>настроить</span>"]])}</div>`;
+        if (state.page === "students") return `<div class="content content-wide">${simpleTable("Ученики", "админ", ["Ученик", "Группа", "Оплата", "Посещаемость", "Статус"], [["Амина С.", "Нур", "<span class='status warn'>pending</span>", "92%", "активна"], ["Ильяс Р.", "Нур", "<span class='status bad'>overdue</span>", "75%", "активен"]])}</div>`;
+        if (state.page === "teachers") return `<div class="content content-wide">${simpleTable("Преподаватели", "админ", ["Преподаватель", "Группы", "Ближайший урок", "Статус"], [["Айша С.", "2", "сегодня 18:30", "<span class='status good'>активна</span>"], ["Омар Х.", "1", "завтра 17:00", "<span class='status good'>активен</span>"]])}</div>`;
+        if (state.page === "payments") return `<div class="content content-wide">${simpleTable("Оплата", "ручной учет", ["Ученик", "Группа", "Сумма", "Срок", "Статус"], [["Амина С.", "Нур", "2 500 ₽", "20 мая", "<span class='status warn'>pending</span>"], ["Ильяс Р.", "Нур", "2 500 ₽", "10 мая", "<span class='status bad'>overdue</span>"], ["Юсуф К.", "Нур", "2 500 ₽", "20 мая", "<span class='status good'>paid</span>"]])}</div>`;
+
+        return `
+          <div class="content">
+            <div class="stack">
+              <section class="hero">
+                <div>
+                  <h2>Учебный процесс</h2>
+                  <div class="hero-meta">
+                    <span class="chip primary">14 групп</span>
+                    <span class="chip">42 ученика</span>
+                    <span class="chip">6 преподавателей</span>
+                    <span class="chip">3 оплаты</span>
+                  </div>
+                </div>
+                <div class="hero-actions">
+                  <button class="btn js-action" data-message="Создать группу">Создать группу</button>
+                  <button class="btn secondary js-action" data-message="Добавить ученика">Добавить ученика</button>
+                </div>
+              </section>
+              ${metricCards([["Курсы", "2", "активные"], ["Группы", "14", "в работе"], ["Ученики", "42", "активные"], ["Преподаватели", "6", "активные"]])}
+              ${simpleTable("Проблемные группы", "контроль", ["Группа", "Проблема", "Действие"], [["Фаджр", "нет расписания", "<button class='btn secondary js-action' data-message='Настроить расписание'>Настроить</button>"], ["Сабр", "нет преподавателя", "<button class='btn secondary js-action' data-message='Назначить преподавателя'>Назначить</button>"]])}
+            </div>
+            ${sidePanels()}
+          </div>
+        `;
+      }
+
+      function renderContent() {
+        const meta = pageMeta();
+        $("#pageTitle").textContent = meta.title;
+        $("#pagePath").textContent = meta.path;
+        const user = roles[state.role].user;
+        document.querySelector(".user-pill").innerHTML = `<span class="avatar">${user.slice(0, 1)}${user.split(" ")[1]?.slice(0, 1) || ""}</span> ${user}`;
+
+        if (state.role === "teacher") $("#pageContent").innerHTML = teacherPage();
+        if (state.role === "student") $("#pageContent").innerHTML = studentPage();
+        if (state.role === "admin") $("#pageContent").innerHTML = adminPage();
+
+        bindActions($("#pageContent"));
+      }
+
+      function render() {
+        renderRoleSwitch();
+        renderNav();
+        renderContent();
+        bindActions(document);
+      }
+
+      render();
+    </script>
+  </body>
+</html>

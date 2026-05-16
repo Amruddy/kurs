@@ -43,15 +43,6 @@ export default async function TeacherPage() {
 
   return (
     <>
-      <div className="page-heading">
-        <span className="status">Преподаватель</span>
-        <h1>Рабочая область преподавателя</h1>
-        <p>
-          Здесь показываются группы, назначенные текущему преподавателю. Журнал, расписание и уроки
-          будут добавлены на следующих этапах.
-        </p>
-      </div>
-
       <section className="grid">
         <div className="panel">
           <h2>{session.name}</h2>
@@ -92,21 +83,6 @@ export default async function TeacherPage() {
       <section className="panel section">
         <div className="section-heading">
           <h2>Мои группы</h2>
-          <Link className="secondary-button link-button" href="/teacher/groups">
-            Открыть список
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/attendance">
-            Посещаемость
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/students">
-            Ученики
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/homework">
-            ДЗ
-          </Link>
-          <Link className="secondary-button link-button" href="/teacher/materials">
-            Материалы
-          </Link>
         </div>
         {groups.length === 0 ? (
           <p>Пока нет назначенных групп.</p>
