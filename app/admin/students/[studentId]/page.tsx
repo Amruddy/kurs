@@ -19,6 +19,18 @@ function dateValue(date: Date | null) {
   return date ? date.toISOString().slice(0, 10) : "";
 }
 
+function isPaymentOverdue(payment: { status: PaymentStatus; dueAt: Date }) {
+  return payment.status === PaymentStatus.overdue || (payment.status === PaymentStatus.pending && payment.dueAt < new Date());
+}
+
+function paymentState(payment: { status: PaymentStatus; dueAt: Date }) {
+  if (isPaymentOverdue(payment)) {
+    return paymentStatusLabels[PaymentStatus.overdue];
+  }
+
+  return paymentStatusLabels[payment.status];
+}
+
 export default async function AdminStudentPage({ params }: AdminStudentPageProps) {
   const { studentId } = await params;
   const session = await requireWorkspace("admin");
@@ -59,41 +71,92 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
     );
   }
 
+  const activeGroupLinks = student.groupLinks.filter((link) => link.status === "active");
+  const overduePayments = student.payments.filter(isPaymentOverdue);
+  const pendingPayments = student.payments.filter(
+    (payment) => payment.status === PaymentStatus.pending && !isPaymentOverdue(payment),
+  );
+  const contactText = [student.phone, student.email].filter(Boolean).join(", ") || "Не указаны";
+
   return (
     <>
       <div className="page-heading">
-        <span className="status">{studentStatusLabels[student.status]}</span>
         <h1>{student.name}</h1>
-        <p>Карточка ученика, контакты, группы и индивидуальные изменения оплаты.</p>
       </div>
 
-      <section className="panel">
-        <h2>Основные данные</h2>
-        <form className="form-grid" action={updateStudent.bind(null, student.id)}>
-          <label>
-            Имя
-            <input name="name" required defaultValue={student.name} />
-          </label>
-          <label>
-            Телефон
-            <input name="phone" defaultValue={student.phone ?? ""} />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" defaultValue={student.email ?? ""} />
-          </label>
-          <label>
-            Статус
-            <select name="status" defaultValue={student.status}>
-              <option value="active">Активный</option>
-              <option value="paused">Приостановлен</option>
-              <option value="archived">Архивный</option>
-            </select>
-          </label>
-          <button className="button" type="submit">
-            Сохранить
-          </button>
-        </form>
+      <section className="admin-detail-grid">
+        <div className="panel admin-main-panel">
+          <div className="section-heading">
+            <h2>Основные данные</h2>
+            <span className="status">{studentStatusLabels[student.status]}</span>
+          </div>
+          <form className="form-grid" action={updateStudent.bind(null, student.id)}>
+            <label>
+              Имя
+              <input name="name" required defaultValue={student.name} />
+            </label>
+            <label>
+              Телефон
+              <input name="phone" defaultValue={student.phone ?? ""} />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" defaultValue={student.email ?? ""} />
+            </label>
+            <label>
+              Статус
+              <select name="status" defaultValue={student.status}>
+                <option value="active">Активный</option>
+                <option value="paused">Приостановлен</option>
+                <option value="archived">Архивный</option>
+              </select>
+            </label>
+            <button className="button" type="submit">
+              Сохранить
+            </button>
+          </form>
+        </div>
+
+        <aside className="panel admin-side-panel">
+          <h2>Состояние ученика</h2>
+          <div className="info-list">
+            <div className="info-row">
+              <span>Контакты</span>
+              <strong>{contactText}</strong>
+            </div>
+            <div className="info-row">
+              <span>Активные группы</span>
+              <strong>{activeGroupLinks.length}</strong>
+            </div>
+            <div className="info-row">
+              <span>Оплаты к вниманию</span>
+              <strong>{overduePayments.length + pendingPayments.length}</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="metric-grid section" aria-label="Показатели ученика">
+        <div className="panel metric-card">
+          <span>Группы</span>
+          <strong>{activeGroupLinks.length}</strong>
+          <p>Активные назначения</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Оплаты</span>
+          <strong>{student.payments.length}</strong>
+          <p>Записи в системе</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Просрочено</span>
+          <strong>{overduePayments.length}</strong>
+          <p>Требуют проверки</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Ожидает</span>
+          <strong>{pendingPayments.length}</strong>
+          <p>По будущему сроку</p>
+        </div>
       </section>
 
       <section className="panel section">
@@ -120,7 +183,7 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
                       {payment.amount} {payment.currency}
                     </td>
                     <td>{payment.dueAt.toLocaleDateString("ru-RU")}</td>
-                    <td>{paymentStatusLabels[payment.status]}</td>
+                    <td>{paymentState(payment)}</td>
                     <td>{payment.history.length}</td>
                   </tr>
                 ))}

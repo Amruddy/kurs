@@ -697,6 +697,59 @@ td a,
   align-items: start;
 }
 
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+.admin-main-panel,
+.admin-side-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 100%;
+}
+
+.info-list {
+  display: grid;
+  gap: 10px;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.info-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.info-row strong,
+.info-row a {
+  color: var(--primary);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.info-row span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.info-row p {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .settings-stack {
   display: grid;
   gap: 12px;
@@ -1377,6 +1430,7 @@ td a,
   }
 
   .director-grid,
+  .admin-detail-grid,
   .student-overview-grid,
   .teacher-overview-grid {
     grid-template-columns: 1fr;
@@ -1444,6 +1498,7 @@ td a,
   .action-grid,
   .lesson-workspace-grid,
   .group-workspace,
+  .admin-detail-grid,
   .student-tabs,
   .student-dashboard-links,
   .metric-grid,

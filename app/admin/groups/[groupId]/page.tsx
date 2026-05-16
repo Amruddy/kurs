@@ -26,11 +26,15 @@ type AdminGroupPageProps = {
 };
 
 function paymentState(payment: { status: PaymentStatus; dueAt: Date }) {
-  if (payment.status === PaymentStatus.pending && payment.dueAt < new Date()) {
-    return "Просрочено для отображения";
+  if (isPaymentOverdue(payment)) {
+    return paymentStatusLabels[PaymentStatus.overdue];
   }
 
   return paymentStatusLabels[payment.status];
+}
+
+function isPaymentOverdue(payment: { status: PaymentStatus; dueAt: Date }) {
+  return payment.status === PaymentStatus.overdue || (payment.status === PaymentStatus.pending && payment.dueAt < new Date());
 }
 
 function dateValue(date: Date | null) {
@@ -108,22 +112,21 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
     },
     orderBy: [{ status: "asc" }, { weekday: "asc" }, { startTime: "asc" }],
   });
+  const activeScheduleRuleCount = scheduleRules.filter((rule) => rule.status === "active").length;
+  const overduePayments = group.payments.filter(isPaymentOverdue);
+  const nextLesson = group.lessons[0];
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">{groupStatusLabels[group.status]}</span>
         <h1>{group.name}</h1>
-        <p>
-          {group.course.name}. Преподаватель: {group.teacher?.name ?? "не назначен"}.
-        </p>
       </div>
 
-      <section className="group-workspace">
-        <div className="panel">
+      <section className="admin-detail-grid">
+        <div className="panel admin-main-panel">
           <div className="section-heading">
             <h2>Состав группы</h2>
-            <span className="status">{activeStudentIds.size} активных</span>
+            <span className="status">{groupStatusLabels[group.status]}</span>
           </div>
           {group.students.length === 0 ? (
             <p>В группе пока нет учеников.</p>
@@ -165,35 +168,78 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
           )}
         </div>
 
-        <div className="panel">
-          <h2>Ближайшие уроки</h2>
-          {group.lessons.length === 0 ? (
-            <p>Ближайшие уроки пока не созданы.</p>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Дата</th>
-                    <th>Время</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.lessons.map((lesson) => (
-                    <tr key={lesson.id}>
-                      <td>{lesson.startsAt.toLocaleDateString("ru-RU")}</td>
-                      <td>
-                        {lesson.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-                        {lesson.endsAt
-                          ? `-${lesson.endsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
-                          : ""}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <aside className="panel admin-side-panel">
+          <h2>Контроль группы</h2>
+          <div className="signal-list">
+            <div className="signal-item" data-tone={group.teacher ? "ok" : "warning"}>
+              <strong>{group.teacher ? 1 : 0}</strong>
+              <div>
+                <span>Преподаватель</span>
+                <p>{group.teacher?.name ?? "Не назначен"}</p>
+              </div>
             </div>
-          )}
+            <div className="signal-item" data-tone={activeScheduleRuleCount > 0 ? "ok" : "warning"}>
+              <strong>{activeScheduleRuleCount}</strong>
+              <div>
+                <span>Активное расписание</span>
+                <p>{activeScheduleRuleCount > 0 ? "Правила расписания заданы." : "Расписание нужно настроить."}</p>
+              </div>
+            </div>
+            <div className="signal-item" data-tone={activeStudentIds.size > 0 ? "ok" : "warning"}>
+              <strong>{activeStudentIds.size}</strong>
+              <div>
+                <span>Активные ученики</span>
+                <p>{activeStudentIds.size > 0 ? "Состав группы заполнен." : "В группе нет активных учеников."}</p>
+              </div>
+            </div>
+            <div className="signal-item" data-tone={overduePayments.length > 0 ? "danger" : "ok"}>
+              <strong>{overduePayments.length}</strong>
+              <div>
+                <span>Просроченные оплаты</span>
+                <p>{overduePayments.length > 0 ? "Нужно проверить оплату учеников." : "Просроченных оплат нет."}</p>
+              </div>
+            </div>
+          </div>
+          <div className="info-list">
+            <div className="info-row">
+              <span>Курс</span>
+              <Link href={`/admin/courses/${group.course.id}`}>{group.course.name}</Link>
+            </div>
+            <div className="info-row">
+              <span>Ближайший урок</span>
+              <strong>
+                {nextLesson
+                  ? `${nextLesson.startsAt.toLocaleDateString("ru-RU")} ${nextLesson.startsAt.toLocaleTimeString("ru-RU", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`
+                  : "Нет"}
+              </strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="metric-grid section" aria-label="Показатели группы">
+        <div className="panel metric-card">
+          <span>Ученики</span>
+          <strong>{activeStudentIds.size}</strong>
+          <p>Активный состав</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Расписание</span>
+          <strong>{activeScheduleRuleCount}</strong>
+          <p>Активные правила</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Уроки</span>
+          <strong>{group.lessons.length}</strong>
+          <p>Ближайшие занятия</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Просрочено</span>
+          <strong>{overduePayments.length}</strong>
+          <p>Оплаты требуют внимания</p>
         </div>
       </section>
 

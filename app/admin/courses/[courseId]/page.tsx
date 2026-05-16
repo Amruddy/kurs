@@ -18,11 +18,15 @@ type AdminCoursePageProps = {
 };
 
 function paymentState(payment: { status: PaymentStatus; dueAt: Date }) {
-  if (payment.status === PaymentStatus.pending && payment.dueAt < new Date()) {
-    return "Просрочено для отображения";
+  if (isPaymentOverdue(payment)) {
+    return paymentStatusLabels[PaymentStatus.overdue];
   }
 
   return paymentStatusLabels[payment.status];
+}
+
+function isPaymentOverdue(payment: { status: PaymentStatus; dueAt: Date }) {
+  return payment.status === PaymentStatus.overdue || (payment.status === PaymentStatus.pending && payment.dueAt < new Date());
 }
 
 export default async function AdminCoursePage({ params }: AdminCoursePageProps) {
@@ -72,31 +76,89 @@ export default async function AdminCoursePage({ params }: AdminCoursePageProps) 
   const unpaid = course.payments.filter(
     (payment) => payment.status === PaymentStatus.pending || payment.status === PaymentStatus.overdue,
   );
+  const overduePayments = course.payments.filter(isPaymentOverdue);
+  const activeGroupsCount = course.groups.filter((group) => group.status === "active").length;
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">{courseStatusLabels[course.status]}</span>
         <h1>{course.name}</h1>
-        <p>{course.description || "Описание пока не заполнено."}</p>
       </div>
 
-      <section className="grid">
-        <div className="panel">
-          <h2>{courseFormatLabels[course.format]}</h2>
-          <p>Формат обучения</p>
+      <section className="admin-detail-grid">
+        <div className="panel admin-main-panel">
+          <div className="section-heading">
+            <h2>Данные курса</h2>
+            <span className="status">{courseStatusLabels[course.status]}</span>
+          </div>
+          <div className="info-list">
+            <div className="info-row">
+              <span>Описание</span>
+              <p>{course.description || "Не заполнено"}</p>
+            </div>
+            <div className="info-row">
+              <span>Формат</span>
+              <strong>{courseFormatLabels[course.format]}</strong>
+            </div>
+            <div className="info-row">
+              <span>Шкала оценки</span>
+              <strong>{course.lessonMarkScale ? lessonMarkScaleLabels[course.lessonMarkScale] : "Нет"}</strong>
+            </div>
+            <div className="info-row">
+              <span>Таджвид-прогресс</span>
+              <strong>{course.progressSettings?.isProgressEnabled ? "Включен" : "Выключен"}</strong>
+            </div>
+          </div>
         </div>
-        <div className="panel">
-          <h2>{course.lessonMarkScale ? lessonMarkScaleLabels[course.lessonMarkScale] : "Нет"}</h2>
-          <p>Шкала оценки</p>
+
+        <aside className="panel admin-side-panel">
+          <h2>Контроль курса</h2>
+          <div className="signal-list">
+            <div className="signal-item" data-tone={course.groups.length > 0 ? "ok" : "warning"}>
+              <strong>{course.groups.length}</strong>
+              <div>
+                <span>Группы курса</span>
+                <p>{course.groups.length > 0 ? `${activeGroupsCount} активных групп.` : "Курс пока без групп."}</p>
+              </div>
+            </div>
+            <div className="signal-item" data-tone={courseStudentCount > 0 ? "ok" : "warning"}>
+              <strong>{courseStudentCount}</strong>
+              <div>
+                <span>Активные ученики</span>
+                <p>{courseStudentCount > 0 ? "Есть ученики для учебного процесса." : "Сначала добавьте учеников в группы."}</p>
+              </div>
+            </div>
+            <div className="signal-item" data-tone={overduePayments.length > 0 ? "danger" : "ok"}>
+              <strong>{overduePayments.length}</strong>
+              <div>
+                <span>Просроченные оплаты</span>
+                <p>{overduePayments.length > 0 ? "Нужно проверить сроки оплат." : "Просроченных оплат нет."}</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="metric-grid section" aria-label="Показатели курса">
+        <div className="panel metric-card">
+          <span>Группы</span>
+          <strong>{course.groups.length}</strong>
+          <p>Привязаны к курсу</p>
         </div>
-        <div className="panel">
-          <h2>{course.progressSettings?.isProgressEnabled ? "Включен" : "Выключен"}</h2>
-          <p>Таджвид-прогресс</p>
+        <div className="panel metric-card">
+          <span>Ученики</span>
+          <strong>{courseStudentCount}</strong>
+          <p>Активный состав</p>
         </div>
-        <div className="panel">
-          <h2>{unpaid.length}</h2>
-          <p>Ожидают оплаты</p>
+        <div className="panel metric-card">
+          <span>Оплаты</span>
+          <strong>{course.payments.length}</strong>
+          <p>Записи по курсу</p>
+        </div>
+        <div className="panel metric-card">
+          <span>К оплате</span>
+          <strong>{unpaid.length}</strong>
+          <p>Ожидают внимания</p>
         </div>
       </section>
 
