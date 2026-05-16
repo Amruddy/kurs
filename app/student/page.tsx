@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { PaymentStatus } from "@prisma/client";
-import { paymentStatusLabels, progressLevelLabels } from "@/app/lib/learning-labels";
+import { attendanceMarkFullLabels, paymentStatusLabels, progressLevelLabels } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 
@@ -62,6 +61,7 @@ export default async function StudentPage() {
     progressRecords,
     priorityPayment,
     latestPayment,
+    latestCompletedLesson,
   ] = student
     ? await Promise.all([
         prisma.lesson.findFirst({
@@ -148,10 +148,29 @@ export default async function StudentPage() {
           include: { course: true, group: true },
           orderBy: [{ dueAt: "desc" }, { createdAt: "desc" }],
         }),
+        prisma.lesson.findFirst({
+          where: {
+            organizationId: session.organizationId,
+            groupId: { in: groupIds },
+            startsAt: { lt: now },
+          },
+          include: {
+            group: { include: { course: true, teacher: true } },
+            course: true,
+            journalEntries: { where: { studentId: student.id } },
+          },
+          orderBy: { startsAt: "desc" },
+        }),
       ])
-    : [null, [], [], [], [], [], null, null];
+    : [null, [], [], [], [], [], null, null, null];
 
   const payment = priorityPayment ?? latestPayment;
+  const latestAttendanceEntry = latestCompletedLesson?.journalEntries[0] ?? null;
+  const latestAttendanceText = latestAttendanceEntry?.mark
+    ? attendanceMarkFullLabels[latestAttendanceEntry.mark]
+    : latestCompletedLesson
+      ? "Присутствовал"
+      : "Нет истории";
 
   return (
     <>
@@ -226,7 +245,7 @@ export default async function StudentPage() {
             <div className="student-list compact">
               {materials.map((material) => (
                 <article className="student-list-item compact" key={material.id}>
-                  {material.url ? <Link href={material.url}>{material.title}</Link> : <strong>{material.title}</strong>}
+                  {material.url ? <a href={material.url}>{material.title}</a> : <strong>{material.title}</strong>}
                   <p>{material.homework ? "Домашнее задание" : material.lesson ? "Урок" : material.group?.name ?? "Курс"}</p>
                 </article>
               ))}
@@ -289,14 +308,21 @@ export default async function StudentPage() {
           {!student || student.groupLinks.length === 0 ? (
             <p>Учебные группы пока не назначены.</p>
           ) : (
-            <div className="student-group-list">
-              {student.groupLinks.map((link) => (
-                <article className="student-group-card" key={link.id}>
-                  <strong>{link.group.name}</strong>
-                  <p>{link.group.course.name}</p>
-                  <span>{link.group.teacher?.name ?? "Преподаватель не назначен"}</span>
-                </article>
-              ))}
+            <div className="student-list compact">
+              <article className="student-list-item compact">
+                <strong>{student.groupLinks.map((link) => link.group.name).join(", ")}</strong>
+                <p>{student.groupLinks.map((link) => link.group.course.name).join(", ")}</p>
+                <span>{student.groupLinks.map((link) => link.group.teacher?.name ?? "Преподаватель не назначен").join(", ")}</span>
+              </article>
+              <article className="student-list-item compact">
+                <strong>{latestAttendanceText}</strong>
+                <p>
+                  {latestCompletedLesson
+                    ? `${formatDate(latestCompletedLesson.startsAt)} · ${latestCompletedLesson.group?.name ?? latestCompletedLesson.course.name}`
+                    : "Прошедших уроков пока нет"}
+                </p>
+                <span>Последний урок</span>
+              </article>
             </div>
           )}
         </aside>

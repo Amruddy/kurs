@@ -1,6 +1,16 @@
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 
+function formatDateTime(date: Date) {
+  return date.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function StudentSchedulePage() {
   const session = await requireWorkspace("student");
   const student = await prisma.student.findFirst({
@@ -23,50 +33,89 @@ export default async function StudentSchedulePage() {
         take: 20,
       })
     : [];
+  const nextLesson = lessons[0] ?? null;
+  const groupCount = new Set(lessons.map((lesson) => lesson.groupId).filter(Boolean)).size;
+  const teacherCount = new Set(lessons.map((lesson) => lesson.group?.teacher?.id).filter(Boolean)).size;
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">Расписание</span>
         <h1>Моё расписание</h1>
-        <p>Ближайшие занятия по активным группам ученика.</p>
       </div>
 
-      <section className="panel">
-        {lessons.length === 0 ? (
-          <p>Ближайшие уроки пока не созданы.</p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Дата</th>
-                  <th>Группа</th>
-                  <th>Курс</th>
-                  <th>Преподаватель</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lessons.map((lesson) => (
-                  <tr key={lesson.id}>
-                    <td>
-                      {lesson.startsAt.toLocaleString("ru-RU", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td>{lesson.group?.name ?? "Индивидуально"}</td>
-                    <td>{lesson.group?.course.name ?? lesson.course.name}</td>
-                    <td>{lesson.group?.teacher?.name ?? "Не назначен"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <section className="student-overview-grid">
+        <div className="panel student-main-panel">
+          <div className="section-heading">
+            <div>
+              <span className="status">Расписание</span>
+              <h2>Ближайшие занятия</h2>
+            </div>
           </div>
-        )}
+          {lessons.length === 0 ? (
+            <p>Ближайшие уроки пока не созданы.</p>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Дата</th>
+                    <th>Группа</th>
+                    <th>Курс</th>
+                    <th>Преподаватель</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lessons.map((lesson) => (
+                    <tr key={lesson.id}>
+                      <td>{formatDateTime(lesson.startsAt)}</td>
+                      <td>{lesson.group?.name ?? "Индивидуально"}</td>
+                      <td>{lesson.group?.course.name ?? lesson.course.name}</td>
+                      <td>{lesson.group?.teacher?.name ?? "Не назначен"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <aside className="panel student-side-panel">
+          <span className="status">Ближайшее</span>
+          <h2>Следующий урок</h2>
+          {nextLesson ? (
+            <div className="student-highlight compact">
+              <strong>{formatDateTime(nextLesson.startsAt)}</strong>
+              <p>
+                {nextLesson.group?.name ?? "Индивидуально"} · {nextLesson.group?.course.name ?? nextLesson.course.name}
+              </p>
+            </div>
+          ) : (
+            <p>Уроков в расписании пока нет.</p>
+          )}
+        </aside>
+      </section>
+
+      <section className="metric-grid section" aria-label="Сводка расписания">
+        <div className="panel metric-card">
+          <span>Занятия</span>
+          <strong>{lessons.length}</strong>
+          <p>Ближайшие уроки</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Группы</span>
+          <strong>{groupCount}</strong>
+          <p>Активное обучение</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Преподаватели</span>
+          <strong>{teacherCount}</strong>
+          <p>Назначены в группах</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Следующий урок</span>
+          <strong>{nextLesson ? "есть" : "нет"}</strong>
+          <p>{nextLesson ? nextLesson.group?.name ?? nextLesson.course.name : "Ожидает расписания"}</p>
+        </div>
       </section>
     </>
   );

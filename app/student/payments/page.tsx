@@ -11,8 +11,34 @@ function paymentState(payment: { status: PaymentStatus; dueAt: Date }) {
   return paymentStatusLabels[payment.status];
 }
 
+function formatDate(date: Date) {
+  return date.toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function formatPayment(amount: number | null | undefined, currency = "RUB") {
+  return `${amount ?? 0} ${currency}`;
+}
+
+function formatPeriod(payment: { periodType: string; periodStart: Date | null; periodEnd: Date | null }) {
+  const periodLabel = paymentPeriodTypeLabels[payment.periodType as keyof typeof paymentPeriodTypeLabels];
+
+  if (!payment.periodStart && !payment.periodEnd) {
+    return periodLabel;
+  }
+
+  return `${periodLabel}: ${payment.periodStart ? formatDate(payment.periodStart) : "?"} - ${
+    payment.periodEnd ? formatDate(payment.periodEnd) : "?"
+  }`;
+}
+
 export default async function StudentPaymentsPage() {
   const session = await requireWorkspace("student");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const student = await prisma.student.findFirst({
     where: { organizationId: session.organizationId, userId: session.userId },
   });
@@ -26,29 +52,67 @@ export default async function StudentPaymentsPage() {
   const nextPayment =
     payments.find((payment) => payment.status === PaymentStatus.pending || payment.status === PaymentStatus.overdue) ??
     payments[0];
+  const paidTotal = payments
+    .filter((payment) => payment.status === PaymentStatus.paid)
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const payableTotal = payments
+    .filter((payment) => payment.status !== PaymentStatus.exempt)
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const overdueTotal = payments
+    .filter((payment) => payment.status === PaymentStatus.overdue || (payment.status === PaymentStatus.pending && payment.dueAt < today))
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingCount = payments.filter((payment) => payment.status === PaymentStatus.pending).length;
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">Ученик</span>
         <h1>Оплата</h1>
-        <p>Сумма, срок, период и статус оплаты. Онлайн-оплаты в MVP нет.</p>
       </div>
 
-      <section className="panel">
-        <h2>Ближайшая оплата</h2>
-        {nextPayment ? (
-          <p>
-            {nextPayment.amount} {nextPayment.currency}, срок {nextPayment.dueAt.toLocaleDateString("ru-RU")},{" "}
-            {paymentState(nextPayment)}.
-          </p>
-        ) : (
-          <p>Оплата пока не настроена.</p>
-        )}
+      <section className="student-overview-grid">
+        <div className="panel student-main-panel">
+          <span className="status">Ближайшее</span>
+          <h2>Ближайшая оплата</h2>
+          {nextPayment ? (
+            <div className="student-highlight">
+              <strong>{formatPayment(nextPayment.amount, nextPayment.currency)}</strong>
+              <p>
+                {nextPayment.group ? `${nextPayment.course.name}, ${nextPayment.group.name}` : nextPayment.course.name} · срок{" "}
+                {formatDate(nextPayment.dueAt)} · {paymentState(nextPayment)}
+              </p>
+            </div>
+          ) : (
+            <p>Оплата пока не настроена.</p>
+          )}
+        </div>
+
+        <aside className="panel student-side-panel">
+          <span className="status">Сводка</span>
+          <h2>Ручной учет</h2>
+          <div className="payment-summary">
+            <div data-tone="paid">
+              <strong>{formatPayment(paidTotal)}</strong>
+              <span>оплачено</span>
+            </div>
+            <div data-tone="total">
+              <strong>{formatPayment(payableTotal)}</strong>
+              <span>к оплате всего</span>
+            </div>
+            <div data-tone="overdue">
+              <strong>{formatPayment(overdueTotal)}</strong>
+              <span>просрочено</span>
+            </div>
+          </div>
+        </aside>
       </section>
 
       <section className="panel section">
-        <h2>Все оплаты</h2>
+        <div className="section-heading">
+          <div>
+            <span className="status">Список</span>
+            <h2>Все оплаты</h2>
+          </div>
+        </div>
         {payments.length === 0 ? (
           <p>Записей оплаты пока нет.</p>
         ) : (
@@ -68,11 +132,9 @@ export default async function StudentPaymentsPage() {
                 {payments.map((payment) => (
                   <tr key={payment.id}>
                     <td>{payment.group ? `${payment.course.name}, ${payment.group.name}` : payment.course.name}</td>
-                    <td>
-                      {payment.amount} {payment.currency}
-                    </td>
-                    <td>{paymentPeriodTypeLabels[payment.periodType]}</td>
-                    <td>{payment.dueAt.toLocaleDateString("ru-RU")}</td>
+                    <td>{formatPayment(payment.amount, payment.currency)}</td>
+                    <td>{formatPeriod(payment)}</td>
+                    <td>{formatDate(payment.dueAt)}</td>
                     <td>{paymentState(payment)}</td>
                     <td>{payment.comment ?? "Нет"}</td>
                   </tr>
@@ -81,6 +143,29 @@ export default async function StudentPaymentsPage() {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="metric-grid section" aria-label="Сводка оплат ученика">
+        <div className="panel metric-card payment-metric-card">
+          <span>Записи</span>
+          <strong>{payments.length}</strong>
+          <p>Все оплаты ученика</p>
+        </div>
+        <div className="panel metric-card payment-metric-card">
+          <span>Ожидает</span>
+          <strong>{pendingCount}</strong>
+          <p>Нужно оплатить вручную</p>
+        </div>
+        <div className="panel metric-card payment-metric-card">
+          <span>Оплачено</span>
+          <strong>{formatPayment(paidTotal)}</strong>
+          <p>Закрытые оплаты</p>
+        </div>
+        <div className="panel metric-card payment-metric-card">
+          <span>Просрочено</span>
+          <strong>{formatPayment(overdueTotal)}</strong>
+          <p>Срок уже прошел</p>
+        </div>
       </section>
     </>
   );
