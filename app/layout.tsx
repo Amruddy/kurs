@@ -4,8 +4,8 @@ import { AppShell } from "@/app/components/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Курс",
-  description: "Рабочая система учебного учета",
+  title: "Deshar",
+  description: "Система для школ и преподавателей",
 };
 
 export default function RootLayout({
