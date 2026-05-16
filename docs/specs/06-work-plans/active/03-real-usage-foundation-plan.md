@@ -71,11 +71,13 @@ Vercel-проекте и письмах-приглашениях.
 - `DATABASE_URL`;
 - `DIRECT_URL`, если он нужен для миграций Supabase;
 - `NEXT_PUBLIC_SUPABASE_URL`;
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`;
-- `SUPABASE_SERVICE_ROLE_KEY`;
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
+- `SUPABASE_SECRET_KEY`;
 - `NEXT_PUBLIC_SITE_URL`.
 
-`SUPABASE_SERVICE_ROLE_KEY` используется только на сервере и не должен попадать
+Старые ключи `NEXT_PUBLIC_SUPABASE_ANON_KEY` и `SUPABASE_SERVICE_ROLE_KEY`
+поддерживаются только как fallback на время перехода. `SUPABASE_SECRET_KEY` или
+`SUPABASE_SERVICE_ROLE_KEY` используются только на сервере и не должны попадать
 в клиентский код.
 
 ### 3.1. Vercel deployment
