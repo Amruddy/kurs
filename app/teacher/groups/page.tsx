@@ -3,6 +3,15 @@ import { requireWorkspace } from "@/app/lib/dev-auth";
 import { groupStatusLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
 
+function formatDateTime(date: Date) {
+  return date.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function TeacherGroupsPage() {
   const session = await requireWorkspace("teacher");
   const groups = await prisma.group.findMany({
@@ -26,13 +35,13 @@ export default async function TeacherGroupsPage() {
     },
     orderBy: { createdAt: "desc" },
   });
+  const studentCount = new Set(groups.flatMap((group) => group.students.map((link) => link.studentId))).size;
+  const groupsWithNextLessonCount = groups.filter((group) => group.lessons.length > 0).length;
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">Группы</span>
         <h1>Мои группы</h1>
-        <p>Группы, назначенные текущему преподавателю, и ближайшие запланированные уроки.</p>
       </div>
 
       <section className="panel">
@@ -58,16 +67,7 @@ export default async function TeacherGroupsPage() {
                     </td>
                     <td>{group.course.name}</td>
                     <td>{group.students.length}</td>
-                    <td>
-                      {group.lessons[0]
-                        ? group.lessons[0].startsAt.toLocaleString("ru-RU", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "Нет"}
-                    </td>
+                    <td>{group.lessons[0] ? formatDateTime(group.lessons[0].startsAt) : "Нет"}</td>
                     <td>{groupStatusLabels[group.status]}</td>
                   </tr>
                 ))}
@@ -75,6 +75,29 @@ export default async function TeacherGroupsPage() {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="metric-grid section" aria-label="Сводка групп преподавателя">
+        <div className="panel metric-card">
+          <span>Группы</span>
+          <strong>{groups.length}</strong>
+          <p>Активные и неархивные</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Ученики</span>
+          <strong>{studentCount}</strong>
+          <p>Уникальные ученики в группах</p>
+        </div>
+        <div className="panel metric-card">
+          <span>С уроками</span>
+          <strong>{groupsWithNextLessonCount}</strong>
+          <p>Есть ближайшее занятие</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Без урока</span>
+          <strong>{groups.length - groupsWithNextLessonCount}</strong>
+          <p>Нужно проверить расписание</p>
+        </div>
       </section>
     </>
   );
