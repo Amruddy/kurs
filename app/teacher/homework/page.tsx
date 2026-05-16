@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageCreateAction } from "@/app/components/page-create-action";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { prisma } from "@/app/lib/prisma";
 import { createTeacherHomework } from "@/app/teacher/actions";
@@ -39,66 +40,62 @@ export default async function TeacherHomeworkPage() {
     <>
       <div className="page-heading page-heading-with-action">
         <div>
-          <span className="status">Домашние задания</span>
-          <h1>ДЗ преподавателя</h1>
-          <p>Задания для ваших групп и отдельных учеников.</p>
+          <h1>Домашние задания</h1>
         </div>
+        {groups.length > 0 ? (
+          <PageCreateAction buttonLabel="Создать задание" title="Новое домашнее задание">
+            <form className="form-grid" action={createTeacherHomework}>
+              <label>
+                Группа
+                <select name="groupId" required>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Название
+                <input name="title" required />
+              </label>
+              <label>
+                Срок
+                <input name="dueAt" type="date" />
+              </label>
+              <label>
+                Ученик
+                <select name="studentId">
+                  <option value="">Вся группа</option>
+                  {groups.flatMap((group) => group.students).map((link) => (
+                    <option key={`${link.groupId}-${link.studentId}`} value={link.studentId}>
+                      {link.student.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Текст
+                <input name="text" required />
+              </label>
+              <label className="checkbox-label">
+                <input name="isVisibleToStudent" type="checkbox" defaultChecked /> Видно ученику
+              </label>
+              <button className="button" type="submit">
+                Создать ДЗ
+              </button>
+            </form>
+          </PageCreateAction>
+        ) : null}
       </div>
 
-      {groups.length > 0 ? (
-        <form className="panel" action={createTeacherHomework}>
-          <h2>Новое задание</h2>
-          <p>Быстрое создание для выбранной группы.</p>
-          <div className="form-grid">
-            <label>
-              Группа
-              <select name="groupId" required>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Название
-              <input name="title" required />
-            </label>
-            <label>
-              Срок
-              <input name="dueAt" type="date" />
-            </label>
-            <label>
-              Ученик
-              <select name="studentId">
-                <option value="">Вся группа</option>
-                {groups.flatMap((group) => group.students).map((link) => (
-                  <option key={`${link.groupId}-${link.studentId}`} value={link.studentId}>
-                    {link.student.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Текст
-              <input name="text" required />
-            </label>
-            <label className="checkbox-label">
-              <input name="isVisibleToStudent" type="checkbox" defaultChecked /> Видно ученику
-            </label>
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <span className="status">Список</span>
+            <h2>История заданий</h2>
           </div>
-          <button className="button compact-button section" type="submit">
-            Создать ДЗ
-          </button>
-        </form>
-      ) : (
-        <section className="panel">
-          <p>Нет активных групп для домашних заданий.</p>
-        </section>
-      )}
-
-      <section className="panel section">
-        <h2>История заданий</h2>
+        </div>
         {homeworks.length === 0 ? (
           <p>Домашние задания пока не созданы.</p>
         ) : (
@@ -134,6 +131,35 @@ export default async function TeacherHomeworkPage() {
           </div>
         )}
       </section>
+
+      <section className="metric-grid section" aria-label="Сводка домашних заданий">
+        <div className="panel metric-card">
+          <span>Задания</span>
+          <strong>{homeworks.length}</strong>
+          <p>Активные записи</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Группы</span>
+          <strong>{groups.length}</strong>
+          <p>Доступны для задания</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Индивидуальные</span>
+          <strong>{homeworks.filter((homework) => homework.studentId).length}</strong>
+          <p>Для отдельных учеников</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Без срока</span>
+          <strong>{homeworks.filter((homework) => !homework.dueAt).length}</strong>
+          <p>Срок не указан</p>
+        </div>
+      </section>
+
+      {groups.length === 0 ? (
+        <section className="panel section">
+          <p>Нет активных групп для домашних заданий.</p>
+        </section>
+      ) : null}
     </>
   );
 }

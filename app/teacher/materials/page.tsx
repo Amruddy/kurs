@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageCreateAction } from "@/app/components/page-create-action";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 import { materialStatusLabels, materialTypeLabels } from "@/app/lib/learning-labels";
 import { prisma } from "@/app/lib/prisma";
@@ -30,47 +31,45 @@ export default async function TeacherMaterialsPage() {
 
   return (
     <>
-      <div className="page-heading">
-        <span className="status">Материалы</span>
-        <h1>Учебные материалы</h1>
-        <p>Тексты и ссылки для групп, уроков и домашних заданий.</p>
+      <div className="page-heading page-heading-with-action">
+        <div>
+          <h1>Учебные материалы</h1>
+        </div>
+        {groups.length > 0 ? (
+          <PageCreateAction buttonLabel="Добавить материал" title="Новый материал">
+            <form className="form-grid" action={createTeacherMaterial}>
+              <label>
+                Куда добавить
+                <select name="groupId" required>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Текст или ссылка
+                <input name="material" required placeholder="Вставьте ссылку или короткий текст" />
+              </label>
+              <label className="checkbox-label">
+                <input name="isVisibleToStudent" type="checkbox" defaultChecked /> Видно ученику
+              </label>
+              <button className="button" type="submit">
+                Добавить
+              </button>
+            </form>
+          </PageCreateAction>
+        ) : null}
       </div>
 
-      {groups.length > 0 ? (
-        <form className="panel" action={createTeacherMaterial}>
-          <h2>Новый материал</h2>
-          <p>Быстрое добавление к выбранной группе.</p>
-          <div className="form-grid">
-            <label>
-              Куда добавить
-              <select name="groupId" required>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Текст или ссылка
-              <input name="material" required placeholder="Вставьте ссылку или короткий текст" />
-            </label>
-            <label className="checkbox-label">
-              <input name="isVisibleToStudent" type="checkbox" defaultChecked /> Видно ученику
-            </label>
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <span className="status">Список</span>
+            <h2>Список материалов</h2>
           </div>
-          <button className="button compact-button section" type="submit">
-            Добавить
-          </button>
-        </form>
-      ) : (
-        <section className="panel">
-          <p>Нет активных групп для материалов.</p>
-        </section>
-      )}
-
-      <section className="panel section">
-        <h2>Список материалов</h2>
+        </div>
         {materials.length === 0 ? (
           <p>Материалы пока не добавлены.</p>
         ) : (
@@ -108,6 +107,35 @@ export default async function TeacherMaterialsPage() {
           </div>
         )}
       </section>
+
+      <section className="metric-grid section" aria-label="Сводка материалов">
+        <div className="panel metric-card">
+          <span>Материалы</span>
+          <strong>{materials.length}</strong>
+          <p>Все записи преподавателя</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Ссылки</span>
+          <strong>{materials.filter((material) => material.type === "link").length}</strong>
+          <p>Внешние ресурсы</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Тексты</span>
+          <strong>{materials.filter((material) => material.type === "text").length}</strong>
+          <p>Текстовые материалы</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Скрыто</span>
+          <strong>{materials.filter((material) => !material.isVisibleToStudent).length}</strong>
+          <p>Не видно ученикам</p>
+        </div>
+      </section>
+
+      {groups.length === 0 ? (
+        <section className="panel section">
+          <p>Нет активных групп для материалов.</p>
+        </section>
+      ) : null}
     </>
   );
 }

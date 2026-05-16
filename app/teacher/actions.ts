@@ -135,7 +135,7 @@ function parseJournalCell(value: string, maxScore: number | null) {
     return { mark: AttendanceMark.present, score };
   }
 
-  throw new Error("В журнал можно вводить только оценку или статус: Б, Н, У.");
+  throw new Error("В журнал можно вводить только оценку или статус: П, Н, У.");
 }
 
 async function requireTeacherLesson(lessonId: string) {

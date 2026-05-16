@@ -26,6 +26,7 @@ const navByWorkspace: Record<WorkspaceRole, NavItem[]> = {
     { href: "/teacher/attendance", icon: "attendance", label: "Посещаемость" },
     { href: "/teacher/homework", icon: "homework", label: "Домашние задания" },
     { href: "/teacher/materials", icon: "materials", label: "Материалы" },
+    { href: "/teacher/payments", icon: "payments", label: "Оплата" },
   ],
   student: [
     { href: "/student", icon: "overview", label: "Обзор" },

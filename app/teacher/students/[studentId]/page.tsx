@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { PaymentStatus } from "@prisma/client";
 import {
   attendanceMarkFullLabels,
+  groupStatusLabels,
+  paymentStatusLabels,
   progressLevelLabels,
 } from "@/app/lib/learning-labels";
 import { requireWorkspace } from "@/app/lib/dev-auth";
@@ -10,6 +13,18 @@ import { createProgressError, createProgressRecord, createProgressRule } from "@
 type TeacherStudentPageProps = {
   params: Promise<{ studentId: string }>;
 };
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function formatPayment(amount: number, currency: string) {
+  return `${amount} ${currency}`;
+}
 
 function markText(entry: { mark: "present" | "absent" | "excused" | null; score: number | null } | null) {
   if (!entry) {
@@ -61,6 +76,7 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
 
   const student = links[0].student;
   const groupIds = links.map((link) => link.groupId);
+  const courseIds = links.map((link) => link.group.courseId);
   const lessons = await prisma.lesson.findMany({
     where: {
       organizationId: session.organizationId,
@@ -77,7 +93,7 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
     orderBy: { startsAt: "desc" },
     take: 20,
   });
-  const [rules, errors, progressRecords, homeworks, materials] = await Promise.all([
+  const [rules, errors, progressRecords, homeworks, materials, payments] = await Promise.all([
     prisma.studentProgressRule.findMany({
       where: { organizationId: session.organizationId, studentId: student.id, isActive: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
@@ -112,29 +128,91 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
+    prisma.payment.findMany({
+      where: {
+        organizationId: session.organizationId,
+        studentId: student.id,
+        OR: [{ groupId: { in: groupIds } }, { groupId: null, courseId: { in: courseIds } }],
+      },
+      include: { group: true, course: true },
+      orderBy: [{ dueAt: "asc" }, { updatedAt: "desc" }],
+      take: 8,
+    }),
   ]);
+  const absentCount = lessons.filter((lesson) => lesson.journalEntries[0]?.mark === "absent").length;
+  const excusedCount = lessons.filter((lesson) => lesson.journalEntries[0]?.mark === "excused").length;
+  const presentCount = Math.max(lessons.length - absentCount - excusedCount, 0);
+  const attendancePercent = lessons.length > 0 ? Math.round((presentCount / lessons.length) * 100) : 0;
+  const paymentsAttentionCount = payments.filter(
+    (payment) => payment.status === PaymentStatus.overdue || (payment.status === PaymentStatus.pending && payment.dueAt < new Date()),
+  ).length;
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">Ученик</span>
         <h1>{student.name}</h1>
-        <p>{[student.phone, student.email].filter(Boolean).join(", ") || "Контакты не указаны"}.</p>
       </div>
 
-      <section className="panel">
-        <h2>Группы</h2>
-        <div className="button-row">
-          {links.map((link) => (
-            <Link key={link.id} className="secondary-button link-button compact-button" href={`/teacher/groups/${link.group.id}`}>
-              {link.group.name}
-            </Link>
-          ))}
+      <section className="teacher-overview-grid">
+        <div className="panel teacher-main-panel">
+          <span className="status">Ученик</span>
+          <h2>Учебная карточка</h2>
+          <div className="teacher-list">
+            <div className="teacher-list-item">
+              <strong>{[student.phone, student.email].filter(Boolean).join(", ") || "Контакты не указаны"}</strong>
+              <span>Контакты</span>
+            </div>
+            <div className="teacher-list-item">
+              <strong>{links.map((link) => link.group.course.name).join(", ")}</strong>
+              <span>Курсы</span>
+            </div>
+            <div className="teacher-list-item">
+              <strong>{lessons.length > 0 ? `${attendancePercent}%` : "Нет данных"}</strong>
+              <span>Посещаемость по последним урокам</span>
+            </div>
+          </div>
+        </div>
+
+        <aside className="panel teacher-side-panel">
+          <span className="status">Группы</span>
+          <h2>Активное обучение</h2>
+          <div className="teacher-group-list">
+            {links.map((link) => (
+              <article className="teacher-group-card" key={link.id}>
+                <Link href={`/teacher/groups/${link.group.id}`}>{link.group.name}</Link>
+                <p>{link.group.course.name}</p>
+                <span>{groupStatusLabels[link.group.status]}</span>
+              </article>
+            ))}
+          </div>
+        </aside>
+      </section>
+
+      <section className="metric-grid section" aria-label="Сводка ученика">
+        <div className="panel metric-card">
+          <span>Уроки</span>
+          <strong>{lessons.length}</strong>
+          <p>Последняя история</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Посещаемость</span>
+          <strong>{lessons.length > 0 ? `${attendancePercent}%` : "0%"}</strong>
+          <p>Был на {presentCount} уроках</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Прогресс</span>
+          <strong>{rules.length + errors.length}</strong>
+          <p>Правила и ошибки</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Оплата</span>
+          <strong>{paymentsAttentionCount}</strong>
+          <p>Требует внимания</p>
         </div>
       </section>
 
-      <section className="grid section">
-        <form className="panel" action={createProgressRule.bind(null, student.id)}>
+      <section className="lesson-workspace-grid section">
+        <form className="panel lesson-workspace-card" action={createProgressRule.bind(null, student.id)}>
           <h2>Правило таджвида</h2>
           <div className="form-grid">
             <label>
@@ -165,7 +243,7 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
           </button>
         </form>
 
-        <form className="panel" action={createProgressError.bind(null, student.id)}>
+        <form className="panel lesson-workspace-card" action={createProgressError.bind(null, student.id)}>
           <h2>Ошибка чтения</h2>
           <div className="form-grid">
             <label>
@@ -222,7 +300,7 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
         </button>
       </form>
 
-      <section className="grid section">
+      <section className="teacher-progress-grid section">
         <div className="panel">
           <h2>Правила</h2>
           {rules.length === 0 ? (
@@ -257,8 +335,8 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
         </div>
       </section>
 
-      <section className="grid section">
-        <div className="panel">
+      <section className="teacher-overview-grid section">
+        <div className="panel teacher-main-panel">
           <h2>Прогресс</h2>
           {progressRecords.length === 0 ? (
             <p>Записей прогресса пока нет.</p>
@@ -272,10 +350,65 @@ export default async function TeacherStudentPage({ params }: TeacherStudentPageP
             </ul>
           )}
         </div>
-        <div className="panel">
-          <h2>ДЗ и материалы</h2>
-          <p>Домашних заданий: {homeworks.length}. Материалов: {materials.length}.</p>
+
+        <aside className="panel teacher-side-panel">
+          <span className="status">Оплата</span>
+          <h2>Статусы платежей</h2>
+          {payments.length === 0 ? (
+            <p>Оплата для этого ученика пока не настроена.</p>
+          ) : (
+            <div className="teacher-payment-list">
+              {payments.map((payment) => (
+                <article className="teacher-payment-row" key={payment.id}>
+                  <div>
+                    <strong>{payment.group?.name ?? payment.course.name}</strong>
+                    <p>срок {formatDate(payment.dueAt)}</p>
+                  </div>
+                  <strong>{formatPayment(payment.amount, payment.currency)}</strong>
+                  <span>{paymentStatusLabels[payment.status]}</span>
+                </article>
+              ))}
+            </div>
+          )}
+        </aside>
+      </section>
+
+      <section className="teacher-overview-grid section">
+        <div className="panel teacher-main-panel">
+          <span className="status">Домашние задания</span>
+          <h2>Активные задания</h2>
+          {homeworks.length === 0 ? (
+            <p>Домашние задания пока не назначены.</p>
+          ) : (
+            <div className="teacher-list">
+              {homeworks.map((homework) => (
+                <article className="teacher-list-item" key={homework.id}>
+                  <strong>{homework.title}</strong>
+                  <span>
+                    {homework.group?.name ?? "Группа"} · {homework.dueAt ? formatDate(homework.dueAt) : "без срока"}
+                  </span>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
+
+        <aside className="panel teacher-side-panel">
+          <span className="status">Материалы</span>
+          <h2>Последние материалы</h2>
+          {materials.length === 0 ? (
+            <p>Материалы пока не добавлены.</p>
+          ) : (
+            <div className="teacher-list">
+              {materials.map((material) => (
+                <article className="teacher-list-item" key={material.id}>
+                  {material.url ? <a href={material.url}>{material.title}</a> : <strong>{material.title}</strong>}
+                  <span>{material.group?.name ?? "Курс"}</span>
+                </article>
+              ))}
+            </div>
+          )}
+        </aside>
       </section>
 
       <section className="panel section">

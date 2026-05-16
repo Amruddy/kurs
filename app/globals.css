@@ -1254,6 +1254,99 @@ td a,
   padding-top: 0;
 }
 
+.teacher-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+.teacher-main-panel,
+.teacher-side-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 100%;
+}
+
+.teacher-highlight {
+  display: grid;
+  gap: 8px;
+}
+
+.teacher-highlight strong {
+  color: var(--primary-strong);
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.teacher-list,
+.teacher-group-list,
+.teacher-payment-list {
+  display: grid;
+  gap: 10px;
+}
+
+.teacher-list-item,
+.teacher-group-card,
+.teacher-payment-row {
+  display: grid;
+  gap: 5px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.teacher-list-item:first-child,
+.teacher-group-card:first-child,
+.teacher-payment-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.teacher-list-item strong,
+.teacher-list-item a,
+.teacher-group-card strong,
+.teacher-payment-row a {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.teacher-list-item span,
+.teacher-group-card span,
+.teacher-payment-row span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.teacher-payment-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+}
+
+.teacher-payment-row > strong {
+  justify-self: end;
+  font-size: 14px;
+}
+
+.teacher-payment-row > span {
+  grid-column: 1 / -1;
+}
+
+.teacher-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.teacher-progress-grid h3 {
+  margin: 0 0 8px;
+}
+
+.teacher-progress-grid .muted-list {
+  margin-top: 0;
+}
+
 @media (max-width: 1180px) {
   .grid,
   .login-grid,
@@ -1284,7 +1377,8 @@ td a,
   }
 
   .director-grid,
-  .student-overview-grid {
+  .student-overview-grid,
+  .teacher-overview-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1353,6 +1447,7 @@ td a,
   .student-tabs,
   .student-dashboard-links,
   .metric-grid,
+  .teacher-progress-grid,
   .student-progress-grid,
   .form-grid,
   .lesson-workspace-card .form-grid {
@@ -1413,6 +1508,14 @@ td a,
 
   .student-list-item {
     grid-template-columns: 1fr;
+  }
+
+  .teacher-payment-row {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-payment-row > strong {
+    justify-self: start;
   }
 
   .student-menu {

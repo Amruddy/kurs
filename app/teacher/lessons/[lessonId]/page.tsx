@@ -13,6 +13,16 @@ type TeacherLessonPageProps = {
   params: Promise<{ lessonId: string }>;
 };
 
+function formatDateTime(date: Date) {
+  return date.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function TeacherLessonPage({ params }: TeacherLessonPageProps) {
   const { lessonId } = await params;
   const session = await requireWorkspace("teacher");
@@ -23,6 +33,7 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
       teacherId: session.userId,
     },
     include: {
+      course: true,
       group: {
         include: {
           students: {
@@ -32,6 +43,8 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
           },
         },
       },
+      journalEntries: true,
+      progressRecords: true,
       homeworks: {
         where: { status: "active" },
         include: { student: true },
@@ -56,42 +69,70 @@ export default async function TeacherLessonPage({ params }: TeacherLessonPagePro
   return (
     <>
       <div className="page-heading">
-        <span className="status">Урок</span>
         <h1>{lesson.group.name}</h1>
-        <p>
-          {lesson.startsAt.toLocaleString("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-          . Посещаемость редактируется в журнале группы.
-        </p>
       </div>
 
-      <section className="panel">
-        <Link className="button link-button compact-button" href={`/teacher/groups/${lesson.group.id}/journal`}>
-          Открыть журнал
-        </Link>
+      <section className="teacher-overview-grid">
+        <form className="panel teacher-main-panel" action={saveLessonDetails.bind(null, lesson.id)}>
+          <span className="status">Запись урока</span>
+          <h2>{formatDateTime(lesson.startsAt)}</h2>
+          <div className="form-grid">
+            <label>
+              Тема
+              <input name="topic" defaultValue={lesson.topic ?? ""} placeholder="Тема урока" />
+            </label>
+            <label>
+              Комментарий к уроку
+              <input name="summary" defaultValue={lesson.summary ?? ""} placeholder="Короткий комментарий" />
+            </label>
+          </div>
+          <button className="button compact-button" type="submit">
+            Сохранить запись
+          </button>
+        </form>
+
+        <aside className="panel teacher-side-panel">
+          <span className="status">Урок</span>
+          <h2>Контекст</h2>
+          <div className="teacher-list">
+            <div className="teacher-list-item">
+              <strong>{lesson.course.name}</strong>
+              <span>Курс</span>
+            </div>
+            <div className="teacher-list-item">
+              <Link href={`/teacher/groups/${lesson.group.id}`}>{lesson.group.name}</Link>
+              <span>Группа</span>
+            </div>
+            <div className="teacher-list-item">
+              <Link href={`/teacher/groups/${lesson.group.id}/journal`}>Открыть журнал</Link>
+              <span>Посещаемость редактируется в журнале группы</span>
+            </div>
+          </div>
+        </aside>
       </section>
 
-      <form className="panel section" action={saveLessonDetails.bind(null, lesson.id)}>
-        <h2>Запись урока</h2>
-        <div className="form-grid">
-          <label>
-            Тема
-            <input name="topic" defaultValue={lesson.topic ?? ""} placeholder="Тема урока" />
-          </label>
-          <label>
-            Комментарий к уроку
-            <input name="summary" defaultValue={lesson.summary ?? ""} placeholder="Короткий комментарий" />
-          </label>
+      <section className="metric-grid section" aria-label="Сводка урока">
+        <div className="panel metric-card">
+          <span>Ученики</span>
+          <strong>{lesson.group.students.length}</strong>
+          <p>В активном составе</p>
         </div>
-        <button className="button compact-button section" type="submit">
-          Сохранить запись
-        </button>
-      </form>
+        <div className="panel metric-card">
+          <span>Журнал</span>
+          <strong>{lesson.journalEntries.length}</strong>
+          <p>Заполненные записи</p>
+        </div>
+        <div className="panel metric-card">
+          <span>ДЗ</span>
+          <strong>{lesson.homeworks.length}</strong>
+          <p>Активные задания</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Материалы</span>
+          <strong>{lesson.materials.length}</strong>
+          <p>Тексты и ссылки</p>
+        </div>
+      </section>
 
       <section className="lesson-workspace-grid section">
         <form className="panel lesson-workspace-card" action={createLessonProgress.bind(null, lesson.id)}>

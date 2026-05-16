@@ -21,15 +21,22 @@ export default async function TeacherStudentsPage() {
     },
     orderBy: { joinedAt: "desc" },
   });
+  const groupCount = new Set(links.map((link) => link.groupId)).size;
+  const studentsWithoutContacts = links.filter((link) => !link.student.phone && !link.student.email).length;
 
   return (
     <>
       <div className="page-heading">
-        <span className="status">Ученики</span>
         <h1>Мои ученики</h1>
       </div>
 
       <section className="panel">
+        <div className="section-heading">
+          <div>
+            <span className="status">Список</span>
+            <h2>Ученики преподавателя</h2>
+          </div>
+        </div>
         {links.length === 0 ? (
           <p>Пока нет активных учеников в ваших группах.</p>
         ) : (
@@ -60,6 +67,29 @@ export default async function TeacherStudentsPage() {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="metric-grid section" aria-label="Сводка учеников преподавателя">
+        <div className="panel metric-card">
+          <span>Ученики</span>
+          <strong>{links.length}</strong>
+          <p>Активные записи в группах</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Группы</span>
+          <strong>{groupCount}</strong>
+          <p>Где есть ученики</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Контакты</span>
+          <strong>{links.length - studentsWithoutContacts}</strong>
+          <p>Телефон или email указан</p>
+        </div>
+        <div className="panel metric-card">
+          <span>Без контактов</span>
+          <strong>{studentsWithoutContacts}</strong>
+          <p>Нужно уточнить данные</p>
+        </div>
       </section>
     </>
   );
