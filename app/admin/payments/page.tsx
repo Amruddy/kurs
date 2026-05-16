@@ -132,7 +132,7 @@ export default async function AdminPaymentsPage() {
       <section className="panel">
         <h2>Список оплат</h2>
         {payments.length === 0 ? (
-          <p>Оплаты пока не созданы. Массовую оплату можно создать внутри курса или группы.</p>
+          <p className="empty-state">Оплаты пока не созданы. Массовую оплату можно создать внутри курса или группы.</p>
         ) : (
           <div className="table-wrap">
             <table>

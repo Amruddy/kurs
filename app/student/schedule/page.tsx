@@ -90,7 +90,7 @@ export default async function StudentSchedulePage() {
               </p>
             </div>
           ) : (
-            <p>Уроков в расписании пока нет.</p>
+            <p className="empty-state">Уроков в расписании пока нет.</p>
           )}
         </aside>
       </section>

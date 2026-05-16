@@ -56,7 +56,7 @@ export default async function AdminTeachersPage() {
       <section className="panel">
         <h2>Список преподавателей</h2>
         {teachers.length === 0 ? (
-          <p>Преподавателей пока нет.</p>
+          <p className="empty-state">Преподавателей пока нет.</p>
         ) : (
           <div className="table-wrap">
             <table>

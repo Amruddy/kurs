@@ -10,49 +10,66 @@ export default async function LoginPage({
   return (
     <>
       <div className="page-heading">
-        <span className="status">Dev-вход</span>
         <h1>Вход в систему</h1>
-        <p>
-          На этом этапе используется тестовый вход без регистрации и пароля.
-          Пользователь выбирается кнопкой для ручной проверки рабочих областей.
-        </p>
       </div>
 
-      {params.error ? (
-        <div className="error-message">
-          Seed-пользователь не найден. Примените миграции и запустите seed.
-        </div>
-      ) : null}
+      <section className="login-workspace">
+        <div className="panel login-main-panel">
+          <div className="section-heading">
+            <h2>Выберите рабочую область</h2>
+          </div>
 
-      <section className="panel">
-        <div className="login-grid">
-          <form action={loginAsAdmin}>
-            <button className="button" type="submit">
-              Войти как админ
-            </button>
-          </form>
-          <form action={loginAsTeacher}>
-            <button className="button" type="submit">
-              Войти как преподаватель
-            </button>
-          </form>
-          <form action={loginAsStudent}>
-            <button className="button" type="submit">
-              Войти как ученик
-            </button>
-          </form>
-          <form action={loginAsPrivateTeacher}>
-            <button className="button" type="submit">
-              Войти как преподаватель-одиночка
-            </button>
-          </form>
+          {params.error ? (
+            <div className="error-message" role="alert">
+              Seed-пользователь не найден. Примените миграции и запустите seed.
+            </div>
+          ) : null}
+
+          <div className="login-grid">
+            <form action={loginAsAdmin}>
+              <button className="button" type="submit">
+                Войти как админ
+              </button>
+            </form>
+            <form action={loginAsTeacher}>
+              <button className="button" type="submit">
+                Войти как преподаватель
+              </button>
+            </form>
+            <form action={loginAsStudent}>
+              <button className="button" type="submit">
+                Войти как ученик
+              </button>
+            </form>
+            <form action={loginAsPrivateTeacher}>
+              <button className="button" type="submit">
+                Войти как преподаватель-одиночка
+              </button>
+            </form>
+          </div>
         </div>
-        <ul className="muted-list">
-          <li>Админ: admin@example.test</li>
-          <li>Преподаватель: teacher@example.test</li>
-          <li>Ученик: student@example.test</li>
-          <li>Преподаватель-одиночка: solo-teacher@example.test</li>
-        </ul>
+
+        <aside className="panel login-side-panel">
+          <h2>Тестовые пользователи</h2>
+          <div className="info-list">
+            <div className="info-row">
+              <span>Админ</span>
+              <strong>admin@example.test</strong>
+            </div>
+            <div className="info-row">
+              <span>Преподаватель</span>
+              <strong>teacher@example.test</strong>
+            </div>
+            <div className="info-row">
+              <span>Ученик</span>
+              <strong>student@example.test</strong>
+            </div>
+            <div className="info-row">
+              <span>Одиночка</span>
+              <strong>solo-teacher@example.test</strong>
+            </div>
+          </div>
+        </aside>
       </section>
     </>
   );

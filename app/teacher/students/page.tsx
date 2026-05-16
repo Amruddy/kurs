@@ -38,7 +38,7 @@ export default async function TeacherStudentsPage() {
           </div>
         </div>
         {links.length === 0 ? (
-          <p>Пока нет активных учеников в ваших группах.</p>
+          <p className="empty-state">Пока нет активных учеников в ваших группах.</p>
         ) : (
           <div className="table-wrap">
             <table>

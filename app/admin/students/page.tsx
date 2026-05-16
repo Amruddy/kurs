@@ -61,7 +61,7 @@ export default async function AdminStudentsPage() {
       <section className="panel">
         <h2>Список учеников</h2>
         {students.length === 0 ? (
-          <p>Учеников пока нет.</p>
+          <p className="empty-state">Учеников пока нет.</p>
         ) : (
           <div className="table-wrap">
             <table>

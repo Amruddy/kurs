@@ -115,7 +115,7 @@ export default async function TeacherAttendancePage() {
           </div>
 
           {rows.length === 0 ? (
-            <p>Пока нет данных для сводки.</p>
+            <p className="empty-state">Пока нет данных для сводки.</p>
           ) : (
             <div className="table-wrap">
               <table>

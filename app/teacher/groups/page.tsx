@@ -46,7 +46,7 @@ export default async function TeacherGroupsPage() {
 
       <section className="panel">
         {groups.length === 0 ? (
-          <p>Пока нет назначенных групп.</p>
+          <p className="empty-state">Пока нет назначенных групп.</p>
         ) : (
           <div className="table-wrap">
             <table>
