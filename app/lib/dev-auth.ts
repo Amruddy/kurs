@@ -2,6 +2,8 @@ import { Role, type Permission } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
+import { getSupabasePublicConfig } from "@/app/lib/supabase/public-env";
+import { createSupabaseServerClient } from "@/app/lib/supabase/server";
 
 export type WorkspaceRole = "admin" | "teacher" | "student";
 
@@ -67,6 +69,7 @@ export type DevSession = {
   roles: WorkspaceRole[];
   permissions: Permission[];
   activeWorkspace: WorkspaceRole;
+  source: "dev" | "supabase";
 };
 
 function roleToWorkspace(role: Role): WorkspaceRole | null {
@@ -91,20 +94,39 @@ function uniqueWorkspaces(roles: Role[]) {
   );
 }
 
-export async function getDevSession(): Promise<DevSession | null> {
-  const cookieStore = await cookies();
-  const email = cookieStore.get("dev_user_email")?.value;
-  const activeWorkspace = cookieStore.get("dev_workspace")?.value;
+export function isDevLoginEnabled() {
+  return process.env.ENABLE_DEV_LOGIN === "true";
+}
 
-  if (!email) {
-    return null;
+function normalizeWorkspace(value?: string): WorkspaceRole | null {
+  if (value === "admin" || value === "teacher" || value === "student") {
+    return value;
   }
 
+  return null;
+}
+
+async function getSelectedWorkspaceCookie() {
+  const cookieStore = await cookies();
+  return normalizeWorkspace(cookieStore.get("workspace")?.value ?? cookieStore.get("dev_workspace")?.value);
+}
+
+async function buildSessionForUser(
+  userWhere: { authUserId: string } | { email: string },
+  source: DevSession["source"],
+): Promise<DevSession | null> {
+  const activeWorkspace = await getSelectedWorkspaceCookie();
+
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: userWhere,
     include: {
       memberships: {
-        where: { status: "active" },
+        where: {
+          status: "active",
+          organization: {
+            status: "active",
+          },
+        },
         include: {
           organization: true,
         },
@@ -113,19 +135,16 @@ export async function getDevSession(): Promise<DevSession | null> {
     },
   });
 
-  const membership = user?.memberships.find((item) => item.organization.status === "active");
+  const membership = user?.memberships.find((item) => uniqueWorkspaces(item.roles).length > 0);
 
   if (!user || user.status !== "active" || !membership) {
     return null;
   }
 
   const roles = uniqueWorkspaces(membership.roles);
-  const selectedWorkspace =
-    activeWorkspace === "admin" || activeWorkspace === "teacher" || activeWorkspace === "student"
-      ? activeWorkspace
-      : roles[0];
+  const selectedWorkspace = activeWorkspace && roles.includes(activeWorkspace) ? activeWorkspace : roles[0];
 
-  if (!selectedWorkspace || !roles.includes(selectedWorkspace)) {
+  if (!selectedWorkspace) {
     return null;
   }
 
@@ -138,11 +157,57 @@ export async function getDevSession(): Promise<DevSession | null> {
     roles,
     permissions: membership.permissions,
     activeWorkspace: selectedWorkspace,
+    source,
   };
 }
 
+async function getSupabaseSession(): Promise<DevSession | null> {
+  if (!getSupabasePublicConfig()) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  let userId: string | null = null;
+
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    userId = error ? null : (data.user?.id ?? null);
+  } catch {
+    userId = null;
+  }
+
+  if (!userId) {
+    return null;
+  }
+
+  return buildSessionForUser({ authUserId: userId }, "supabase");
+}
+
+async function getFallbackDevSession(): Promise<DevSession | null> {
+  if (!isDevLoginEnabled()) {
+    return null;
+  }
+
+  const cookieStore = await cookies();
+  const email = cookieStore.get("dev_user_email")?.value;
+
+  if (!email) {
+    return null;
+  }
+
+  return buildSessionForUser({ email }, "dev");
+}
+
+export async function getCurrentSession(): Promise<DevSession | null> {
+  return (await getSupabaseSession()) ?? (await getFallbackDevSession());
+}
+
+export async function getDevSession(): Promise<DevSession | null> {
+  return getCurrentSession();
+}
+
 export async function requireWorkspace(requiredWorkspace: WorkspaceRole) {
-  const session = await getDevSession();
+  const session = await getCurrentSession();
 
   if (!session) {
     redirect("/login");
@@ -154,4 +219,3 @@ export async function requireWorkspace(requiredWorkspace: WorkspaceRole) {
 
   return session;
 }
-

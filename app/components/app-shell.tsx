@@ -1,7 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppNavLink, type NavIcon } from "@/app/components/app-nav-link";
-import { getDevSession, workspaceConfig, type DevSession, type WorkspaceRole } from "@/app/lib/dev-auth";
+import {
+  getCurrentSession,
+  isDevLoginEnabled,
+  workspaceConfig,
+  type DevSession,
+  type WorkspaceRole,
+} from "@/app/lib/dev-auth";
 import { switchWorkspace } from "@/app/login/actions";
 
 type NavItem = {
@@ -64,7 +70,8 @@ function WorkspaceSwitcher({ session }: { session: DevSession }) {
 
 function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | null }) {
   const homePath = session ? workspaceConfig[session.activeWorkspace].homePath : "/login";
-  const workspaceLabel = session ? workspaceConfig[session.activeWorkspace].label : "Dev-вход";
+  const workspaceLabel = session ? workspaceConfig[session.activeWorkspace].label : "Вход";
+  const showDevLogin = isDevLoginEnabled();
 
   return (
     <aside className="sidebar" aria-label="Основная навигация">
@@ -93,8 +100,8 @@ function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | n
           </>
         ) : (
           <>
-            <strong>Тестовый режим</strong>
-            <p>Выберите роль для ручной проверки MVP.</p>
+            <strong>{showDevLogin ? "Тестовый режим" : "Авторизация"}</strong>
+            <p>{showDevLogin ? "Выберите роль для ручной проверки MVP." : "Войдите в рабочий кабинет."}</p>
           </>
         )}
       </div>
@@ -104,7 +111,7 @@ function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | n
 
 function WorkspaceTopbar({ session }: { session: DevSession | null }) {
   const title = session ? workspaceConfig[session.activeWorkspace].label : "Вход";
-  const subtitle = session ? session.email : "Тестовая авторизация";
+  const subtitle = session ? session.email : isDevLoginEnabled() ? "Тестовая авторизация" : "Рабочая авторизация";
 
   return (
     <header className="workspace-topbar">
@@ -128,7 +135,7 @@ function MobileNav({ items }: { items: NavItem[] }) {
 }
 
 export async function AppShell({ children }: { children: ReactNode }) {
-  const session = await getDevSession();
+  const session = await getCurrentSession();
   const items = session ? navByWorkspace[session.activeWorkspace] : publicNav;
 
   return (

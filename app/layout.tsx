@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Система для школ и преподавателей",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{

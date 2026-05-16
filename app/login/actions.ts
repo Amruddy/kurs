@@ -3,9 +3,20 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
-import { devUsers, workspaceConfig, type DevUserKey, type WorkspaceRole } from "@/app/lib/dev-auth";
+import {
+  devUsers,
+  getCurrentSession,
+  isDevLoginEnabled,
+  workspaceConfig,
+  type DevUserKey,
+  type WorkspaceRole,
+} from "@/app/lib/dev-auth";
 
 async function loginAs(userKey: DevUserKey) {
+  if (!isDevLoginEnabled()) {
+    redirect("/login?error=dev-login-disabled");
+  }
+
   const seedUser = devUsers[userKey];
   const user = await prisma.user.findUnique({
     where: { email: seedUser.email },
@@ -40,6 +51,11 @@ async function loginAs(userKey: DevUserKey) {
     sameSite: "lax",
     path: "/",
   });
+  cookieStore.set("workspace", preferredWorkspace, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+  });
   cookieStore.set("dev_workspace", preferredWorkspace, {
     httpOnly: true,
     sameSite: "lax",
@@ -66,7 +82,22 @@ export async function loginAsPrivateTeacher() {
 }
 
 export async function switchWorkspace(workspace: WorkspaceRole) {
+  const session = await getCurrentSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  if (!session.roles.includes(workspace)) {
+    redirect(`/forbidden?required=${workspace}`);
+  }
+
   const cookieStore = await cookies();
+  cookieStore.set("workspace", workspace, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+  });
   cookieStore.set("dev_workspace", workspace, {
     httpOnly: true,
     sameSite: "lax",
