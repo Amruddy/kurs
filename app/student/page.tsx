@@ -215,7 +215,7 @@ export default async function StudentPage() {
           <span className="status">Подготовка</span>
           <h2>Что подготовить</h2>
           {homeworks.length === 0 ? (
-            <p>Актуальных домашних заданий пока нет.</p>
+            <p className="empty-state">Актуальных домашних заданий пока нет.</p>
           ) : (
             <div className="student-list">
               {homeworks.map((homework) => (
@@ -240,7 +240,7 @@ export default async function StudentPage() {
           <span className="status">Материалы</span>
           <h2>Последнее открытое</h2>
           {materials.length === 0 ? (
-            <p>Материалов пока нет.</p>
+            <p className="empty-state">Материалов пока нет.</p>
           ) : (
             <div className="student-list compact">
               {materials.map((material) => (
@@ -265,7 +265,7 @@ export default async function StudentPage() {
               <div>
                 <h3>Правила</h3>
                 {progressRules.length === 0 ? (
-                  <p>Пока нет открытых правил.</p>
+                  <p className="empty-state">Пока нет открытых правил.</p>
                 ) : (
                   <ul className="muted-list">
                     {progressRules.map((rule) => (
@@ -280,7 +280,7 @@ export default async function StudentPage() {
               <div>
                 <h3>Повторить</h3>
                 {progressRecords.length === 0 && progressErrors.length === 0 ? (
-                  <p>Пока нет открытых замечаний.</p>
+                  <p className="empty-state">Пока нет открытых замечаний.</p>
                 ) : (
                   <ul className="muted-list">
                     {progressErrors.map((error) => (

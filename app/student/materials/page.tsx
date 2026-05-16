@@ -41,7 +41,7 @@ export default async function StudentMaterialsPage() {
             </div>
           </div>
           {materials.length === 0 ? (
-            <p>Материалов пока нет.</p>
+            <p className="empty-state">Материалов пока нет.</p>
           ) : (
             <div className="table-wrap">
               <table>
@@ -83,7 +83,7 @@ export default async function StudentMaterialsPage() {
               </article>
             </div>
           ) : (
-            <p>Открытых материалов пока нет.</p>
+            <p className="empty-state">Открытых материалов пока нет.</p>
           )}
         </aside>
       </section>

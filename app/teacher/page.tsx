@@ -202,7 +202,7 @@ export default async function TeacherPage() {
           </div>
 
           {groups.length === 0 ? (
-            <p>Пока нет назначенных групп.</p>
+            <p className="empty-state">Пока нет назначенных групп.</p>
           ) : (
             <div className="table-wrap">
               <table>

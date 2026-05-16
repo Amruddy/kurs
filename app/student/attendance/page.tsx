@@ -88,7 +88,7 @@ export default async function StudentAttendancePage() {
             </div>
           </div>
           {lessons.length === 0 ? (
-            <p>Прошедших занятий пока нет.</p>
+            <p className="empty-state">Прошедших занятий пока нет.</p>
           ) : (
             <div className="table-wrap">
               <table>
@@ -136,7 +136,7 @@ export default async function StudentAttendancePage() {
               </article>
             </div>
           ) : (
-            <p>Истории занятий пока нет.</p>
+            <p className="empty-state">Истории занятий пока нет.</p>
           )}
         </aside>
       </section>

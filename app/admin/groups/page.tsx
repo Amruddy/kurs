@@ -101,7 +101,7 @@ export default async function AdminGroupsPage({ searchParams }: AdminGroupsPageP
       <section className="panel">
         <h2>Список групп</h2>
         {groups.length === 0 ? (
-          <p>Групп пока нет.</p>
+          <p className="empty-state">Групп пока нет.</p>
         ) : (
           <div className="table-wrap">
             <table>

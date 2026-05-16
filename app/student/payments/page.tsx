@@ -114,7 +114,7 @@ export default async function StudentPaymentsPage() {
           </div>
         </div>
         {payments.length === 0 ? (
-          <p>Записей оплаты пока нет.</p>
+          <p className="empty-state">Записей оплаты пока нет.</p>
         ) : (
           <div className="table-wrap">
             <table>

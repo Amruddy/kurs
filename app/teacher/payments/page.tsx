@@ -76,7 +76,7 @@ export default async function TeacherPaymentsPage() {
           </div>
         </div>
         {payments.length === 0 ? (
-          <p>Оплаты по вашим группам пока не настроены.</p>
+          <p className="empty-state">Оплаты по вашим группам пока не настроены.</p>
         ) : (
           <div className="table-wrap">
             <table>

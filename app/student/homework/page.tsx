@@ -55,7 +55,7 @@ export default async function StudentHomeworkPage() {
             </div>
           </div>
           {homeworks.length === 0 ? (
-            <p>Актуальных домашних заданий пока нет.</p>
+            <p className="empty-state">Актуальных домашних заданий пока нет.</p>
           ) : (
             <div className="table-wrap">
               <table>
@@ -109,7 +109,7 @@ export default async function StudentHomeworkPage() {
               </article>
             </div>
           ) : (
-            <p>Заданий для подготовки пока нет.</p>
+            <p className="empty-state">Заданий для подготовки пока нет.</p>
           )}
         </aside>
       </section>

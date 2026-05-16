@@ -7,16 +7,15 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <section className="panel">
-      <div className="page-heading">
-        <span className="status">Ошибка</span>
-        <h1>Что-то пошло не так</h1>
-        <p>Попробуйте повторить действие. Если ошибка останется, нужно проверить журнал приложения.</p>
+    <section className="panel system-state">
+      <span className="status">Ошибка</span>
+      <h1>Что-то пошло не так</h1>
+      <p>Попробуйте повторить действие. Если ошибка останется, нужно проверить журнал приложения.</p>
+      <div className="button-row">
+        <button className="button" type="button" onClick={reset}>
+          Повторить
+        </button>
       </div>
-      <button className="button" type="button" onClick={reset}>
-        Повторить
-      </button>
     </section>
   );
 }
-
