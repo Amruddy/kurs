@@ -15,16 +15,16 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `chore/supabase-foundation`.
-- Текущий этап: `Supabase Foundation`.
+- Текущая ветка: `feat/admin-crud-foundation`.
+- Текущий этап: `Admin CRUD Foundation`.
 - Активный план этапа:
-  `docs/work-plans/active/04-supabase-foundation-plan.md`.
-- Статус этапа: Supabase Foundation реализован локально и проверен с dev-данными,
-  ожидает ручной проверки пользователя и разрешения на commit/push.
-- Предыдущий этап: `Remove Legacy Database Layer`, завершен и смержен в `main`.
+  `docs/work-plans/active/05-admin-crud-foundation-plan.md`.
+- Статус этапа: реализован локально, прошел автоматические проверки и ожидает
+  ручной проверки создания записей через UI.
+- Предыдущий этап: `Supabase Foundation`, завершен и смержен в `main`.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/03-remove-legacy-database-layer-plan.md`.
-- Следующий этап: будет уточнен после завершения `Supabase Foundation`.
+  `docs/work-plans/completed/04-supabase-foundation-plan.md`.
+- Следующий этап: будет уточнен после завершения `Admin CRUD Foundation`.
 
 ## 2. Правило перехода между этапами
 
@@ -76,11 +76,28 @@ merge. Сообщения о merge достаточно.
 
 План:
 
-`docs/work-plans/active/04-supabase-foundation-plan.md`
+`docs/work-plans/completed/04-supabase-foundation-plan.md`
 
 Статус:
 
-этап активен на ветке `chore/supabase-foundation`.
+этап завершен и смержен в `main` через PR #25.
+
+### Stage 3: Admin CRUD Foundation
+
+Цель:
+
+- вернуть базовые административные формы поверх Supabase;
+- дать администратору создать курс, группу и ученика из интерфейса;
+- дать администратору назначить ученика в группу;
+- оставить остальные действия для следующих отдельных этапов.
+
+План:
+
+`docs/work-plans/active/05-admin-crud-foundation-plan.md`
+
+Статус:
+
+этап активен на ветке `feat/admin-crud-foundation`.
 
 ## 4. Правила для планов
 
@@ -105,3 +122,15 @@ Stage 2 начат:
 
 - ветка: `chore/supabase-foundation`;
 - активный план: `docs/work-plans/active/04-supabase-foundation-plan.md`.
+
+Stage 2 завершен:
+
+- ветка: `chore/supabase-foundation`;
+- stage commit: `c3216df`;
+- merge commit в `main`: `188ed7b`;
+- PR: #25.
+
+Stage 3 начат:
+
+- ветка: `feat/admin-crud-foundation`;
+- активный план: `docs/work-plans/active/05-admin-crud-foundation-plan.md`.

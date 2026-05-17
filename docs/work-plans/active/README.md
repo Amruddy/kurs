@@ -13,11 +13,11 @@
 
 Текущий активный технический план:
 
-`04-supabase-foundation-plan.md`
+`05-admin-crud-foundation-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/03-remove-legacy-database-layer-plan.md`
+`../completed/04-supabase-foundation-plan.md`
 
 Codex перед разработкой должен читать:
 
