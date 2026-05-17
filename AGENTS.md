@@ -13,10 +13,13 @@ Codex must use the project specifications as the source of truth before making c
 
 ## Source of Truth
 
+- Read `docs/roadmap/README.md` before implementation.
 - Read relevant files in `docs/specs/` before implementation.
+- Read the active work plan in `docs/work-plans/active/`.
 - If a feature is not described in the specs, do not implement it.
 - If a spec is unclear, clarify or update the spec before coding.
-- Follow the active MVP work plan in `docs/specs/06-work-plans/active/`.
+- Follow the active work plan named by `docs/roadmap/README.md` and
+  `docs/work-plans/active/README.md`.
 
 ## Working Order
 
@@ -42,22 +45,31 @@ Codex must use the project specifications as the source of truth before making c
 
 ## Branch Workflow For MVP Stages
 
-- Новый MVP stage нельзя реализовывать напрямую в `master`.
-- Когда пользователь явно говорит начать код для stage, нужно создать отдельную ветку от актуального `master`.
+- Новый MVP stage нельзя реализовывать напрямую в `main`.
+- Когда пользователь явно говорит начать код для stage, нужно создать отдельную ветку от актуального `main`.
 - В ветку stage коммитится только завершенная и проверенная работа этого stage.
 - После автоматической проверки Codex сам выполняет базовую smoke-проверку stage, если это возможно локально.
 - После своей smoke-проверки Codex кратко пишет пользователю, что уже проверено, и дает ручной smoke-чеклист только как необязательную финальную проверку.
 - Ветка stage коммитится и пушится после явной команды пользователя продолжать; ручная проверка пользователя не обязательна, если пользователь ее пропускает.
-- Pull request открывает пользователь. После merge пользователь сообщает Codex, Codex возвращается на `master`, обновляет его из GitHub и только потом начинает следующую stage-ветку.
+- Pull request открывает пользователь. После merge пользователь сообщает Codex, Codex возвращается на `main`, обновляет его из GitHub и только потом начинает следующую stage-ветку.
 - После подтверждения пользователя ветка stage пушится в GitHub и готовится к pull request.
 - Следующий stage нельзя начинать, пока предыдущий stage не смержен.
-- Перед началом следующего stage нужно вернуться в `master` и обновить его из GitHub, чтобы новая ветка начиналась от последнего смерженного состояния.
-- Цикл для каждого stage: обновить `master`, создать ветку stage, реализовать, проверить, закоммитить, запушить, открыть pull request, смержить, снова обновить `master`.
+- Перед началом следующего stage нужно вернуться в `main` и обновить его из GitHub, чтобы новая ветка начиналась от последнего смерженного состояния.
+- Цикл для каждого stage: обновить `main`, создать ветку stage, реализовать, проверить, закоммитить, запушить, открыть pull request, смержить, снова обновить `main`.
+- Если пользователь сообщает, что PR/stage смержен, Codex должен сам выполнить переход на `main` и обновление из GitHub перед обсуждением или началом следующего этапа. Пользователь не обязан отдельно писать команду "перейди на main".
 
 ## Current MVP Direction
 
-The current implementation source of truth is:
+The current roadmap is:
 
-`docs/specs/06-work-plans/active/01-mvp-implementation-plan.md`
+`docs/roadmap/README.md`
 
-Use the current status section in that active work plan to determine the next MVP stage.
+The current active implementation source of truth is named in:
+
+`docs/work-plans/active/README.md`
+
+Current active technical plan:
+
+`docs/work-plans/active/03-remove-legacy-database-layer-plan.md`
+
+Use the roadmap and the current status section in the active work plan to determine the next stage.

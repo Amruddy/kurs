@@ -1,7 +1,5 @@
-import { Role, type Permission } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "@/app/lib/prisma";
 
 export type WorkspaceRole = "admin" | "teacher" | "student";
 
@@ -31,21 +29,25 @@ export const devUsers = {
     label: "Администратор",
     email: "admin@example.test",
     preferredWorkspace: "admin",
+    roles: ["admin", "teacher", "student"],
   },
   teacher: {
     label: "Преподаватель",
     email: "teacher@example.test",
     preferredWorkspace: "teacher",
+    roles: ["teacher"],
   },
   student: {
     label: "Ученик",
     email: "student@example.test",
     preferredWorkspace: "student",
+    roles: ["student"],
   },
   privateTeacher: {
     label: "Преподаватель-одиночка",
     email: "solo-teacher@example.test",
     preferredWorkspace: "teacher",
+    roles: ["teacher"],
   },
 } as const satisfies Record<
   string,
@@ -53,6 +55,7 @@ export const devUsers = {
     label: string;
     email: string;
     preferredWorkspace: WorkspaceRole;
+    roles: readonly WorkspaceRole[];
   }
 >;
 
@@ -65,30 +68,16 @@ export type DevSession = {
   organizationId: string;
   organizationName: string;
   roles: WorkspaceRole[];
-  permissions: Permission[];
+  permissions: string[];
   activeWorkspace: WorkspaceRole;
 };
 
-function roleToWorkspace(role: Role): WorkspaceRole | null {
-  if (role === Role.admin || role === Role.director) {
-    return "admin";
-  }
-
-  if (role === Role.teacher) {
-    return "teacher";
-  }
-
-  if (role === Role.student) {
-    return "student";
-  }
-
-  return null;
+function isWorkspaceRole(value: string | undefined): value is WorkspaceRole {
+  return value === "admin" || value === "teacher" || value === "student";
 }
 
-function uniqueWorkspaces(roles: Role[]) {
-  return Array.from(
-    new Set(roles.map(roleToWorkspace).filter((role): role is WorkspaceRole => role !== null)),
-  );
+function findDevUserByEmail(email: string) {
+  return Object.entries(devUsers).find(([, user]) => user.email === email) ?? null;
 }
 
 export async function getDevSession(): Promise<DevSession | null> {
@@ -100,43 +89,31 @@ export async function getDevSession(): Promise<DevSession | null> {
     return null;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      memberships: {
-        where: { status: "active" },
-        include: {
-          organization: true,
-        },
-        orderBy: { createdAt: "asc" },
-      },
-    },
-  });
+  const entry = findDevUserByEmail(email);
 
-  const membership = user?.memberships.find((item) => item.organization.status === "active");
-
-  if (!user || user.status !== "active" || !membership) {
+  if (!entry) {
     return null;
   }
 
-  const roles = uniqueWorkspaces(membership.roles);
+  const [userId, user] = entry;
+  const roles = [...user.roles];
   const selectedWorkspace =
-    activeWorkspace === "admin" || activeWorkspace === "teacher" || activeWorkspace === "student"
+    isWorkspaceRole(activeWorkspace) && roles.includes(activeWorkspace)
       ? activeWorkspace
-      : roles[0];
+      : user.preferredWorkspace;
 
-  if (!selectedWorkspace || !roles.includes(selectedWorkspace)) {
+  if (!roles.includes(selectedWorkspace)) {
     return null;
   }
 
   return {
-    userId: user.id,
-    name: user.name,
+    userId,
+    name: user.label,
     email: user.email,
-    organizationId: membership.organizationId,
-    organizationName: membership.organization.name,
+    organizationId: "dev-organization",
+    organizationName: "Deshar",
     roles,
-    permissions: membership.permissions,
+    permissions: [],
     activeWorkspace: selectedWorkspace,
   };
 }
@@ -154,4 +131,3 @@ export async function requireWorkspace(requiredWorkspace: WorkspaceRole) {
 
   return session;
 }
-
