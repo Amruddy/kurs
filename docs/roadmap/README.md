@@ -15,14 +15,16 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `chore/remove-legacy-db-and-restructure-docs`.
-- Текущий этап: `Remove Legacy Database Layer`.
+- Текущая ветка: `chore/supabase-foundation`.
+- Текущий этап: `Supabase Foundation`.
 - Активный план этапа:
-  `docs/work-plans/active/03-remove-legacy-database-layer-plan.md`.
-- Статус этапа: выполнен локально, ожидает проверки, commit и push.
-- Следующий этап: `Supabase Foundation`.
-- План следующего этапа:
   `docs/work-plans/active/04-supabase-foundation-plan.md`.
+- Статус этапа: Supabase Foundation реализован локально и проверен с dev-данными,
+  ожидает ручной проверки пользователя и разрешения на commit/push.
+- Предыдущий этап: `Remove Legacy Database Layer`, завершен и смержен в `main`.
+- Запись предыдущего этапа:
+  `docs/work-plans/completed/03-remove-legacy-database-layer-plan.md`.
+- Следующий этап: будет уточнен после завершения `Supabase Foundation`.
 
 ## 2. Правило перехода между этапами
 
@@ -57,7 +59,11 @@ merge. Сообщения о merge достаточно.
 
 План:
 
-`docs/work-plans/active/03-remove-legacy-database-layer-plan.md`
+`docs/work-plans/completed/03-remove-legacy-database-layer-plan.md`
+
+Статус:
+
+этап завершен и смержен в `main` через PR #24.
 
 ### Stage 2: Supabase Foundation
 
@@ -72,7 +78,9 @@ merge. Сообщения о merge достаточно.
 
 `docs/work-plans/active/04-supabase-foundation-plan.md`
 
-Этот этап нельзя начинать до merge Stage 1.
+Статус:
+
+этап активен на ветке `chore/supabase-foundation`.
 
 ## 4. Правила для планов
 
@@ -86,5 +94,14 @@ merge. Сообщения о merge достаточно.
 
 ## 5. Запись о выполнении
 
-Пока текущий roadmap создан для перехода от удаления старого DB-слоя к чистому
-Supabase-подключению.
+Stage 1 завершен:
+
+- ветка: `chore/remove-legacy-db-and-restructure-docs`;
+- stage commit: `7ff5415`;
+- merge commit в `main`: `ebf89a2`;
+- PR: #24.
+
+Stage 2 начат:
+
+- ветка: `chore/supabase-foundation`;
+- активный план: `docs/work-plans/active/04-supabase-foundation-plan.md`.
