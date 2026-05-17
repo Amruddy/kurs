@@ -184,6 +184,19 @@ export type AdminGroupItem = {
   nextLesson: string;
 };
 
+export type SelectOption = {
+  label: string;
+  value: string;
+};
+
+export type AdminGroupsData = {
+  groups: AdminGroupItem[];
+  courseOptions: SelectOption[];
+  groupOptions: SelectOption[];
+  studentOptions: SelectOption[];
+  teacherOptions: SelectOption[];
+};
+
 export type AdminStudentItem = {
   id: string;
   name: string;
@@ -472,8 +485,8 @@ export async function getAdminCourses(organizationId: string) {
 }
 
 export async function getAdminGroups(organizationId: string) {
-  return readSupabaseData<{ groups: AdminGroupItem[] }>(async (client) => {
-    const { courses, groups, users } = await getBaseOrganizationData(client, organizationId);
+  return readSupabaseData<AdminGroupsData>(async (client) => {
+    const { courses, groups, members, students, users } = await getBaseOrganizationData(client, organizationId);
     const groupIds = groups.map((group) => group.id);
     const [groupStudentsResult, lessonsResult] = await Promise.all([
       groupIds.length > 0
@@ -492,6 +505,11 @@ export async function getAdminGroups(organizationId: string) {
     const lessons = rows<LessonRow>(lessonsResult, "Занятия групп");
     const courseMap = byId(courses);
     const userMap = byId(users);
+    const teacherIds = new Set(
+      members
+        .filter((member) => member.roles.includes("teacher") && member.user_id)
+        .map((member) => member.user_id),
+    );
 
     return {
       groups: groups.map((group) => {
@@ -507,6 +525,18 @@ export async function getAdminGroups(organizationId: string) {
           nextLesson: nextLesson ? formatDateTime(nextLesson.starts_at) : "нет ближайшего занятия",
         };
       }),
+      courseOptions: courses
+        .filter((course) => course.status === "active")
+        .map((course) => ({ label: course.name, value: course.id })),
+      groupOptions: groups
+        .filter((group) => group.status === "active" || group.status === "recruiting")
+        .map((group) => ({ label: group.name, value: group.id })),
+      studentOptions: students
+        .filter((student) => student.status === "active")
+        .map((student) => ({ label: student.name, value: student.id })),
+      teacherOptions: users
+        .filter((user) => user.status === "active" && teacherIds.has(user.id))
+        .map((user) => ({ label: user.name, value: user.id })),
     };
   });
 }
@@ -763,4 +793,3 @@ export async function getStudentOverview(organizationId: string, email: string) 
     };
   });
 }
-

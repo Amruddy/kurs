@@ -7,6 +7,8 @@
 - `03-remove-legacy-database-layer-plan.md` - удаление старого Prisma/local DB
   слоя, временный режим без runtime-базы, реструктуризация specs/roadmap/work
   plans.
+- `04-supabase-foundation-plan.md` - чистое подключение Supabase, schema/seed,
+  data-layer чтения и базовые страницы с dev-данными.
 
 Формат будущей записи:
 

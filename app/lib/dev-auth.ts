@@ -26,24 +26,28 @@ export const workspaceConfig: Record<
 
 export const devUsers = {
   admin: {
+    userId: "10000000-0000-4000-8000-000000000001",
     label: "Администратор",
     email: "admin@example.test",
     preferredWorkspace: "admin",
     roles: ["admin", "teacher", "student"],
   },
   teacher: {
+    userId: "10000000-0000-4000-8000-000000000002",
     label: "Преподаватель",
     email: "teacher@example.test",
     preferredWorkspace: "teacher",
     roles: ["teacher"],
   },
   student: {
+    userId: "10000000-0000-4000-8000-000000000003",
     label: "Ученик",
     email: "student@example.test",
     preferredWorkspace: "student",
     roles: ["student"],
   },
   privateTeacher: {
+    userId: "10000000-0000-4000-8000-000000000004",
     label: "Преподаватель-одиночка",
     email: "solo-teacher@example.test",
     preferredWorkspace: "teacher",
@@ -52,6 +56,7 @@ export const devUsers = {
 } as const satisfies Record<
   string,
   {
+    userId: string;
     label: string;
     email: string;
     preferredWorkspace: WorkspaceRole;
@@ -95,7 +100,7 @@ export async function getDevSession(): Promise<DevSession | null> {
     return null;
   }
 
-  const [userId, user] = entry;
+  const [, user] = entry;
   const roles = [...user.roles];
   const selectedWorkspace =
     isWorkspaceRole(activeWorkspace) && roles.includes(activeWorkspace)
@@ -107,7 +112,7 @@ export async function getDevSession(): Promise<DevSession | null> {
   }
 
   return {
-    userId,
+    userId: user.userId,
     name: user.label,
     email: user.email,
     organizationId: "00000000-0000-4000-8000-000000000001",

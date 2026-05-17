@@ -2,15 +2,53 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  assignAdminStudentToGroup,
+  createAdminCourse,
+  createAdminGroup,
+  createAdminStudent,
+} from "@/app/lib/data/admin-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
 async function requireAdmin() {
-  await requireWorkspace("admin");
+  return requireWorkspace("admin");
+}
+
+function requiredString(formData: FormData, name: string, label: string) {
+  const value = formData.get(name);
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`${label}: обязательное поле.`);
+  }
+
+  return value.trim();
+}
+
+function optionalString(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 export async function createCourse(formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await createAdminCourse({
+    organizationId: session.organizationId,
+    createdBy: session.userId,
+    name: requiredString(formData, "name", "Название курса"),
+    description: optionalString(formData, "description"),
+    format: requiredString(formData, "format", "Формат курса"),
+    lessonMarkScale: requiredString(formData, "lessonMarkScale", "Шкала оценок"),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/courses");
   redirect("/admin/courses");
 }
 
@@ -33,8 +71,17 @@ export async function createTeacher(formData: FormData) {
 }
 
 export async function createStudent(formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await createAdminStudent({
+    organizationId: session.organizationId,
+    name: requiredString(formData, "name", "Имя ученика"),
+    phone: optionalString(formData, "phone"),
+    email: optionalString(formData, "email"),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/students");
   redirect("/admin/students");
 }
 
@@ -52,8 +99,18 @@ export async function updateStudent(studentId: string, formData: FormData) {
 }
 
 export async function createGroup(formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await createAdminGroup({
+    organizationId: session.organizationId,
+    courseId: requiredString(formData, "courseId", "Курс"),
+    teacherId: requiredString(formData, "teacherId", "Преподаватель"),
+    name: requiredString(formData, "name", "Название группы"),
+    status: requiredString(formData, "status", "Статус группы"),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
   redirect("/admin/groups");
 }
 
@@ -82,9 +139,23 @@ export async function generateLessonsForGroup(groupId: string) {
 }
 
 export async function addStudentToGroup(groupId: string, formData: FormData) {
-  void formData;
+  const studentId = requiredString(formData, "studentId", "Ученик");
   await requireAdmin();
+  await assignAdminStudentToGroup({ groupId, studentId });
   revalidatePath(`/admin/groups/${groupId}`);
+}
+
+export async function assignStudentToGroup(formData: FormData) {
+  await requireAdmin();
+
+  const groupId = requiredString(formData, "groupId", "Группа");
+  const studentId = requiredString(formData, "studentId", "Ученик");
+
+  await assignAdminStudentToGroup({ groupId, studentId });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
+  redirect("/admin/groups");
 }
 
 export async function removeStudentFromGroup(groupStudentId: string, groupId: string) {
