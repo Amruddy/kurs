@@ -69,8 +69,8 @@ function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | n
   return (
     <aside className="sidebar" aria-label="Основная навигация">
       <Link className="brand" href={homePath}>
-        <span className="brand-mark">К</span>
-        <span className="brand-text">Курс</span>
+        <span className="brand-mark">D</span>
+        <span className="brand-text">Deshar</span>
       </Link>
 
       <div className="sidebar-section">
@@ -109,7 +109,7 @@ function WorkspaceTopbar({ session }: { session: DevSession | null }) {
   return (
     <header className="workspace-topbar">
       <div>
-        <span className="topbar-kicker">Курс</span>
+        <span className="topbar-kicker">Deshar</span>
         <strong>{title}</strong>
       </div>
       <span className="topbar-user">{subtitle}</span>
