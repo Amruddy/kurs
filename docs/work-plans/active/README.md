@@ -13,11 +13,11 @@
 
 Текущий активный технический план:
 
-`03-remove-legacy-database-layer-plan.md`
-
-Следующий план, который нельзя начинать до merge текущего этапа:
-
 `04-supabase-foundation-plan.md`
+
+Завершенный предыдущий stage:
+
+`../completed/03-remove-legacy-database-layer-plan.md`
 
 Codex перед разработкой должен читать:
 

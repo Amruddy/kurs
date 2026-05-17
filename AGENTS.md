@@ -70,6 +70,6 @@ The current active implementation source of truth is named in:
 
 Current active technical plan:
 
-`docs/work-plans/active/03-remove-legacy-database-layer-plan.md`
+`docs/work-plans/active/04-supabase-foundation-plan.md`
 
 Use the roadmap and the current status section in the active work plan to determine the next stage.

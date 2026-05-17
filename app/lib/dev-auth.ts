@@ -110,7 +110,7 @@ export async function getDevSession(): Promise<DevSession | null> {
     userId,
     name: user.label,
     email: user.email,
-    organizationId: "dev-organization",
+    organizationId: "00000000-0000-4000-8000-000000000001",
     organizationName: "Deshar",
     roles,
     permissions: [],
