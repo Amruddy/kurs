@@ -21,7 +21,7 @@ export default async function LoginPage({
 
           {params.error ? (
             <div className="error-message" role="alert">
-              Seed-пользователь не найден. Примените миграции и запустите seed.
+              Тестовый вход работает без базы данных. Вернитесь на страницу входа и выберите роль заново.
             </div>
           ) : null}
 
