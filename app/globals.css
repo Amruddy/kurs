@@ -1821,6 +1821,63 @@ td a,
   font-weight: 800;
 }
 
+.payment-filter-form {
+  margin-top: 0;
+}
+
+.payment-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.payment-cell strong {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.payment-cell p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.payment-status-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.payment-status-pill[data-tone="danger"] {
+  border-color: #efc4c9;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.payment-status-pill[data-tone="ok"] {
+  border-color: #b7d8ca;
+  background: #edf7f2;
+  color: var(--primary);
+}
+
+.payment-status-pill[data-tone="warning"] {
+  border-color: #e8d1a2;
+  background: #fff8e8;
+  color: var(--warning);
+}
+
+.payment-inline-action select {
+  width: min(170px, 100%);
+}
+
 .student-overview-grid {
   display: grid;
   grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);

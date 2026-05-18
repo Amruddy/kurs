@@ -2,7 +2,7 @@
 
 ## 0. Статус
 
-- Статус плана: реализация и проверки завершены, ожидается подтверждение на commit/push.
+- Статус плана: завершен и смержен в `main` через PR #39.
 - Ветка: `feat/mpmf-1-stage-9-student-learning-cabinet`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 8. Student Schedule And Dashboard`,
