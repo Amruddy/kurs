@@ -30,6 +30,9 @@
   задание и материалы урока.
 - `13-mpmf-1-entry-page-plan.md` - публичная входная страница `/` и `/login`
   без внутреннего AppShell-бара, с объяснением продукта и входом по ролям.
+- `14-mpmf-1-stage-6-tajweed-progress-plan.md` - прогресс таджвида:
+  карточка ученика преподавателя, правила, ошибки, записи прогресса и
+  read-only `/student/progress`.
 - `01-initial-product-implementation-plan.md` - исторический план первой
   рабочей реализации до перехода к `MPMF 1.0`.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления
