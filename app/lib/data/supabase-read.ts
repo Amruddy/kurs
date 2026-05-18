@@ -535,6 +535,73 @@ export type TeacherLessonData = {
   topic: string;
 };
 
+export type LearningMaterialItem = {
+  content: string;
+  detail: string;
+  id: string;
+  title: string;
+  url: string | null;
+};
+
+export type TeacherHomeworkItem = {
+  context: string;
+  description: string;
+  due: string;
+  id: string;
+  lesson: string;
+  materials: LearningMaterialItem[];
+  status: string;
+  statusValue: string;
+  student: string;
+  title: string;
+};
+
+export type TeacherHomeworkData = {
+  groupOptions: SelectOption[];
+  homework: TeacherHomeworkItem[];
+  lessonOptions: SelectOption[];
+  metrics: MetricItem[];
+  studentOptions: SelectOption[];
+};
+
+export type TeacherMaterialItem = LearningMaterialItem & {
+  context: string;
+  status: string;
+  statusValue: string;
+  visibility: string;
+  visibilityValue: string;
+};
+
+export type TeacherMaterialsData = {
+  contextOptions: SelectOption[];
+  materials: TeacherMaterialItem[];
+  metrics: MetricItem[];
+};
+
+export type StudentHomeworkItem = {
+  context: string;
+  description: string;
+  due: string;
+  id: string;
+  lesson: string;
+  materials: LearningMaterialItem[];
+  title: string;
+};
+
+export type StudentHomeworkData = {
+  groups: string[];
+  homework: StudentHomeworkItem[];
+  metrics: MetricItem[];
+  studentName: string;
+};
+
+export type StudentMaterialsData = {
+  groups: string[];
+  materials: LearningMaterialItem[];
+  metrics: MetricItem[];
+  studentName: string;
+};
+
 async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T>): Promise<DataResult<T>> {
   try {
     const client = createSupabaseAdminClient();
@@ -816,6 +883,26 @@ function materialVisibilityLabel(value: string) {
   const labels: Record<string, string> = {
     teacher_only: "только преподавателю",
     visible_to_students: "видно ученикам",
+  };
+
+  return labels[value] ?? value;
+}
+
+function homeworkStatusLabel(value: string) {
+  const labels: Record<string, string> = {
+    active: "активно",
+    archived: "архив",
+    cancelled: "отменено",
+  };
+
+  return labels[value] ?? value;
+}
+
+function materialStatusLabel(value: string) {
+  const labels: Record<string, string> = {
+    active: "активен",
+    archived: "архив",
+    hidden: "скрыт",
   };
 
   return labels[value] ?? value;
@@ -1970,6 +2057,276 @@ export async function getTeacherStudentDetail(organizationId: string, email: str
   });
 }
 
+export async function getTeacherHomework(organizationId: string, email: string) {
+  return readSupabaseData<TeacherHomeworkData>(async (client) => {
+    const teacher = await getUserByEmail(client, email);
+    const { courses, groups, students } = await getBaseOrganizationData(client, organizationId);
+    const teacherGroups = groups.filter((group) => group.teacher_id === teacher.id);
+    const teacherGroupIds = teacherGroups.map((group) => group.id);
+    const teacherGroupIdSet = new Set(teacherGroupIds);
+    const [groupStudentsResult, lessonsResult, homeworkResult, materialsResult] = await Promise.all([
+      teacherGroupIds.length > 0
+        ? client.from("group_students").select("id,group_id,student_id,status").in("group_id", teacherGroupIds)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("lessons")
+            .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
+            .in("group_id", teacherGroupIds)
+            .order("starts_at", { ascending: false })
+            .limit(60)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("homework")
+            .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+            .eq("organization_id", organizationId)
+            .neq("status", "archived")
+            .order("due_at", { ascending: true, nullsFirst: false })
+            .limit(100)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("materials")
+            .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+            .eq("organization_id", organizationId)
+            .neq("status", "archived")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Ученики групп преподавателя");
+    const lessons = rows<LessonRow>(lessonsResult, "Уроки преподавателя");
+    const homeworkRows = rows<HomeworkRow>(homeworkResult, "Домашние задания преподавателя");
+    const materials = rows<MaterialRow>(materialsResult, "Материалы домашних заданий преподавателя");
+    const activeMemberships = groupStudents.filter((membership) => membership.status === "active");
+    const activeStudentIds = new Set(activeMemberships.map((membership) => membership.student_id));
+    const courseMap = byId(courses);
+    const groupMap = byId(teacherGroups);
+    const studentMap = byId(students);
+    const lessonMap = byId(lessons);
+    const visibleHomework = homeworkRows.filter(
+      (item) =>
+        (item.group_id ? teacherGroupIdSet.has(item.group_id) : false) ||
+        (item.student_id ? activeStudentIds.has(item.student_id) : false) ||
+        (item.lesson_id ? lessonMap.has(item.lesson_id) : false),
+    );
+    const homeworkIds = new Set(visibleHomework.map((item) => item.id));
+    const materialsByHomeworkId = new Map<string, LearningMaterialItem[]>();
+
+    for (const material of materials.filter((item) => item.homework_id && homeworkIds.has(item.homework_id))) {
+      const existing = materialsByHomeworkId.get(material.homework_id ?? "") ?? [];
+      existing.push({
+        content: material.content ?? "",
+        detail: `${materialTypeLabel(material.type)}; ${materialVisibilityLabel(material.visibility)}; ${materialStatusLabel(material.status)}`,
+        id: material.id,
+        title: material.title,
+        url: material.url,
+      });
+      materialsByHomeworkId.set(material.homework_id ?? "", existing);
+    }
+
+    const studentIds = [...new Set(activeMemberships.map((membership) => membership.student_id))].sort((left, right) =>
+      (studentMap.get(left)?.name ?? "").localeCompare(studentMap.get(right)?.name ?? "", "ru"),
+    );
+
+    return {
+      groupOptions: teacherGroups
+        .filter((group) => group.status === "active" || group.status === "recruiting")
+        .map((group) => ({ label: `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`, value: group.id })),
+      homework: visibleHomework.map((item) => {
+        const group = item.group_id ? groupMap.get(item.group_id) : null;
+        const student = item.student_id ? studentMap.get(item.student_id) : null;
+        const lesson = item.lesson_id ? lessonMap.get(item.lesson_id) : null;
+
+        return {
+          context: group ? `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}` : "учебный контекст",
+          description: item.description ?? "Описание не заполнено",
+          due: formatDate(item.due_at),
+          id: item.id,
+          lesson: lesson
+            ? `${formatDateTime(lesson.starts_at)} - ${lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "урок"}`
+            : "без связи с уроком",
+          materials: materialsByHomeworkId.get(item.id) ?? [],
+          status: homeworkStatusLabel(item.status),
+          statusValue: item.status,
+          student: student ? student.name : "вся группа",
+          title: item.title,
+        };
+      }),
+      lessonOptions: lessons.map((lesson) => ({
+        label: `${formatDateTime(lesson.starts_at)} - ${groupMap.get(lesson.group_id ?? "")?.name ?? "группа"} - ${
+          lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "урок"
+        }`,
+        value: lesson.id,
+      })),
+      metrics: [
+        { label: "Задания", value: String(visibleHomework.length) },
+        { label: "Активные", value: String(visibleHomework.filter((item) => item.status === "active").length) },
+        { label: "Индивидуальные", value: String(visibleHomework.filter((item) => item.student_id).length) },
+        { label: "Материалы к ДЗ", value: String([...materialsByHomeworkId.values()].flat().length) },
+      ],
+      studentOptions: studentIds.map((studentId) => {
+        const studentGroups = activeMemberships
+          .filter((membership) => membership.student_id === studentId)
+          .map((membership) => groupMap.get(membership.group_id)?.name)
+          .filter(Boolean)
+          .join(", ");
+
+        return {
+          label: `${studentMap.get(studentId)?.name ?? "Ученик"} - ${studentGroups || "группа"}`,
+          value: studentId,
+        };
+      }),
+    };
+  });
+}
+
+export async function getTeacherMaterials(organizationId: string, email: string) {
+  return readSupabaseData<TeacherMaterialsData>(async (client) => {
+    const teacher = await getUserByEmail(client, email);
+    const { courses, groups, students } = await getBaseOrganizationData(client, organizationId);
+    const teacherGroups = groups.filter((group) => group.teacher_id === teacher.id);
+    const teacherGroupIds = teacherGroups.map((group) => group.id);
+    const teacherGroupIdSet = new Set(teacherGroupIds);
+    const teacherCourseIds = new Set(teacherGroups.map((group) => group.course_id));
+    const [groupStudentsResult, lessonsResult, homeworkResult, materialsResult] = await Promise.all([
+      teacherGroupIds.length > 0
+        ? client.from("group_students").select("id,group_id,student_id,status").in("group_id", teacherGroupIds)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("lessons")
+            .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
+            .in("group_id", teacherGroupIds)
+            .order("starts_at", { ascending: false })
+            .limit(60)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("homework")
+            .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+            .eq("organization_id", organizationId)
+            .neq("status", "archived")
+            .limit(100)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("materials")
+            .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+            .eq("organization_id", organizationId)
+            .neq("status", "archived")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Ученики групп преподавателя");
+    const lessons = rows<LessonRow>(lessonsResult, "Уроки материалов преподавателя");
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания материалов преподавателя").filter(
+      (item) => (item.group_id ? teacherGroupIdSet.has(item.group_id) : false),
+    );
+    const materials = rows<MaterialRow>(materialsResult, "Материалы преподавателя");
+    const activeMemberships = groupStudents.filter((membership) => membership.status === "active");
+    const activeStudentIds = new Set(activeMemberships.map((membership) => membership.student_id));
+    const lessonMap = byId(lessons);
+    const homeworkMap = byId(homework);
+    const groupMap = byId(teacherGroups);
+    const courseMap = byId(courses);
+    const studentMap = byId(students);
+    const homeworkIds = new Set(homework.map((item) => item.id));
+    const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+    const visibleMaterials = materials.filter(
+      (item) =>
+        (item.group_id ? teacherGroupIdSet.has(item.group_id) : false) ||
+        (item.course_id ? teacherCourseIds.has(item.course_id) && !item.group_id && !item.student_id : false) ||
+        (item.student_id ? activeStudentIds.has(item.student_id) : false) ||
+        (item.lesson_id ? lessonIds.has(item.lesson_id) : false) ||
+        (item.homework_id ? homeworkIds.has(item.homework_id) : false),
+    );
+    const studentContextOptions = activeMemberships
+      .map((membership) => {
+        const student = studentMap.get(membership.student_id);
+        const group = groupMap.get(membership.group_id);
+
+        return student && group
+          ? {
+              label: `Ученик: ${student.name} - ${group.name}`,
+              value: `student:${student.id}:${group.id}`,
+            }
+          : null;
+      })
+      .filter((item): item is SelectOption => item !== null);
+    const contextOptions: SelectOption[] = [
+      ...[...teacherCourseIds].map((courseId) => ({
+        label: `Курс: ${courseMap.get(courseId)?.name ?? "курс"}`,
+        value: `course:${courseId}`,
+      })),
+      ...teacherGroups.map((group) => ({
+        label: `Группа: ${group.name}`,
+        value: `group:${group.id}`,
+      })),
+      ...lessons.slice(0, 30).map((lesson) => ({
+        label: `Урок: ${formatDateTime(lesson.starts_at)} - ${groupMap.get(lesson.group_id ?? "")?.name ?? "группа"}`,
+        value: `lesson:${lesson.id}`,
+      })),
+      ...homework.slice(0, 30).map((item) => ({
+        label: `ДЗ: ${item.title}`,
+        value: `homework:${item.id}`,
+      })),
+      ...studentContextOptions,
+    ];
+
+    function materialContext(item: MaterialRow) {
+      if (item.homework_id && homeworkMap.has(item.homework_id)) {
+        return `ДЗ: ${homeworkMap.get(item.homework_id)?.title}`;
+      }
+
+      if (item.lesson_id && lessonMap.has(item.lesson_id)) {
+        const lesson = lessonMap.get(item.lesson_id);
+        return `Урок: ${formatDateTime(lesson?.starts_at)} - ${lesson?.topic ?? courseMap.get(lesson?.course_id ?? "")?.name ?? "курс"}`;
+      }
+
+      if (item.student_id && studentMap.has(item.student_id)) {
+        return `Ученик: ${studentMap.get(item.student_id)?.name}`;
+      }
+
+      if (item.group_id && groupMap.has(item.group_id)) {
+        return `Группа: ${groupMap.get(item.group_id)?.name}`;
+      }
+
+      if (item.course_id && courseMap.has(item.course_id)) {
+        return `Курс: ${courseMap.get(item.course_id)?.name}`;
+      }
+
+      return "учебный контекст";
+    }
+
+    return {
+      contextOptions,
+      materials: visibleMaterials.map((item) => ({
+        content: item.content ?? "",
+        context: materialContext(item),
+        detail: materialTypeLabel(item.type),
+        id: item.id,
+        status: materialStatusLabel(item.status),
+        statusValue: item.status,
+        title: item.title,
+        url: item.url,
+        visibility: materialVisibilityLabel(item.visibility),
+        visibilityValue: item.visibility,
+      })),
+      metrics: [
+        { label: "Материалы", value: String(visibleMaterials.length) },
+        { label: "Открытые ученикам", value: String(visibleMaterials.filter((item) => item.visibility === "visible_to_students").length) },
+        { label: "Ссылки", value: String(visibleMaterials.filter((item) => item.type === "link").length) },
+        { label: "Скрытые", value: String(visibleMaterials.filter((item) => item.status === "hidden").length) },
+      ],
+    };
+  });
+}
+
 export async function getTeacherStudents(organizationId: string, email: string) {
   return readSupabaseData<{ students: TeacherStudentItem[] }>(async (client) => {
     const teacher = await getUserByEmail(client, email);
@@ -2011,6 +2368,208 @@ export async function getTeacherStudents(organizationId: string, email: string) 
             : "без внимания",
         };
       }),
+    };
+  });
+}
+
+export async function getStudentHomework(organizationId: string, email: string) {
+  return readSupabaseData<StudentHomeworkData>(async (client) => {
+    const user = await getUserByEmail(client, email);
+    const studentResult = await client
+      .from("students")
+      .select("id,user_id,name,phone,email,status")
+      .eq("organization_id", organizationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const student = single<StudentRow>(studentResult, "Карточка ученика");
+    const { courses, groups } = await getBaseOrganizationData(client, organizationId);
+    const groupStudentsResult = await client
+      .from("group_students")
+      .select("id,group_id,student_id,status")
+      .eq("student_id", student.id);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Группы ученика");
+    const activeGroupIds = new Set(groupStudents.filter((item) => item.status === "active").map((item) => item.group_id));
+    const visibleGroups = groups.filter((group) => activeGroupIds.has(group.id));
+    const [lessonsResult, homeworkResult, materialsResult] = await Promise.all([
+      activeGroupIds.size > 0
+        ? client
+            .from("lessons")
+            .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
+            .in("group_id", [...activeGroupIds])
+            .order("starts_at", { ascending: false })
+            .limit(80)
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("homework")
+        .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+        .eq("organization_id", organizationId)
+        .eq("status", "active")
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .limit(100),
+      client
+        .from("materials")
+        .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+        .eq("organization_id", organizationId)
+        .eq("visibility", "visible_to_students")
+        .eq("status", "active")
+        .limit(200),
+    ]);
+    const lessons = rows<LessonRow>(lessonsResult, "Уроки домашнего задания ученика");
+    const lessonMap = byId(lessons);
+    const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания ученика").filter(
+      (item) =>
+        item.student_id === student.id ||
+        (item.group_id ? activeGroupIds.has(item.group_id) : false) ||
+        (item.lesson_id ? lessonIds.has(item.lesson_id) : false),
+    );
+    const homeworkIds = new Set(homework.map((item) => item.id));
+    const materials = rows<MaterialRow>(materialsResult, "Материалы домашнего задания ученика");
+    const courseMap = byId(courses);
+    const groupMap = byId(visibleGroups);
+    const materialsByHomeworkId = new Map<string, LearningMaterialItem[]>();
+
+    for (const material of materials.filter((item) => item.homework_id && homeworkIds.has(item.homework_id))) {
+      const existing = materialsByHomeworkId.get(material.homework_id ?? "") ?? [];
+      existing.push({
+        content: material.content ?? "",
+        detail: materialTypeLabel(material.type),
+        id: material.id,
+        title: material.title,
+        url: material.url,
+      });
+      materialsByHomeworkId.set(material.homework_id ?? "", existing);
+    }
+
+    return {
+      groups: visibleGroups.map((group) => `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`),
+      homework: homework.map((item) => {
+        const group = item.group_id ? groupMap.get(item.group_id) : null;
+        const lesson = item.lesson_id ? lessonMap.get(item.lesson_id) : null;
+
+        return {
+          context: group ? `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}` : courseMap.get(item.course_id)?.name ?? "курс",
+          description: item.description ?? "Описание не заполнено",
+          due: formatDate(item.due_at),
+          id: item.id,
+          lesson: lesson
+            ? `${formatDateTime(lesson.starts_at)} - ${lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "урок"}`
+            : "без связи с уроком",
+          materials: materialsByHomeworkId.get(item.id) ?? [],
+          title: item.title,
+        };
+      }),
+      metrics: [
+        { label: "Задания", value: String(homework.length) },
+        { label: "Индивидуальные", value: String(homework.filter((item) => item.student_id === student.id).length) },
+        { label: "С материалами", value: String(homework.filter((item) => (materialsByHomeworkId.get(item.id) ?? []).length > 0).length) },
+      ],
+      studentName: student.name,
+    };
+  });
+}
+
+export async function getStudentMaterials(organizationId: string, email: string) {
+  return readSupabaseData<StudentMaterialsData>(async (client) => {
+    const user = await getUserByEmail(client, email);
+    const studentResult = await client
+      .from("students")
+      .select("id,user_id,name,phone,email,status")
+      .eq("organization_id", organizationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const student = single<StudentRow>(studentResult, "Карточка ученика");
+    const { courses, groups } = await getBaseOrganizationData(client, organizationId);
+    const groupStudentsResult = await client
+      .from("group_students")
+      .select("id,group_id,student_id,status")
+      .eq("student_id", student.id);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Группы ученика");
+    const activeGroupIds = new Set(groupStudents.filter((item) => item.status === "active").map((item) => item.group_id));
+    const visibleGroups = groups.filter((group) => activeGroupIds.has(group.id));
+    const courseIds = new Set(visibleGroups.map((group) => group.course_id));
+    const [lessonsResult, homeworkResult, materialsResult] = await Promise.all([
+      activeGroupIds.size > 0
+        ? client
+            .from("lessons")
+            .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
+            .in("group_id", [...activeGroupIds])
+            .order("starts_at", { ascending: false })
+            .limit(80)
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("homework")
+        .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+        .eq("organization_id", organizationId)
+        .eq("status", "active")
+        .limit(100),
+      client
+        .from("materials")
+        .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+        .eq("organization_id", organizationId)
+        .eq("visibility", "visible_to_students")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(200),
+    ]);
+    const lessons = rows<LessonRow>(lessonsResult, "Уроки материалов ученика");
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания материалов ученика").filter(
+      (item) => item.student_id === student.id || (item.group_id ? activeGroupIds.has(item.group_id) : false),
+    );
+    const materials = rows<MaterialRow>(materialsResult, "Открытые материалы ученика");
+    const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+    const homeworkIds = new Set(homework.map((item) => item.id));
+    const lessonMap = byId(lessons);
+    const homeworkMap = byId(homework);
+    const groupMap = byId(visibleGroups);
+    const courseMap = byId(courses);
+    const visibleMaterials = materials.filter(
+      (item) =>
+        item.student_id === student.id ||
+        (item.group_id ? activeGroupIds.has(item.group_id) : false) ||
+        (item.course_id ? courseIds.has(item.course_id) && !item.group_id && !item.student_id : false) ||
+        (item.lesson_id ? lessonIds.has(item.lesson_id) : false) ||
+        (item.homework_id ? homeworkIds.has(item.homework_id) : false),
+    );
+
+    function materialContext(item: MaterialRow) {
+      if (item.homework_id && homeworkMap.has(item.homework_id)) {
+        return `ДЗ: ${homeworkMap.get(item.homework_id)?.title}`;
+      }
+
+      if (item.lesson_id && lessonMap.has(item.lesson_id)) {
+        const lesson = lessonMap.get(item.lesson_id);
+        return `Урок: ${formatDateTime(lesson?.starts_at)} - ${lesson?.topic ?? courseMap.get(lesson?.course_id ?? "")?.name ?? "курс"}`;
+      }
+
+      if (item.group_id && groupMap.has(item.group_id)) {
+        return `Группа: ${groupMap.get(item.group_id)?.name}`;
+      }
+
+      if (item.course_id && courseMap.has(item.course_id)) {
+        return `Курс: ${courseMap.get(item.course_id)?.name}`;
+      }
+
+      return "личный материал";
+    }
+
+    return {
+      groups: visibleGroups.map((group) => `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`),
+      materials: visibleMaterials.map((item) => ({
+        content: item.content ?? "",
+        detail: `${materialTypeLabel(item.type)}; ${materialContext(item)}`,
+        id: item.id,
+        title: item.title,
+        url: item.url,
+      })),
+      metrics: [
+        { label: "Материалы", value: String(visibleMaterials.length) },
+        { label: "Ссылки", value: String(visibleMaterials.filter((item) => item.type === "link").length) },
+        { label: "Тексты", value: String(visibleMaterials.filter((item) => item.type === "text").length) },
+      ],
+      studentName: student.name,
     };
   });
 }

@@ -17,6 +17,33 @@ type SaveTeacherLessonInput = {
   organizationId: string;
 };
 
+type SaveTeacherHomeworkInput = {
+  email: string;
+  formData: FormData;
+  groupId?: string;
+  organizationId: string;
+};
+
+type UpdateTeacherHomeworkStatusInput = {
+  email: string;
+  formData: FormData;
+  homeworkId: string;
+  organizationId: string;
+};
+
+type SaveTeacherMaterialInput = {
+  email: string;
+  formData: FormData;
+  organizationId: string;
+};
+
+type UpdateTeacherMaterialStatusInput = {
+  email: string;
+  formData: FormData;
+  materialId: string;
+  organizationId: string;
+};
+
 type SaveTeacherStudentProgressInput = {
   email: string;
   formData: FormData;
@@ -50,6 +77,23 @@ type TeacherLessonGroupRow = {
 type TeacherProgressGroupRow = {
   course_id: string;
   id: string;
+};
+
+type TeacherHomeworkRow = {
+  course_id: string;
+  group_id: string | null;
+  id: string;
+  lesson_id: string | null;
+  student_id: string | null;
+};
+
+type TeacherMaterialRow = {
+  course_id: string | null;
+  group_id: string | null;
+  homework_id: string | null;
+  id: string;
+  lesson_id: string | null;
+  student_id: string | null;
 };
 
 type TeacherLessonRow = {
@@ -254,6 +298,22 @@ function parseVisibility(value: string) {
   throw new Error("Материал: неверная видимость.");
 }
 
+function parseHomeworkStatus(value: string) {
+  if (value === "active" || value === "cancelled" || value === "archived") {
+    return value;
+  }
+
+  throw new Error("Домашнее задание: неверный статус.");
+}
+
+function parseMaterialStatus(value: string) {
+  if (value === "active" || value === "hidden" || value === "archived") {
+    return value;
+  }
+
+  throw new Error("Материал: неверный статус.");
+}
+
 function parseDueAt(formData: FormData) {
   const value = formText(formData, "due_date", "Срок домашнего задания");
 
@@ -441,6 +501,358 @@ async function assertAllowedLesson(
   ) {
     throw new Error("Прогресс: урок не относится к ученику преподавателя.");
   }
+}
+
+async function getTeacherGroupContext(
+  supabase: SupabaseClient,
+  email: string,
+  organizationId: string,
+  groupId: string,
+) {
+  assertUuid(groupId, "Группа");
+
+  const teacher = await getTeacherByEmail(supabase, email);
+  const groupResult = await supabase
+    .from("groups")
+    .select("id,course_id,teacher_id")
+    .eq("id", groupId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(groupResult.error, "Проверка группы преподавателя");
+
+  const group = groupResult.data as TeacherLessonGroupRow | null;
+
+  if (!group || group.teacher_id !== teacher.id) {
+    throw new Error("Группа: запись не найдена.");
+  }
+
+  return { group, teacher };
+}
+
+async function assertActiveGroupStudent(supabase: SupabaseClient, groupId: string, studentId: string | null) {
+  if (!studentId) {
+    return;
+  }
+
+  assertUuid(studentId, "Ученик");
+
+  const membershipResult = await supabase
+    .from("group_students")
+    .select("student_id,status")
+    .eq("group_id", groupId)
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  assertWriteSuccess(membershipResult.error, "Проверка ученика задания");
+
+  const membership = membershipResult.data as GroupStudentStatusRow | null;
+
+  if (!membership || membership.status !== "active") {
+    throw new Error("Ученик задания: ученик не входит в активный состав группы.");
+  }
+}
+
+async function assertLessonForGroup(
+  supabase: SupabaseClient,
+  organizationId: string,
+  group: TeacherLessonGroupRow,
+  teacher: TeacherUserRow,
+  lessonId: string | null,
+) {
+  if (!lessonId) {
+    return;
+  }
+
+  assertUuid(lessonId, "Урок");
+
+  const lessonResult = await supabase
+    .from("lessons")
+    .select("id,course_id,group_id,teacher_id")
+    .eq("id", lessonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(lessonResult.error, "Проверка урока задания");
+
+  const lesson = lessonResult.data as TeacherLessonRow | null;
+
+  if (!lesson || lesson.teacher_id !== teacher.id || lesson.group_id !== group.id || lesson.course_id !== group.course_id) {
+    throw new Error("Урок задания: урок не относится к выбранной группе.");
+  }
+}
+
+async function assertTeacherHomeworkAccess(
+  supabase: SupabaseClient,
+  email: string,
+  organizationId: string,
+  homeworkId: string,
+) {
+  assertUuid(homeworkId, "Домашнее задание");
+
+  const teacher = await getTeacherByEmail(supabase, email);
+  const homeworkResult = await supabase
+    .from("homework")
+    .select("id,course_id,group_id,student_id,lesson_id")
+    .eq("id", homeworkId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(homeworkResult.error, "Проверка домашнего задания");
+
+  const homework = homeworkResult.data as TeacherHomeworkRow | null;
+
+  if (!homework) {
+    throw new Error("Домашнее задание: запись не найдена.");
+  }
+
+  if (homework.group_id) {
+    await getTeacherGroupContext(supabase, email, organizationId, homework.group_id);
+    return { homework, teacher };
+  }
+
+  if (homework.lesson_id) {
+    const lessonResult = await supabase
+      .from("lessons")
+      .select("id,course_id,group_id,teacher_id")
+      .eq("id", homework.lesson_id)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+
+    assertWriteSuccess(lessonResult.error, "Проверка урока домашнего задания");
+
+    const lesson = lessonResult.data as TeacherLessonRow | null;
+
+    if (lesson && lesson.teacher_id === teacher.id) {
+      return { homework, teacher };
+    }
+  }
+
+  if (homework.student_id) {
+    const groupsResult = await supabase
+      .from("groups")
+      .select("id,course_id")
+      .eq("organization_id", organizationId)
+      .eq("teacher_id", teacher.id)
+      .eq("course_id", homework.course_id);
+
+    assertWriteSuccess(groupsResult.error, "Проверка групп домашнего задания");
+
+    const groupIds = ((groupsResult.data ?? []) as TeacherProgressGroupRow[]).map((group) => group.id);
+    const membershipResult =
+      groupIds.length > 0
+        ? await supabase
+            .from("group_students")
+            .select("student_id,status")
+            .in("group_id", groupIds)
+            .eq("student_id", homework.student_id)
+            .eq("status", "active")
+            .limit(1)
+        : { data: [], error: null };
+
+    assertWriteSuccess(membershipResult.error, "Проверка ученика домашнего задания");
+
+    if ((membershipResult.data ?? []).length > 0) {
+      return { homework, teacher };
+    }
+  }
+
+  throw new Error("Домашнее задание: запись не найдена.");
+}
+
+async function resolveTeacherMaterialContext(
+  supabase: SupabaseClient,
+  input: SaveTeacherMaterialInput,
+) {
+  const contextValue = requiredText(input.formData, "context", "Учебный контекст материала");
+  const [kind, id, secondaryId] = contextValue.split(":");
+
+  if (!id) {
+    throw new Error("Материал: неверный учебный контекст.");
+  }
+
+  if (kind === "course") {
+    assertUuid(id, "Курс материала");
+
+    const teacher = await getTeacherByEmail(supabase, input.email);
+    const groupsResult = await supabase
+      .from("groups")
+      .select("id,course_id")
+      .eq("organization_id", input.organizationId)
+      .eq("teacher_id", teacher.id)
+      .eq("course_id", id)
+      .limit(1);
+
+    assertWriteSuccess(groupsResult.error, "Проверка курса материала");
+
+    if ((groupsResult.data ?? []).length === 0) {
+      throw new Error("Материал: курс не относится к группам преподавателя.");
+    }
+
+    return { course_id: id, created_by: teacher.id };
+  }
+
+  if (kind === "group") {
+    const { group, teacher } = await getTeacherGroupContext(supabase, input.email, input.organizationId, id);
+
+    return { course_id: group.course_id, created_by: teacher.id, group_id: group.id };
+  }
+
+  if (kind === "lesson") {
+    assertUuid(id, "Урок материала");
+
+    const teacher = await getTeacherByEmail(supabase, input.email);
+    const lessonResult = await supabase
+      .from("lessons")
+      .select("id,course_id,group_id,teacher_id")
+      .eq("id", id)
+      .eq("organization_id", input.organizationId)
+      .maybeSingle();
+
+    assertWriteSuccess(lessonResult.error, "Проверка урока материала");
+
+    const lesson = lessonResult.data as TeacherLessonRow | null;
+
+    if (!lesson || lesson.teacher_id !== teacher.id || !lesson.group_id) {
+      throw new Error("Материал: урок не относится к преподавателю.");
+    }
+
+    return {
+      course_id: lesson.course_id,
+      created_by: teacher.id,
+      group_id: lesson.group_id,
+      lesson_id: lesson.id,
+    };
+  }
+
+  if (kind === "homework") {
+    const { homework, teacher } = await assertTeacherHomeworkAccess(supabase, input.email, input.organizationId, id);
+
+    return {
+      course_id: homework.course_id,
+      created_by: teacher.id,
+      group_id: homework.group_id,
+      homework_id: homework.id,
+      lesson_id: homework.lesson_id,
+      student_id: homework.student_id,
+    };
+  }
+
+  if (kind === "student") {
+    if (!secondaryId) {
+      throw new Error("Материал: для ученика нужно выбрать группу.");
+    }
+
+    const { group, teacher } = await getTeacherGroupContext(supabase, input.email, input.organizationId, secondaryId);
+    await assertActiveGroupStudent(supabase, group.id, id);
+
+    return {
+      course_id: group.course_id,
+      created_by: teacher.id,
+      group_id: group.id,
+      student_id: id,
+    };
+  }
+
+  throw new Error("Материал: неверный учебный контекст.");
+}
+
+async function assertTeacherMaterialAccess(
+  supabase: SupabaseClient,
+  email: string,
+  organizationId: string,
+  materialId: string,
+) {
+  assertUuid(materialId, "Материал");
+
+  const teacher = await getTeacherByEmail(supabase, email);
+  const materialResult = await supabase
+    .from("materials")
+    .select("id,course_id,group_id,student_id,lesson_id,homework_id")
+    .eq("id", materialId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(materialResult.error, "Проверка материала");
+
+  const material = materialResult.data as TeacherMaterialRow | null;
+
+  if (!material) {
+    throw new Error("Материал: запись не найдена.");
+  }
+
+  if (material.group_id) {
+    await getTeacherGroupContext(supabase, email, organizationId, material.group_id);
+    return { material, teacher };
+  }
+
+  if (material.lesson_id) {
+    const lessonResult = await supabase
+      .from("lessons")
+      .select("id,course_id,group_id,teacher_id")
+      .eq("id", material.lesson_id)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+
+    assertWriteSuccess(lessonResult.error, "Проверка урока материала");
+
+    const lesson = lessonResult.data as TeacherLessonRow | null;
+
+    if (lesson && lesson.teacher_id === teacher.id) {
+      return { material, teacher };
+    }
+  }
+
+  if (material.homework_id) {
+    await assertTeacherHomeworkAccess(supabase, email, organizationId, material.homework_id);
+    return { material, teacher };
+  }
+
+  if (material.course_id) {
+    const groupsResult = await supabase
+      .from("groups")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("teacher_id", teacher.id)
+      .eq("course_id", material.course_id)
+      .limit(1);
+
+    assertWriteSuccess(groupsResult.error, "Проверка курса материала");
+
+    if ((groupsResult.data ?? []).length > 0) {
+      return { material, teacher };
+    }
+  }
+
+  if (material.student_id) {
+    const groupsResult = await supabase
+      .from("groups")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("teacher_id", teacher.id);
+
+    assertWriteSuccess(groupsResult.error, "Проверка групп материала");
+
+    const groupIds = ((groupsResult.data ?? []) as Array<{ id: string }>).map((group) => group.id);
+    const membershipResult =
+      groupIds.length > 0
+        ? await supabase
+            .from("group_students")
+            .select("student_id,status")
+            .in("group_id", groupIds)
+            .eq("student_id", material.student_id)
+            .eq("status", "active")
+            .limit(1)
+        : { data: [], error: null };
+
+    assertWriteSuccess(membershipResult.error, "Проверка ученика материала");
+
+    if ((membershipResult.data ?? []).length > 0) {
+      return { material, teacher };
+    }
+  }
+
+  throw new Error("Материал: запись не найдена.");
 }
 
 export async function saveTeacherGroupJournal(input: SaveTeacherGroupJournalInput) {
@@ -683,6 +1095,107 @@ export async function createTeacherLessonMaterial(input: SaveTeacherLessonInput)
   assertWriteSuccess(result.error, "Добавление материала");
 
   return { groupId: context.group.id };
+}
+
+export async function createTeacherHomework(input: SaveTeacherHomeworkInput) {
+  const supabase = createSupabaseAdminClient();
+  const groupId = input.groupId ?? requiredText(input.formData, "group_id", "Группа задания");
+  const { group, teacher } = await getTeacherGroupContext(supabase, input.email, input.organizationId, groupId);
+  const studentId = optionalUuid(formText(input.formData, "student_id", "Ученик задания"), "Ученик задания");
+  const lessonId = optionalUuid(formText(input.formData, "lesson_id", "Урок задания"), "Урок задания");
+
+  await assertActiveGroupStudent(supabase, group.id, studentId);
+  await assertLessonForGroup(supabase, input.organizationId, group, teacher, lessonId);
+
+  const result = await supabase.from("homework").insert({
+    course_id: group.course_id,
+    created_by: teacher.id,
+    description: requiredText(input.formData, "description", "Описание домашнего задания"),
+    due_at: parseDueAt(input.formData),
+    group_id: group.id,
+    lesson_id: lessonId,
+    organization_id: input.organizationId,
+    status: "active",
+    student_id: studentId,
+    title: requiredText(input.formData, "title", "Название домашнего задания"),
+  });
+
+  assertWriteSuccess(result.error, "Добавление домашнего задания");
+
+  return { groupId: group.id, lessonId };
+}
+
+export async function updateTeacherHomeworkStatus(input: UpdateTeacherHomeworkStatusInput) {
+  const supabase = createSupabaseAdminClient();
+  await assertTeacherHomeworkAccess(supabase, input.email, input.organizationId, input.homeworkId);
+
+  const status = parseHomeworkStatus(requiredText(input.formData, "status", "Статус домашнего задания"));
+  const result = await supabase
+    .from("homework")
+    .update({
+      archived_at: status === "archived" ? new Date().toISOString() : null,
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.homeworkId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Обновление домашнего задания");
+
+  if (!result.data) {
+    throw new Error("Домашнее задание: запись не найдена.");
+  }
+}
+
+export async function createTeacherMaterial(input: SaveTeacherMaterialInput) {
+  const supabase = createSupabaseAdminClient();
+  const context = await resolveTeacherMaterialContext(supabase, input);
+  const type = parseMaterialType(requiredText(input.formData, "type", "Тип материала"));
+  const visibility = parseVisibility(requiredText(input.formData, "visibility", "Видимость материала"));
+  const content =
+    type === "text"
+      ? requiredText(input.formData, "content", "Текст материала")
+      : nullableText(input.formData, "content", "Текст материала");
+  const url = type === "link" ? requiredText(input.formData, "url", "Ссылка материала") : null;
+  const result = await supabase.from("materials").insert({
+    ...context,
+    content,
+    organization_id: input.organizationId,
+    status: "active",
+    title: requiredText(input.formData, "title", "Название материала"),
+    type,
+    url,
+    visibility,
+  });
+
+  assertWriteSuccess(result.error, "Добавление материала");
+}
+
+export async function updateTeacherMaterialStatus(input: UpdateTeacherMaterialStatusInput) {
+  const supabase = createSupabaseAdminClient();
+  await assertTeacherMaterialAccess(supabase, input.email, input.organizationId, input.materialId);
+
+  const status = parseMaterialStatus(requiredText(input.formData, "status", "Статус материала"));
+  const result = await supabase
+    .from("materials")
+    .update({
+      archived_at: status === "archived" ? new Date().toISOString() : null,
+      status,
+      updated_at: new Date().toISOString(),
+      visibility: parseVisibility(requiredText(input.formData, "visibility", "Видимость материала")),
+    })
+    .eq("id", input.materialId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Обновление материала");
+
+  if (!result.data) {
+    throw new Error("Материал: запись не найдена.");
+  }
 }
 
 export async function createTeacherProgressRule(input: SaveTeacherStudentProgressInput) {
