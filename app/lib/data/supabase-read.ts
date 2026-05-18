@@ -220,7 +220,8 @@ export type AdminGroupDetailStudent = {
 
 export type AdminGroupScheduleRule = {
   id: string;
-  summary: string;
+  weekday: string;
+  timeRange: string;
   period: string;
 };
 
@@ -424,6 +425,10 @@ function weekdayLabel(value: number) {
   };
 
   return labels[value] ?? `день ${value}`;
+}
+
+function weekdayOrderValue(value: number) {
+  return value === 0 ? 7 : value;
 }
 
 function isPaymentAttention(payment: PaymentRow) {
@@ -720,11 +725,19 @@ export async function getAdminGroupDetail(organizationId: string, groupId: strin
           status: statusLabel(item.status),
         };
       }),
-      scheduleRules: scheduleRules.map((rule) => ({
-        id: rule.id,
-        summary: `${weekdayLabel(rule.weekday)}, ${formatTime(rule.start_time)}-${formatTime(rule.end_time)}`,
-        period: `${formatDate(rule.starts_on)} - ${rule.ends_on ? formatDate(rule.ends_on) : "без окончания"}`,
-      })),
+      scheduleRules: scheduleRules
+        .slice()
+        .sort(
+          (left, right) =>
+            weekdayOrderValue(left.weekday) - weekdayOrderValue(right.weekday) ||
+            left.start_time.localeCompare(right.start_time),
+        )
+        .map((rule) => ({
+          id: rule.id,
+          weekday: weekdayLabel(rule.weekday),
+          timeRange: `${formatTime(rule.start_time)}-${formatTime(rule.end_time)}`,
+          period: `с ${formatDate(rule.starts_on)} ${rule.ends_on ? `до ${formatDate(rule.ends_on)}` : "без окончания"}`,
+        })),
       upcomingLessons: summarizeLessons(lessons, courseMap, new Map([[group.id, group]])),
       studentOptions: students
         .filter((student) => student.status === "active" && !activeStudentIds.has(student.id))

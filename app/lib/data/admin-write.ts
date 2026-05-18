@@ -39,9 +39,166 @@ type AssignStudentToGroupInput = {
   studentId: string;
 };
 
+type CreateScheduleRuleInput = {
+  organizationId: string;
+  groupId: string;
+  weekdays: number[];
+  startTime: string;
+  endTime: string;
+  startsOn: string;
+  endsOn: string | null;
+};
+
+type DeleteScheduleRuleInput = {
+  organizationId: string;
+  groupId: string;
+  scheduleRuleId: string;
+};
+
+export type LessonGenerationHorizon = "one_month" | "three_months" | "schedule_end";
+
+type GenerateGroupLessonsInput = {
+  organizationId: string;
+  groupId: string;
+  horizon: LessonGenerationHorizon;
+};
+
+type GroupForLessonGeneration = {
+  id: string;
+  course_id: string;
+  teacher_id: string | null;
+};
+
+type ScheduleRuleForGeneration = {
+  id: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  starts_on: string;
+  ends_on: string | null;
+};
+
+type ExistingLessonSlot = {
+  schedule_rule_id: string | null;
+  starts_at: string;
+};
+
+type LessonIdRow = {
+  id: string;
+};
+
 function assertWriteSuccess(error: { message: string } | null, context: string) {
   if (error) {
     throw new Error(`${context}: ${error.message}`);
+  }
+}
+
+function assertDateString(value: string, label: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${label}: неверная дата.`);
+  }
+}
+
+function assertTimeString(value: string, label: string) {
+  if (!/^\d{2}:\d{2}$/.test(value)) {
+    throw new Error(`${label}: неверное время.`);
+  }
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function addMonths(date: Date, months: number) {
+  const next = new Date(date);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  return next;
+}
+
+function dateOnly(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function moscowDateOnly(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+  }).formatToParts(date);
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+
+  return `${values.get("year")}-${values.get("month")}-${values.get("day")}`;
+}
+
+function maxDateString(left: string, right: string) {
+  return left > right ? left : right;
+}
+
+function minDateString(left: string, right: string) {
+  return left < right ? left : right;
+}
+
+function moscowDateTimeIso(date: string, time: string) {
+  return new Date(`${date}T${time}:00+03:00`).toISOString();
+}
+
+function datesInWindow(startDate: string, endDate: string, weekday: number) {
+  const dates: string[] = [];
+  let current = new Date(`${startDate}T00:00:00Z`);
+  const end = new Date(`${endDate}T00:00:00Z`);
+
+  while (current.getUTCDay() !== weekday && current <= end) {
+    current = addDays(current, 1);
+  }
+
+  while (current <= end) {
+    dates.push(dateOnly(current));
+    current = addDays(current, 7);
+  }
+
+  return dates;
+}
+
+function resolveLessonGenerationEndDate(
+  horizon: LessonGenerationHorizon,
+  today: string,
+  rules: ScheduleRuleForGeneration[],
+) {
+  if (horizon === "one_month") {
+    return dateOnly(addMonths(new Date(`${today}T00:00:00Z`), 1));
+  }
+
+  if (horizon === "three_months") {
+    return dateOnly(addMonths(new Date(`${today}T00:00:00Z`), 3));
+  }
+
+  const missingEndDate = rules.some((rule) => !rule.ends_on);
+
+  if (missingEndDate) {
+    throw new Error("Создание занятий: для создания до окончания расписания заполните дату окончания у всех активных правил.");
+  }
+
+  return rules.reduce((latest, rule) => maxDateString(latest, rule.ends_on as string), today);
+}
+
+function assertWeekdays(weekdays: number[]) {
+  if (weekdays.length === 0) {
+    throw new Error("Дни недели: выберите хотя бы один день.");
+  }
+
+  const uniqueWeekdays = new Set(weekdays);
+
+  if (uniqueWeekdays.size !== weekdays.length) {
+    throw new Error("Дни недели: один день не должен повторяться.");
+  }
+
+  for (const weekday of weekdays) {
+    if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
+      throw new Error("День недели: неверное значение.");
+    }
   }
 }
 
@@ -139,4 +296,200 @@ export async function assignAdminStudentToGroup(input: AssignStudentToGroupInput
   );
 
   assertWriteSuccess(result.error, "Назначение ученика в группу");
+}
+
+export async function createAdminGroupScheduleRule(input: CreateScheduleRuleInput) {
+  assertWeekdays(input.weekdays);
+  assertDateString(input.startsOn, "Дата начала");
+  assertTimeString(input.startTime, "Время начала");
+  assertTimeString(input.endTime, "Время окончания");
+
+  if (input.endsOn) {
+    assertDateString(input.endsOn, "Дата окончания");
+
+    if (input.endsOn < input.startsOn) {
+      throw new Error("Дата окончания не может быть раньше даты начала.");
+    }
+  }
+
+  if (input.endTime <= input.startTime) {
+    throw new Error("Время окончания должно быть позже времени начала.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const groupResult = await supabase
+    .from("groups")
+    .select("id")
+    .eq("id", input.groupId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(groupResult.error, "Проверка группы");
+
+  if (!groupResult.data) {
+    throw new Error("Расписание: группа не найдена.");
+  }
+
+  const result = await supabase.from("schedule_rules").insert(
+    input.weekdays.map((weekday) => ({
+      organization_id: input.organizationId,
+      target_type: "group",
+      target_id: input.groupId,
+      weekday,
+      start_time: input.startTime,
+      end_time: input.endTime,
+      timezone: "Europe/Moscow",
+      starts_on: input.startsOn,
+      ends_on: input.endsOn,
+      status: "active",
+    })),
+  );
+
+  assertWriteSuccess(result.error, "Создание расписания");
+}
+
+export async function deleteAdminGroupScheduleRule(input: DeleteScheduleRuleInput) {
+  const supabase = createSupabaseAdminClient();
+  const now = new Date().toISOString();
+  const lessonsResult = await supabase
+    .from("lessons")
+    .select("id")
+    .eq("organization_id", input.organizationId)
+    .eq("group_id", input.groupId)
+    .eq("schedule_rule_id", input.scheduleRuleId)
+    .gte("starts_at", now);
+
+  assertWriteSuccess(lessonsResult.error, "Проверка будущих уроков расписания");
+
+  const futureLessonIds = ((lessonsResult.data ?? []) as LessonIdRow[]).map((lesson) => lesson.id);
+
+  if (futureLessonIds.length > 0) {
+    const journalResult = await supabase
+      .from("journal_entries")
+      .select("id")
+      .in("lesson_id", futureLessonIds)
+      .limit(1);
+
+    assertWriteSuccess(journalResult.error, "Проверка журнала расписания");
+
+    if ((journalResult.data ?? []).length > 0) {
+      throw new Error("Удаление расписания: у будущих уроков уже есть записи журнала.");
+    }
+
+    const lessonsDeleteResult = await supabase
+      .from("lessons")
+      .delete()
+      .eq("organization_id", input.organizationId)
+      .eq("group_id", input.groupId)
+      .eq("schedule_rule_id", input.scheduleRuleId)
+      .gte("starts_at", now);
+
+    assertWriteSuccess(lessonsDeleteResult.error, "Удаление будущих уроков расписания");
+  }
+
+  const result = await supabase
+    .from("schedule_rules")
+    .delete()
+    .eq("id", input.scheduleRuleId)
+    .eq("organization_id", input.organizationId)
+    .eq("target_type", "group")
+    .eq("target_id", input.groupId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Удаление расписания");
+
+  if (!result.data) {
+    throw new Error("Удаление расписания: правило не найдено.");
+  }
+}
+
+export async function generateAdminGroupLessons(input: GenerateGroupLessonsInput) {
+  const supabase = createSupabaseAdminClient();
+  const groupResult = await supabase
+    .from("groups")
+    .select("id,course_id,teacher_id")
+    .eq("id", input.groupId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(groupResult.error, "Проверка группы");
+
+  const group = groupResult.data as GroupForLessonGeneration | null;
+
+  if (!group) {
+    throw new Error("Создание занятий: группа не найдена.");
+  }
+
+  if (!group.teacher_id) {
+    throw new Error("Создание занятий: у группы нет преподавателя.");
+  }
+
+  const rulesResult = await supabase
+    .from("schedule_rules")
+    .select("id,weekday,start_time,end_time,starts_on,ends_on")
+    .eq("organization_id", input.organizationId)
+    .eq("target_type", "group")
+    .eq("target_id", input.groupId)
+    .eq("status", "active");
+
+  assertWriteSuccess(rulesResult.error, "Расписание группы");
+
+  const rules = (rulesResult.data ?? []) as ScheduleRuleForGeneration[];
+
+  if (rules.length === 0) {
+    throw new Error("Создание занятий: сначала настройте расписание.");
+  }
+
+  const today = moscowDateOnly(new Date());
+  const windowEnd = resolveLessonGenerationEndDate(input.horizon, today, rules);
+  const existingResult = await supabase
+    .from("lessons")
+    .select("schedule_rule_id,starts_at")
+    .eq("organization_id", input.organizationId)
+    .eq("group_id", input.groupId)
+    .gte("starts_at", moscowDateTimeIso(today, "00:00"))
+    .lte("starts_at", moscowDateTimeIso(windowEnd, "23:59"));
+
+  assertWriteSuccess(existingResult.error, "Проверка занятий");
+
+  const existingSlots = new Set(
+    ((existingResult.data ?? []) as ExistingLessonSlot[])
+      .filter((lesson) => lesson.schedule_rule_id)
+      .map((lesson) => `${lesson.schedule_rule_id}:${new Date(lesson.starts_at).toISOString()}`),
+  );
+  const lessonsToCreate = rules.flatMap((rule) => {
+    const startDate = maxDateString(today, rule.starts_on);
+    const endDate = rule.ends_on ? minDateString(windowEnd, rule.ends_on) : windowEnd;
+
+    if (startDate > endDate) {
+      return [];
+    }
+
+    return datesInWindow(startDate, endDate, rule.weekday)
+      .map((scheduledAt) => ({
+        organization_id: input.organizationId,
+        course_id: group.course_id,
+        group_id: group.id,
+        individual_enrollment_id: null,
+        teacher_id: group.teacher_id,
+        schedule_rule_id: rule.id,
+        scheduled_at: scheduledAt,
+        starts_at: moscowDateTimeIso(scheduledAt, rule.start_time.slice(0, 5)),
+        ends_at: moscowDateTimeIso(scheduledAt, rule.end_time.slice(0, 5)),
+        topic: null,
+        summary: "Создано по расписанию",
+      }))
+      .filter((lesson) => !existingSlots.has(`${lesson.schedule_rule_id}:${lesson.starts_at}`));
+  });
+
+  if (lessonsToCreate.length === 0) {
+    return 0;
+  }
+
+  const insertResult = await supabase.from("lessons").insert(lessonsToCreate);
+
+  assertWriteSuccess(insertResult.error, "Создание занятий");
+
+  return lessonsToCreate.length;
 }

@@ -6,7 +6,11 @@ import {
   assignAdminStudentToGroup,
   createAdminCourse,
   createAdminGroup,
+  createAdminGroupScheduleRule,
   createAdminStudent,
+  deleteAdminGroupScheduleRule,
+  generateAdminGroupLessons,
+  type LessonGenerationHorizon,
   updateAdminGroup,
 } from "@/app/lib/data/admin-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
@@ -34,6 +38,38 @@ function optionalString(formData: FormData, name: string) {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function requiredIntegers(formData: FormData, name: string, label: string) {
+  const values = formData.getAll(name);
+
+  if (values.length === 0) {
+    throw new Error(`${label}: выберите хотя бы одно значение.`);
+  }
+
+  return values.map((raw) => {
+    if (typeof raw !== "string") {
+      throw new Error(`${label}: неверное значение.`);
+    }
+
+    const value = Number.parseInt(raw, 10);
+
+    if (!Number.isInteger(value)) {
+      throw new Error(`${label}: неверное число.`);
+    }
+
+    return value;
+  });
+}
+
+function lessonGenerationHorizon(formData: FormData): LessonGenerationHorizon {
+  const value = optionalString(formData, "horizon") ?? "one_month";
+
+  if (value === "one_month" || value === "three_months" || value === "schedule_end") {
+    return value;
+  }
+
+  throw new Error("Срок создания занятий: неверное значение.");
 }
 
 export async function createCourse(formData: FormData) {
@@ -133,20 +169,52 @@ export async function updateGroup(groupId: string, formData: FormData) {
 }
 
 export async function createGroupScheduleRule(groupId: string, formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await createAdminGroupScheduleRule({
+    organizationId: session.organizationId,
+    groupId,
+    weekdays: requiredIntegers(formData, "weekdays", "Дни недели"),
+    startTime: requiredString(formData, "startTime", "Время начала"),
+    endTime: requiredString(formData, "endTime", "Время окончания"),
+    startsOn: requiredString(formData, "startsOn", "Дата начала"),
+    endsOn: optionalString(formData, "endsOn"),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}`);
 }
 
 export async function deleteScheduleRule(scheduleRuleId: string, groupId: string) {
-  void scheduleRuleId;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await deleteAdminGroupScheduleRule({
+    organizationId: session.organizationId,
+    groupId,
+    scheduleRuleId,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}`);
 }
 
-export async function generateLessonsForGroup(groupId: string) {
-  await requireAdmin();
+export async function generateLessonsForGroup(groupId: string, formData: FormData) {
+  const session = await requireAdmin();
+
+  await generateAdminGroupLessons({
+    organizationId: session.organizationId,
+    groupId,
+    horizon: lessonGenerationHorizon(formData),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}`);
 }
 
 export async function addStudentToGroup(groupId: string, formData: FormData) {

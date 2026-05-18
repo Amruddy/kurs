@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { DataTable, InfoList, SupabaseDataPage } from "@/app/components/supabase-data-page";
+import { ConfirmSubmitButton } from "@/app/components/confirm-submit-button";
 import { PageCreateAction } from "@/app/components/page-create-action";
-import { addStudentToGroup, updateGroup } from "@/app/admin/actions";
+import {
+  addStudentToGroup,
+  createGroupScheduleRule,
+  deleteScheduleRule,
+  generateLessonsForGroup,
+  updateGroup,
+} from "@/app/admin/actions";
 import { getAdminGroupDetail } from "@/app/lib/data/supabase-read";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
@@ -19,6 +26,24 @@ const groupStatuses = [
   { label: "Архив", value: "archived" },
 ];
 
+const weekdays = [
+  { label: "Понедельник", value: "1" },
+  { label: "Вторник", value: "2" },
+  { label: "Среда", value: "3" },
+  { label: "Четверг", value: "4" },
+  { label: "Пятница", value: "5" },
+  { label: "Суббота", value: "6" },
+  { label: "Воскресенье", value: "0" },
+];
+
+function TrashIcon() {
+  return (
+    <svg className="trash-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 4h6m-8 4h10m-9 0 .7 12h6.6L16 8M10 11v6m4-6v6" />
+    </svg>
+  );
+}
+
 export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
   const session = await requireWorkspace("admin");
   const { groupId } = await params;
@@ -33,6 +58,8 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
       {(data) => {
         const updateGroupAction = updateGroup.bind(null, data.id);
         const addStudentAction = addStudentToGroup.bind(null, data.id);
+        const createScheduleRuleAction = createGroupScheduleRule.bind(null, data.id);
+        const generateLessonsAction = generateLessonsForGroup.bind(null, data.id);
 
         return (
           <>
@@ -45,65 +72,134 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
                       {data.course}; {data.teacher}; {data.status}
                     </p>
                   </div>
-                  <div className="button-row">
-                    <PageCreateAction buttonLabel="Изменить группу" title="Изменить группу">
-                      <form action={updateGroupAction} className="form-grid">
-                        <label>
-                          Название
-                          <input name="name" required defaultValue={data.name} />
-                        </label>
-                        <label>
-                          Преподаватель
-                          <select name="teacherId" defaultValue={data.teacherId ?? ""}>
-                            <option value="">Без преподавателя</option>
-                            {data.teacherOptions.map((teacher) => (
-                              <option key={teacher.value} value={teacher.value}>
-                                {teacher.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>
-                          Статус
-                          <select name="status" required defaultValue={data.statusValue}>
-                            {groupStatuses.map((status) => (
-                              <option key={status.value} value={status.value}>
-                                {status.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <button className="button" type="submit">
-                          Сохранить
-                        </button>
-                      </form>
-                    </PageCreateAction>
-
-                    <PageCreateAction buttonLabel="Добавить ученика" title="Добавить ученика">
-                      {data.studentOptions.length > 0 ? (
-                        <form action={addStudentAction} className="form-grid">
+                  <details className="group-settings">
+                    <summary className="button">Настройки</summary>
+                    <div className="group-settings-actions">
+                      <PageCreateAction buttonLabel="Изменить группу" title="Изменить группу">
+                        <form action={updateGroupAction} className="form-grid">
                           <label>
-                            Ученик
-                            <select name="studentId" required defaultValue="">
-                              <option value="" disabled>
-                                Выберите ученика
-                              </option>
-                              {data.studentOptions.map((student) => (
-                                <option key={student.value} value={student.value}>
-                                  {student.label}
+                            Название
+                            <input name="name" required defaultValue={data.name} />
+                          </label>
+                          <label>
+                            Преподаватель
+                            <select name="teacherId" defaultValue={data.teacherId ?? ""}>
+                              <option value="">Без преподавателя</option>
+                              {data.teacherOptions.map((teacher) => (
+                                <option key={teacher.value} value={teacher.value}>
+                                  {teacher.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            Статус
+                            <select name="status" required defaultValue={data.statusValue}>
+                              {groupStatuses.map((status) => (
+                                <option key={status.value} value={status.value}>
+                                  {status.label}
                                 </option>
                               ))}
                             </select>
                           </label>
                           <button className="button" type="submit">
-                            Добавить в группу
+                            Сохранить
                           </button>
                         </form>
-                      ) : (
-                        <p className="empty-state">Все активные ученики уже добавлены в группу.</p>
-                      )}
-                    </PageCreateAction>
-                  </div>
+                      </PageCreateAction>
+
+                      <PageCreateAction buttonLabel="Добавить ученика" title="Добавить ученика">
+                        {data.studentOptions.length > 0 ? (
+                          <form action={addStudentAction} className="form-grid">
+                            <label>
+                              Ученик
+                              <select name="studentId" required defaultValue="">
+                                <option value="" disabled>
+                                  Выберите ученика
+                                </option>
+                                {data.studentOptions.map((student) => (
+                                  <option key={student.value} value={student.value}>
+                                    {student.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <button className="button" type="submit">
+                              Добавить в группу
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="empty-state">Все активные ученики уже добавлены в группу.</p>
+                        )}
+                      </PageCreateAction>
+
+                      <PageCreateAction buttonLabel="Настроить расписание" title="Новое правило расписания">
+                        <form action={createScheduleRuleAction} className="form-grid">
+                          <fieldset className="weekday-picker">
+                            <legend>Дни недели</legend>
+                            <div className="weekday-options">
+                              {weekdays.map((weekday) => (
+                                <label className="checkbox-label" key={weekday.value}>
+                                  <input
+                                    name="weekdays"
+                                    type="checkbox"
+                                    value={weekday.value}
+                                    defaultChecked={weekday.value === "1"}
+                                  />
+                                  {weekday.label}
+                                </label>
+                              ))}
+                            </div>
+                          </fieldset>
+                          <label>
+                            Время начала
+                            <input name="startTime" type="time" required defaultValue="10:00" />
+                          </label>
+                          <label>
+                            Время окончания
+                            <input name="endTime" type="time" required defaultValue="11:00" />
+                          </label>
+                          <label>
+                            Действует с
+                            <input name="startsOn" type="date" required />
+                          </label>
+                          <label>
+                            Действует до
+                            <input name="endsOn" type="date" />
+                          </label>
+                          <button className="button" type="submit">
+                            Сохранить правило
+                          </button>
+                        </form>
+                        <p className="form-note">
+                          Выберите один или несколько дней. Правило может действовать весь учебный срок.
+                        </p>
+                      </PageCreateAction>
+
+                      <PageCreateAction buttonLabel="Создать уроки" title="Создать уроки по расписанию">
+                        {data.scheduleRules.length > 0 ? (
+                          <form action={generateLessonsAction} className="form-grid">
+                            <label>
+                              Срок создания
+                              <select name="horizon" required defaultValue="one_month">
+                                <option value="one_month">На 1 месяц</option>
+                                <option value="three_months">На 3 месяца</option>
+                                <option value="schedule_end">До окончания расписания</option>
+                              </select>
+                            </label>
+                            <button className="button" type="submit">
+                              Создать уроки
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="empty-state">Сначала добавьте хотя бы одно правило расписания.</p>
+                        )}
+                        <p className="form-note">
+                          Это создает конкретные уроки в выбранном периоде. Само расписание хранится отдельно как правило.
+                        </p>
+                      </PageCreateAction>
+                    </div>
+                  </details>
                 </div>
 
                 <DataTable
@@ -172,15 +268,34 @@ export default async function AdminGroupPage({ params }: AdminGroupPageProps) {
 
               <div className="panel">
                 <h2>Расписание</h2>
-                <InfoList
-                  emptyText="Активное расписание пока не настроено."
-                  items={data.scheduleRules.map((rule) => (
-                    <div className="info-row" key={rule.id}>
-                      <span>{rule.summary}</span>
-                      <strong>{rule.period}</strong>
-                    </div>
-                  ))}
-                />
+                {data.scheduleRules.length > 0 ? (
+                  <div className="schedule-card-list">
+                    {data.scheduleRules.map((rule) => {
+                      const deleteScheduleRuleAction = deleteScheduleRule.bind(null, rule.id, data.id);
+
+                      return (
+                        <div className="schedule-card" key={rule.id}>
+                          <div>
+                            <span>{rule.weekday}</span>
+                            <strong>{rule.timeRange}</strong>
+                            <p>{rule.period}</p>
+                          </div>
+                          <form action={deleteScheduleRuleAction} className="inline-form">
+                            <ConfirmSubmitButton
+                              className="secondary-button compact-button icon-button"
+                              message={`Точно удалить расписание: ${rule.weekday}, ${rule.timeRange}?`}
+                            >
+                              <TrashIcon />
+                              <span className="visually-hidden">Удалить</span>
+                            </ConfirmSubmitButton>
+                          </form>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="empty-state">Активное расписание пока не настроено.</p>
+                )}
               </div>
 
               <div className="panel">
