@@ -30,50 +30,50 @@ export default async function StudentProgressPage() {
           </section>
 
           <section className="student-learning-grid">
-            <div className="student-learning-column">
+            <article className="panel student-progress-section">
               <h2>Правила</h2>
               {data.rules.length > 0 ? (
-                <div className="student-detail-list">
+                <div className="student-progress-items">
                   {data.rules.map((rule) => (
-                    <article className="panel student-detail-card" key={rule.id}>
+                    <div className="student-progress-item" key={rule.id}>
                       <span className="student-card-meta">{rule.course}</span>
                       <strong>{rule.name}</strong>
                       <p>
                         Уровень: {rule.level}
                         {rule.note ? `; ${rule.note}` : ""}
                       </p>
-                    </article>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="empty-state">Преподаватель пока не открыл правила прогресса.</p>
+                <p>Преподаватель пока не открыл правила прогресса.</p>
               )}
-            </div>
+            </article>
 
-            <div className="student-learning-column">
+            <article className="panel student-progress-section">
               <h2>Ошибки и замечания</h2>
               {data.errors.length > 0 ? (
-                <div className="student-detail-list">
+                <div className="student-progress-items">
                   {data.errors.map((error) => (
-                    <article className="panel student-detail-card" key={error.id}>
+                    <div className="student-progress-item" key={error.id}>
                       <span className="student-card-meta">{error.course}</span>
                       <strong>{error.name}</strong>
                       {error.note ? <p>{error.note}</p> : null}
-                    </article>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="empty-state">Открытых ошибок и замечаний пока нет.</p>
+                <p>Открытых ошибок и замечаний пока нет.</p>
               )}
-            </div>
+            </article>
           </section>
 
-          <section className="student-learning-column">
+          <section className="panel student-progress-section">
             <h2>Что повторить</h2>
             {data.records.length > 0 ? (
-              <div className="student-detail-list">
+              <div className="student-progress-items">
                 {data.records.map((record) => (
-                  <article className="panel student-detail-card" key={record.id}>
+                  <div className="student-progress-item" key={record.id}>
                     <span className="student-card-meta">
                       {record.createdAt}; {record.course}
                     </span>
@@ -82,11 +82,11 @@ export default async function StudentProgressPage() {
                       {record.lesson}
                       {record.studentComment ? `; ${record.studentComment}` : ""}
                     </p>
-                  </article>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="empty-state">Открытых записей прогресса пока нет.</p>
+              <p>Открытых записей прогресса пока нет.</p>
             )}
           </section>
         </div>
