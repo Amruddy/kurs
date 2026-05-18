@@ -77,7 +77,7 @@ The current active implementation source of truth is named in:
 
 Current active technical plan:
 
-`docs/work-plans/active/07-mpmf-1-implementation-roadmap-plan.md`
+`docs/work-plans/active/08-mpmf-1-stage-1-admin-group-detail-plan.md`
 
 Use the roadmap and `docs/work-plans/active/README.md` to determine whether a
 stage is active. If no active plan is selected, create or update the next stage

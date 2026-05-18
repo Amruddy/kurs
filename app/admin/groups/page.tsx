@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DataTable, SupabaseDataPage } from "@/app/components/supabase-data-page";
 import { PageCreateAction } from "@/app/components/page-create-action";
 import { getAdminGroups } from "@/app/lib/data/supabase-read";
@@ -111,6 +112,14 @@ export default async function AdminGroupsPage() {
               { header: "Ученики", render: (group) => group.students },
               { header: "Следующее занятие", render: (group) => group.nextLesson },
               { header: "Статус", render: (group) => group.status },
+              {
+                header: "Действие",
+                render: (group) => (
+                  <Link className="secondary-button compact-button" href={`/admin/groups/${group.id}`}>
+                    Открыть группу
+                  </Link>
+                ),
+              },
             ]}
           />
         </section>

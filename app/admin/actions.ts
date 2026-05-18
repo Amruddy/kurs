@@ -7,6 +7,7 @@ import {
   createAdminCourse,
   createAdminGroup,
   createAdminStudent,
+  updateAdminGroup,
 } from "@/app/lib/data/admin-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
@@ -115,10 +116,20 @@ export async function createGroup(formData: FormData) {
 }
 
 export async function updateGroup(groupId: string, formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await updateAdminGroup({
+    organizationId: session.organizationId,
+    groupId,
+    teacherId: optionalString(formData, "teacherId"),
+    name: requiredString(formData, "name", "Название группы"),
+    status: requiredString(formData, "status", "Статус группы"),
+  });
+
+  revalidatePath("/admin");
   revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}`);
 }
 
 export async function createGroupScheduleRule(groupId: string, formData: FormData) {
@@ -142,7 +153,10 @@ export async function addStudentToGroup(groupId: string, formData: FormData) {
   const studentId = requiredString(formData, "studentId", "Ученик");
   await requireAdmin();
   await assignAdminStudentToGroup({ groupId, studentId });
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}`);
 }
 
 export async function assignStudentToGroup(formData: FormData) {

@@ -15,14 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `docs/mpmf-1-implementation-roadmap`.
-- Текущий этап: `MPMF 1.0 Implementation Roadmap`.
+- Текущая ветка: `feat/mpmf-1-stage-1-admin-group-detail`.
+- Текущий этап: `MPMF 1.0 Stage 1. Admin Group Detail`.
 - Активный план:
-  `docs/work-plans/active/07-mpmf-1-implementation-roadmap-plan.md`.
-- Статус: идет фиксация полного roadmap реализации версии 1.0.
-- Предыдущий этап: `MPMF 1.0 Spec Rewrite`, завершен и смержен в `main`.
+  `docs/work-plans/active/08-mpmf-1-stage-1-admin-group-detail-plan.md`.
+- Статус: реализация и проверки выполнены, ожидает команды на commit/push.
+- Предыдущий этап: `MPMF 1.0 Implementation Roadmap`, завершен и смержен в
+  `main` через PR #29.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/06-mpmf-1-spec-rewrite-plan.md`.
+  `docs/work-plans/completed/07-mpmf-1-implementation-roadmap-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -84,26 +85,38 @@
 
 завершен и смержен в `main` через PR #27.
 
-## 4. Активный этап
-
 ### Stage 5: MPMF 1.0 Implementation Roadmap
 
 План:
 
-`docs/work-plans/active/07-mpmf-1-implementation-roadmap-plan.md`
+`docs/work-plans/completed/07-mpmf-1-implementation-roadmap-plan.md`
 
 Результат:
 
 `docs/roadmap/mpmf-1-implementation-roadmap.md`
 
+Статус:
+
+завершен и смержен в `main` через PR #29.
+
+## 4. Активный этап
+
+### MPMF 1.0 Stage 1: Admin Group Detail
+
+План:
+
+`docs/work-plans/active/08-mpmf-1-stage-1-admin-group-detail-plan.md`
+
+Маршрут:
+
+`/admin/groups/[groupId]`
+
 ## 5. Следующий этап
 
-Следующий stage выбирается после утверждения полного roadmap реализации.
+Следующий stage после merge текущего stage:
+
+`Stage 2. Group Schedule And Lessons`
 
 Полный roadmap реализации:
 
 `docs/roadmap/mpmf-1-implementation-roadmap.md`
-
-Первый кодовый stage по этому roadmap:
-
-`Stage 1. Admin Group Detail`

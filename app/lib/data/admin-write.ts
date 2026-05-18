@@ -26,6 +26,14 @@ type CreateGroupInput = {
   status: string;
 };
 
+type UpdateGroupInput = {
+  organizationId: string;
+  groupId: string;
+  teacherId: string | null;
+  name: string;
+  status: string;
+};
+
 type AssignStudentToGroupInput = {
   groupId: string;
   studentId: string;
@@ -93,6 +101,28 @@ export async function createAdminGroup(input: CreateGroupInput) {
   });
 
   assertWriteSuccess(result.error, "Создание группы");
+}
+
+export async function updateAdminGroup(input: UpdateGroupInput) {
+  const supabase = createSupabaseAdminClient();
+  const result = await supabase
+    .from("groups")
+    .update({
+      teacher_id: input.teacherId,
+      name: input.name,
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.groupId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Изменение группы");
+
+  if (!result.data) {
+    throw new Error("Изменение группы: группа не найдена.");
+  }
 }
 
 export async function assignAdminStudentToGroup(input: AssignStudentToGroupInput) {

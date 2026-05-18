@@ -88,6 +88,18 @@ type LessonRow = {
   topic: string | null;
 };
 
+type ScheduleRuleRow = {
+  id: string;
+  target_type: string;
+  target_id: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  starts_on: string;
+  ends_on: string | null;
+  status: string;
+};
+
 type HomeworkRow = {
   id: string;
   course_id: string;
@@ -193,6 +205,43 @@ export type AdminGroupsData = {
   groups: AdminGroupItem[];
   courseOptions: SelectOption[];
   groupOptions: SelectOption[];
+  studentOptions: SelectOption[];
+  teacherOptions: SelectOption[];
+};
+
+export type AdminGroupDetailStudent = {
+  id: string;
+  groupStudentId: string;
+  name: string;
+  contacts: string;
+  joinedAt: string;
+  status: string;
+};
+
+export type AdminGroupScheduleRule = {
+  id: string;
+  summary: string;
+  period: string;
+};
+
+export type ProblemSignal = {
+  detail: string;
+  label: string;
+  tone: "danger" | "ok" | "warning";
+};
+
+export type AdminGroupDetailData = {
+  id: string;
+  name: string;
+  course: string;
+  teacher: string;
+  teacherId: string | null;
+  status: string;
+  statusValue: string;
+  problemSignals: ProblemSignal[];
+  students: AdminGroupDetailStudent[];
+  scheduleRules: AdminGroupScheduleRule[];
+  upcomingLessons: LessonSummary[];
   studentOptions: SelectOption[];
   teacherOptions: SelectOption[];
 };
@@ -308,6 +357,14 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+function formatTime(value: string | null | undefined) {
+  if (!value) {
+    return "не задано";
+  }
+
+  return value.slice(0, 5);
+}
+
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("ru-RU", {
     currency,
@@ -332,6 +389,18 @@ function statusLabel(status: string) {
   return labels[status] ?? status;
 }
 
+function groupStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    active: "активна",
+    archived: "архив",
+    completed: "завершена",
+    paused: "пауза",
+    recruiting: "набор",
+  };
+
+  return labels[status] ?? statusLabel(status);
+}
+
 function formatLabel(value: string) {
   const labels: Record<string, string> = {
     both: "группы и индивидуально",
@@ -341,6 +410,20 @@ function formatLabel(value: string) {
   };
 
   return labels[value] ?? value;
+}
+
+function weekdayLabel(value: number) {
+  const labels: Record<number, string> = {
+    0: "воскресенье",
+    1: "понедельник",
+    2: "вторник",
+    3: "среда",
+    4: "четверг",
+    5: "пятница",
+    6: "суббота",
+  };
+
+  return labels[value] ?? `день ${value}`;
 }
 
 function isPaymentAttention(payment: PaymentRow) {
@@ -520,7 +603,7 @@ export async function getAdminGroups(organizationId: string) {
           name: group.name,
           course: courseMap.get(group.course_id)?.name ?? "Курс",
           teacher: group.teacher_id ? userMap.get(group.teacher_id)?.name ?? "Не назначен" : "Не назначен",
-          status: statusLabel(group.status),
+          status: groupStatusLabel(group.status),
           students: String(groupStudents.filter((item) => item.group_id === group.id && item.status === "active").length),
           nextLesson: nextLesson ? formatDateTime(nextLesson.starts_at) : "нет ближайшего занятия",
         };
@@ -533,6 +616,118 @@ export async function getAdminGroups(organizationId: string) {
         .map((group) => ({ label: group.name, value: group.id })),
       studentOptions: students
         .filter((student) => student.status === "active")
+        .map((student) => ({ label: student.name, value: student.id })),
+      teacherOptions: users
+        .filter((user) => user.status === "active" && teacherIds.has(user.id))
+        .map((user) => ({ label: user.name, value: user.id })),
+    };
+  });
+}
+
+export async function getAdminGroupDetail(organizationId: string, groupId: string) {
+  return readSupabaseData<AdminGroupDetailData>(async (client) => {
+    const { courses, groups, members, students, users } = await getBaseOrganizationData(client, organizationId);
+    const group = groups.find((item) => item.id === groupId);
+
+    if (!group) {
+      throw new Error("Группа: запись не найдена.");
+    }
+
+    const now = new Date().toISOString();
+    const [groupStudentsResult, scheduleRulesResult, lessonsResult] = await Promise.all([
+      client.from("group_students").select("id,group_id,student_id,status,joined_at,left_at").eq("group_id", groupId),
+      client
+        .from("schedule_rules")
+        .select("id,target_type,target_id,weekday,start_time,end_time,starts_on,ends_on,status")
+        .eq("organization_id", organizationId)
+        .eq("target_type", "group")
+        .eq("target_id", groupId)
+        .eq("status", "active")
+        .order("weekday", { ascending: true })
+        .order("start_time", { ascending: true }),
+      client
+        .from("lessons")
+        .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+        .eq("organization_id", organizationId)
+        .eq("group_id", groupId)
+        .gte("starts_at", now)
+        .order("starts_at", { ascending: true })
+        .limit(5),
+    ]);
+    const groupStudents = rows<GroupStudentRow & { joined_at: string | null }>(groupStudentsResult, "Состав группы");
+    const scheduleRules = rows<ScheduleRuleRow>(scheduleRulesResult, "Расписание группы");
+    const lessons = rows<LessonRow>(lessonsResult, "Ближайшие занятия группы");
+    const courseMap = byId(courses);
+    const studentMap = byId(students);
+    const userMap = byId(users);
+    const teacherIds = new Set(
+      members
+        .filter((member) => member.roles.includes("teacher") && member.user_id)
+        .map((member) => member.user_id),
+    );
+    const activeGroupStudents = groupStudents.filter((item) => item.status === "active");
+    const activeStudentIds = new Set(activeGroupStudents.map((item) => item.student_id));
+    const teacherName = group.teacher_id ? userMap.get(group.teacher_id)?.name ?? "Не назначен" : "Не назначен";
+    const problemSignals: ProblemSignal[] = [
+      !group.teacher_id
+        ? {
+            detail: "У группы нет преподавателя.",
+            label: "Нет преподавателя",
+            tone: "warning",
+          }
+        : null,
+      activeGroupStudents.length === 0
+        ? {
+            detail: "В активном составе пока нет учеников.",
+            label: "Нет учеников",
+            tone: "warning",
+          }
+        : null,
+      scheduleRules.length === 0
+        ? {
+            detail: "Активное расписание для группы не найдено.",
+            label: "Нет расписания",
+            tone: "warning",
+          }
+        : null,
+      lessons.length === 0
+        ? {
+            detail: "Ближайшие занятия для группы не созданы.",
+            label: "Нет ближайших занятий",
+            tone: "warning",
+          }
+        : null,
+    ].filter((item): item is ProblemSignal => item !== null);
+
+    return {
+      id: group.id,
+      name: group.name,
+      course: courseMap.get(group.course_id)?.name ?? "Курс",
+      teacher: teacherName,
+      teacherId: group.teacher_id,
+      status: groupStatusLabel(group.status),
+      statusValue: group.status,
+      problemSignals,
+      students: activeGroupStudents.map((item) => {
+        const student = studentMap.get(item.student_id);
+
+        return {
+          id: item.student_id,
+          groupStudentId: item.id,
+          name: student?.name ?? "Ученик",
+          contacts: [student?.phone, student?.email].filter(Boolean).join(", ") || "контакты не заполнены",
+          joinedAt: formatDate(item.joined_at),
+          status: statusLabel(item.status),
+        };
+      }),
+      scheduleRules: scheduleRules.map((rule) => ({
+        id: rule.id,
+        summary: `${weekdayLabel(rule.weekday)}, ${formatTime(rule.start_time)}-${formatTime(rule.end_time)}`,
+        period: `${formatDate(rule.starts_on)} - ${rule.ends_on ? formatDate(rule.ends_on) : "без окончания"}`,
+      })),
+      upcomingLessons: summarizeLessons(lessons, courseMap, new Map([[group.id, group]])),
+      studentOptions: students
+        .filter((student) => student.status === "active" && !activeStudentIds.has(student.id))
         .map((student) => ({ label: student.name, value: student.id })),
       teacherOptions: users
         .filter((user) => user.status === "active" && teacherIds.has(user.id))
@@ -668,7 +863,7 @@ export async function getTeacherGroups(organizationId: string, email: string) {
           id: group.id,
           name: group.name,
           course: courseMap.get(group.course_id)?.name ?? "Курс",
-          status: statusLabel(group.status),
+          status: groupStatusLabel(group.status),
           students: String(groupStudents.filter((item) => item.group_id === group.id && item.status === "active").length),
           nextLesson: nextLesson ? formatDateTime(nextLesson.starts_at) : "нет ближайшего занятия",
         };
