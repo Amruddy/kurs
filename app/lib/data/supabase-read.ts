@@ -387,14 +387,34 @@ export type StudentProgressData = {
   studentName: string;
 };
 
+export type StudentScheduleLesson = {
+  course: string;
+  date: string;
+  group: string;
+  id: string;
+  startsAt: string;
+  status: string;
+  teacher: string;
+  timeRange: string;
+  title: string;
+};
+
 export type StudentOverviewData = {
-  studentName: string;
+  courses: string[];
   groups: string[];
-  nextLesson: LessonSummary | null;
-  homework: string[];
-  materials: string[];
-  progress: string[];
+  homework: StudentHomeworkItem[];
+  materials: LearningMaterialItem[];
+  nextLesson: StudentScheduleLesson | null;
   payments: PaymentSummary[];
+  progress: string[];
+  studentName: string;
+};
+
+export type StudentScheduleData = {
+  groups: string[];
+  lessons: StudentScheduleLesson[];
+  metrics: MetricItem[];
+  studentName: string;
 };
 
 export type TeacherGroupDetailStudent = {
@@ -719,6 +739,43 @@ function formatTime(value: string | null | undefined) {
   return value.slice(0, 5);
 }
 
+function formatMoscowDateValue(value: Date | string) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+  }).formatToParts(date);
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+
+  return `${values.get("year")}-${values.get("month")}-${values.get("day")}`;
+}
+
+function addDaysToDateValue(value: string, days: number) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return [
+    String(date.getUTCFullYear()),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function weekdayOfDateValue(value: string) {
+  return new Date(`${value}T12:00:00+03:00`).getUTCDay();
+}
+
+function compareDateValues(left: string, right: string) {
+  return left.localeCompare(right);
+}
+
+function moscowDateTimeIso(dateValue: string, timeValue: string) {
+  return `${dateValue}T${formatTime(timeValue)}:00+03:00`;
+}
+
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("ru-RU", {
     currency,
@@ -971,6 +1028,121 @@ function summarizeLessons(lessons: LessonRow[], courses: Map<string, CourseRow>,
     subtitle: lesson.group_id ? groups.get(lesson.group_id)?.name ?? "Группа" : "Индивидуально",
     when: formatDateTime(lesson.starts_at),
   }));
+}
+
+function summarizeStudentLessons(
+  lessons: LessonRow[],
+  courses: Map<string, CourseRow>,
+  groups: Map<string, GroupRow>,
+  users: Map<string, UserRow>,
+) {
+  return lessons.map((lesson) => {
+    const course = courses.get(lesson.course_id);
+    const group = lesson.group_id ? groups.get(lesson.group_id) : null;
+
+    return {
+      course: course?.name ?? "Курс",
+      date: formatDateLong(lesson.starts_at),
+      group: group?.name ?? "Группа",
+      id: lesson.id,
+      startsAt: lesson.starts_at,
+      status: new Date(lesson.starts_at).getTime() >= Date.now() ? "предстоит" : "прошел",
+      teacher: users.get(lesson.teacher_id)?.name ?? "Преподаватель",
+      timeRange: `${formatTimeOfDate(lesson.starts_at)}-${formatTimeOfDate(lesson.ends_at)}`,
+      title: lesson.topic || course?.name || "Занятие",
+    };
+  });
+}
+
+function studentScheduleKey(groupId: string | null, startsAt: string) {
+  return `${groupId ?? "individual"}:${formatMoscowDateValue(startsAt)}:${formatTimeOfDate(startsAt)}`;
+}
+
+function isScheduleRuleActiveOnDate(rule: ScheduleRuleRow, dateValue: string) {
+  if (compareDateValues(dateValue, rule.starts_on) < 0) {
+    return false;
+  }
+
+  if (rule.ends_on && compareDateValues(dateValue, rule.ends_on) > 0) {
+    return false;
+  }
+
+  return weekdayOfDateValue(dateValue) === rule.weekday;
+}
+
+function summarizeScheduleRuleLessons(
+  scheduleRules: ScheduleRuleRow[],
+  courses: Map<string, CourseRow>,
+  groups: Map<string, GroupRow>,
+  users: Map<string, UserRow>,
+  existingLessonKeys: Set<string>,
+  limit: number,
+) {
+  const today = formatMoscowDateValue(new Date());
+  const items: StudentScheduleLesson[] = [];
+  let dateValue = today;
+
+  for (let daysAhead = 0; daysAhead < 180 && items.length < limit; daysAhead += 1) {
+    for (const rule of scheduleRules) {
+      if (!isScheduleRuleActiveOnDate(rule, dateValue)) {
+        continue;
+      }
+
+      const group = groups.get(rule.target_id);
+
+      if (!group) {
+        continue;
+      }
+
+      const startsAt = moscowDateTimeIso(dateValue, rule.start_time);
+
+      if (new Date(startsAt).getTime() < Date.now()) {
+        continue;
+      }
+
+      const key = studentScheduleKey(group.id, startsAt);
+
+      if (existingLessonKeys.has(key)) {
+        continue;
+      }
+
+      const endsAt = moscowDateTimeIso(dateValue, rule.end_time);
+      const course = courses.get(group.course_id);
+
+      items.push({
+        course: course?.name ?? "Курс",
+        date: formatDateLong(startsAt),
+        group: group.name,
+        id: `rule-${rule.id}-${dateValue}`,
+        startsAt,
+        status: "по расписанию",
+        teacher: group.teacher_id ? users.get(group.teacher_id)?.name ?? "Преподаватель" : "Преподаватель",
+        timeRange: `${formatTimeOfDate(startsAt)}-${formatTimeOfDate(endsAt)}`,
+        title: course?.name ?? "Занятие",
+      });
+    }
+
+    dateValue = addDaysToDateValue(dateValue, 1);
+  }
+
+  return items;
+}
+
+function summarizeStudentScheduleLessons(
+  lessons: LessonRow[],
+  scheduleRules: ScheduleRuleRow[],
+  courses: Map<string, CourseRow>,
+  groups: Map<string, GroupRow>,
+  users: Map<string, UserRow>,
+  limit: number,
+) {
+  const materializedLessons = summarizeStudentLessons(lessons, courses, groups, users);
+  const existingLessonKeys = new Set(lessons.map((lesson) => studentScheduleKey(lesson.group_id, lesson.starts_at)));
+  const plannedLessons = summarizeScheduleRuleLessons(scheduleRules, courses, groups, users, existingLessonKeys, limit);
+
+  return [...materializedLessons, ...plannedLessons]
+    .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())
+    .slice(0, limit);
 }
 
 function summarizePayments(
@@ -2584,64 +2756,205 @@ export async function getStudentOverview(organizationId: string, email: string) 
       .eq("user_id", user.id)
       .maybeSingle();
     const student = single<StudentRow>(studentResult, "Карточка ученика");
-    const { courses, groups } = await getBaseOrganizationData(client, organizationId);
-    const [groupStudentsResult, homeworkResult, materialsResult, progressResult, paymentsResult] = await Promise.all([
-      client.from("group_students").select("id,group_id,student_id,status").eq("student_id", student.id),
-      client
-        .from("homework")
-        .select("id,course_id,group_id,student_id,title,description,due_at,status")
-        .eq("organization_id", organizationId)
-        .eq("status", "active"),
-      client
-        .from("materials")
-        .select("id,course_id,group_id,student_id,title,type,content,url,visibility,status")
-        .eq("organization_id", organizationId)
-        .eq("visibility", "visible_to_students")
-        .eq("status", "active"),
-      client
-        .from("student_progress_rules")
-        .select("id,student_id,course_id,name,level,note,is_visible_to_student,is_active")
-        .eq("student_id", student.id)
-        .eq("is_visible_to_student", true)
-        .eq("is_active", true),
-      client
-        .from("payments")
-        .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
-        .eq("student_id", student.id),
-    ]);
+    const { courses, groups, users } = await getBaseOrganizationData(client, organizationId);
+    const groupStudentsResult = await client
+      .from("group_students")
+      .select("id,group_id,student_id,status")
+      .eq("student_id", student.id);
     const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Группы ученика");
     const activeGroupIds = new Set(groupStudents.filter((item) => item.status === "active").map((item) => item.group_id));
-    const courseMap = byId(courses);
     const visibleGroups = groups.filter((group) => activeGroupIds.has(group.id));
+    const courseIds = new Set(visibleGroups.map((group) => group.course_id));
+    const courseMap = byId(courses);
     const groupMap = byId(visibleGroups);
-    const lessonsResult =
+    const userMap = byId(users);
+    const [lessonsResult, scheduleRulesResult, homeworkResult, materialsResult, progressResult, recordsResult, paymentsResult] = await Promise.all([
       activeGroupIds.size > 0
-        ? await client
+        ? client
             .from("lessons")
             .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
             .in("group_id", [...activeGroupIds])
             .gte("starts_at", new Date().toISOString())
             .order("starts_at", { ascending: true })
-            .limit(1)
-        : { data: [], error: null };
-    const lessons = rows<LessonRow>(lessonsResult, "Ближайшее занятие ученика");
+            .limit(6)
+        : Promise.resolve({ data: [], error: null }),
+      activeGroupIds.size > 0
+        ? client
+            .from("schedule_rules")
+            .select("id,target_type,target_id,weekday,start_time,end_time,starts_on,ends_on,status")
+            .eq("organization_id", organizationId)
+            .eq("target_type", "group")
+            .in("target_id", [...activeGroupIds])
+            .eq("status", "active")
+            .order("weekday", { ascending: true })
+            .order("start_time", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("homework")
+        .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+        .eq("organization_id", organizationId)
+        .eq("status", "active")
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .limit(20),
+      client
+        .from("materials")
+        .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+        .eq("organization_id", organizationId)
+        .eq("visibility", "visible_to_students")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      courseIds.size > 0
+        ? client
+            .from("student_progress_rules")
+            .select("id,student_id,course_id,name,level,note,is_visible_to_student,is_active")
+            .eq("organization_id", organizationId)
+            .eq("student_id", student.id)
+            .eq("is_visible_to_student", true)
+            .eq("is_active", true)
+            .in("course_id", [...courseIds])
+            .order("sort_order", { ascending: true })
+            .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+      courseIds.size > 0
+        ? client
+            .from("progress_records")
+            .select("id,student_id,course_id,lesson_id,repeat_note,student_comment,internal_comment,is_visible_to_student,created_at")
+            .eq("organization_id", organizationId)
+            .eq("student_id", student.id)
+            .eq("is_visible_to_student", true)
+            .in("course_id", [...courseIds])
+            .order("created_at", { ascending: false })
+            .limit(3)
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("payments")
+        .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
+        .eq("student_id", student.id)
+        .order("due_at", { ascending: true, nullsFirst: false }),
+    ]);
+    const lessons = rows<LessonRow>(lessonsResult, "Ближайшие занятия ученика");
+    const scheduleRules = rows<ScheduleRuleRow>(scheduleRulesResult, "Правила расписания ученика");
+    const lessonIds = new Set(lessons.map((lesson) => lesson.id));
     const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания ученика").filter(
-      (item) => item.student_id === student.id || (item.group_id ? activeGroupIds.has(item.group_id) : false),
+      (item) =>
+        item.student_id === student.id ||
+        (item.group_id ? activeGroupIds.has(item.group_id) : false) ||
+        (item.lesson_id ? lessonIds.has(item.lesson_id) : false),
     );
+    const homeworkIds = new Set(homework.map((item) => item.id));
     const materials = rows<MaterialRow>(materialsResult, "Материалы ученика").filter(
-      (item) => item.student_id === student.id || (item.group_id ? activeGroupIds.has(item.group_id) : false),
+      (item) =>
+        item.student_id === student.id ||
+        (item.group_id ? activeGroupIds.has(item.group_id) : false) ||
+        (item.course_id ? courseIds.has(item.course_id) && !item.group_id && !item.student_id : false) ||
+        (item.lesson_id ? lessonIds.has(item.lesson_id) : false) ||
+        (item.homework_id ? homeworkIds.has(item.homework_id) : false),
     );
     const progress = rows<ProgressRuleRow>(progressResult, "Прогресс ученика");
+    const progressRecords = rows<ProgressRecordRow>(recordsResult, "Записи прогресса ученика");
     const payments = rows<PaymentRow>(paymentsResult, "Оплата ученика");
+    const studentLessons = summarizeStudentScheduleLessons(lessons, scheduleRules, courseMap, groupMap, userMap, 8);
+    const visibleHomework = homework.slice(0, 3).map((item) => {
+      const group = item.group_id ? groupMap.get(item.group_id) : null;
+
+      return {
+        context: group ? `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}` : courseMap.get(item.course_id)?.name ?? "курс",
+        description: item.description ?? "Описание не заполнено",
+        due: formatDate(item.due_at),
+        id: item.id,
+        lesson: "подробности в разделе домашних заданий",
+        materials: [],
+        title: item.title,
+      };
+    });
+    const progressSummary = [
+      ...progress.slice(0, 3).map((item) => `${item.name}${item.level ? ` - ${progressLevelLabel(item.level)}` : ""}`),
+      ...progressRecords
+        .slice(0, Math.max(0, 3 - progress.length))
+        .map((item) => item.repeat_note || item.student_comment || "Есть открытая запись прогресса"),
+    ];
 
     return {
-      studentName: student.name,
+      courses: [...courseIds].map((courseId) => courseMap.get(courseId)?.name ?? "Курс"),
       groups: visibleGroups.map((group) => `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`),
-      nextLesson: summarizeLessons(lessons, courseMap, groupMap)[0] ?? null,
-      homework: homework.slice(0, 5).map((item) => `${item.title} - срок ${formatDate(item.due_at)}`),
-      materials: materials.slice(0, 5).map((item) => (item.url ? `${item.title} - ${item.url}` : item.title)),
-      progress: progress.slice(0, 5).map((item) => `${item.name}${item.level ? ` - ${statusLabel(item.level)}` : ""}`),
+      homework: visibleHomework,
+      materials: materials.slice(0, 3).map((item) => ({
+        content: item.content ?? "",
+        detail: materialTypeLabel(item.type),
+        id: item.id,
+        title: item.title,
+        url: item.url,
+      })),
+      nextLesson: studentLessons[0] ?? null,
       payments: summarizePayments(payments, new Map([[student.id, student]]), courseMap, groupMap),
+      progress: progressSummary,
+      studentName: student.name,
+    };
+  });
+}
+
+export async function getStudentSchedule(organizationId: string, email: string) {
+  return readSupabaseData<StudentScheduleData>(async (client) => {
+    const user = await getUserByEmail(client, email);
+    const studentResult = await client
+      .from("students")
+      .select("id,user_id,name,phone,email,status")
+      .eq("organization_id", organizationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const student = single<StudentRow>(studentResult, "Карточка ученика");
+    const { courses, groups, users } = await getBaseOrganizationData(client, organizationId);
+    const groupStudentsResult = await client
+      .from("group_students")
+      .select("id,group_id,student_id,status")
+      .eq("student_id", student.id);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Группы расписания ученика");
+    const activeGroupIds = new Set(groupStudents.filter((item) => item.status === "active").map((item) => item.group_id));
+    const visibleGroups = groups.filter((group) => activeGroupIds.has(group.id));
+    const [lessonsResult, scheduleRulesResult] =
+      activeGroupIds.size > 0
+        ? await Promise.all([
+            client
+              .from("lessons")
+              .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+              .eq("organization_id", organizationId)
+              .in("group_id", [...activeGroupIds])
+              .gte("starts_at", new Date().toISOString())
+              .order("starts_at", { ascending: true })
+              .limit(20),
+            client
+              .from("schedule_rules")
+              .select("id,target_type,target_id,weekday,start_time,end_time,starts_on,ends_on,status")
+              .eq("organization_id", organizationId)
+              .eq("target_type", "group")
+              .in("target_id", [...activeGroupIds])
+              .eq("status", "active")
+              .order("weekday", { ascending: true })
+              .order("start_time", { ascending: true }),
+          ])
+        : [
+            { data: [], error: null },
+            { data: [], error: null },
+          ];
+    const lessons = rows<LessonRow>(lessonsResult, "Расписание ученика");
+    const scheduleRules = rows<ScheduleRuleRow>(scheduleRulesResult, "Правила расписания ученика");
+    const courseMap = byId(courses);
+    const groupMap = byId(visibleGroups);
+    const userMap = byId(users);
+    const courseIds = new Set(visibleGroups.map((group) => group.course_id));
+    const scheduleLessons = summarizeStudentScheduleLessons(lessons, scheduleRules, courseMap, groupMap, userMap, 12);
+
+    return {
+      groups: visibleGroups.map((group) => `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`),
+      lessons: scheduleLessons,
+      metrics: [
+        { label: "Ближайшие занятия", value: String(scheduleLessons.length) },
+        { label: "Группы", value: String(visibleGroups.length) },
+        { label: "Курсы", value: String(courseIds.size) },
+      ],
+      studentName: student.name,
     };
   });
 }

@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`15-mpmf-1-stage-7-homework-materials-plan.md`
+`16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/14-mpmf-1-stage-6-tajweed-progress-plan.md`
+`../completed/15-mpmf-1-stage-7-homework-materials-plan.md`
 
 Codex перед разработкой должен читать:
 
