@@ -15,15 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-9-student-learning-cabinet`.
-- Текущий этап: `MPMF 1.0 Stage 9. Student Learning Cabinet`.
+- Текущая ветка: `feat/mpmf-1-stage-10-payments`.
+- Текущий этап: `MPMF 1.0 Stage 10. Payments`.
 - Активный план:
-  `docs/work-plans/active/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`.
+  `docs/work-plans/active/18-mpmf-1-stage-10-payments-plan.md`.
 - Статус: реализация и проверки завершены, ожидается подтверждение на commit/push.
-- Предыдущий этап: `MPMF 1.0 Stage 8. Student Schedule And Dashboard`, завершен и
-  смержен в `main` через PR #38.
+- Предыдущий этап: `MPMF 1.0 Stage 9. Student Learning Cabinet`, завершен и
+  смержен в `main` через PR #39.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`.
+  `docs/work-plans/completed/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -232,13 +232,11 @@
 
 завершен и смержен в `main` через PR #38.
 
-## 4. Активный этап
-
 ### MPMF 1.0 Stage 9: Student Learning Cabinet
 
 План:
 
-`docs/work-plans/active/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`
+`docs/work-plans/completed/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`
 
 Маршруты:
 
@@ -249,13 +247,32 @@
 
 Статус:
 
+завершен и смержен в `main` через PR #39.
+
+## 4. Активный этап
+
+### MPMF 1.0 Stage 10: Payments
+
+План:
+
+`docs/work-plans/active/18-mpmf-1-stage-10-payments-plan.md`
+
+Маршруты:
+
+- `/admin/payments`;
+- `/teacher/payments`;
+- `/student/payments`;
+- платежные блоки в карточках группы и ученика.
+
+Статус:
+
 реализация и проверки завершены, ожидается подтверждение на commit/push.
 
 ## 5. Следующий этап
 
 Следующий stage после merge текущего stage:
 
-`Stage 10. Payments`
+`Stage 11. Admin Entity Completeness`
 
 Полный roadmap реализации:
 

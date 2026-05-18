@@ -37,6 +37,8 @@
   материалы: рабочие разделы преподавателя и read-only разделы ученика.
 - `16-mpmf-1-stage-8-student-dashboard-schedule-plan.md` - первый экран и расписание ученика:
   компактный student-dashboard, список ближайших занятий и единая подача student-разделов.
+- `17-mpmf-1-stage-9-student-learning-cabinet-plan.md` - учебный кабинет ученика:
+  read-only домашние задания, материалы, прогресс и посещаемость в compact student-дизайне.
 - `01-initial-product-implementation-plan.md` - исторический план первой
   рабочей реализации до перехода к `MPMF 1.0`.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления

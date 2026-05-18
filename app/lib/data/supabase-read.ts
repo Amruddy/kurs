@@ -148,15 +148,22 @@ type ProgressRecordLessonRow = {
 
 type PaymentRow = {
   id: string;
+  organization_id?: string;
   student_id: string;
   course_id: string | null;
   group_id: string | null;
+  individual_enrollment_id?: string | null;
   amount: number;
   currency: string;
+  period_type?: string;
   period_start: string | null;
   period_end: string | null;
   due_at: string | null;
   status: string;
+  comment?: string | null;
+  internal_comment?: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 type ProgressRuleRow = {
@@ -212,6 +219,53 @@ export type PaymentSummary = {
   amount: string;
   due: string;
   status: string;
+};
+
+export type AdminPaymentFilters = {
+  groupId?: string;
+  period?: string;
+  status?: string;
+  studentId?: string;
+};
+
+export type PaymentDetailItem = {
+  amount: string;
+  attention: boolean;
+  comment: string;
+  context: string;
+  due: string;
+  id: string;
+  internalComment: string;
+  period: string;
+  status: string;
+  statusTone: "danger" | "neutral" | "ok" | "warning";
+  statusValue: string;
+  studentName: string;
+};
+
+export type AdminPaymentsData = {
+  activeFilters: Required<AdminPaymentFilters>;
+  courseOptions: SelectOption[];
+  defaultDueAt: string;
+  defaultPeriodEnd: string;
+  defaultPeriodStart: string;
+  groupOptions: SelectOption[];
+  metrics: MetricItem[];
+  payments: PaymentDetailItem[];
+  periodOptions: SelectOption[];
+  studentOptions: SelectOption[];
+};
+
+export type TeacherPaymentsData = {
+  groups: string[];
+  metrics: MetricItem[];
+  payments: PaymentDetailItem[];
+};
+
+export type StudentPaymentsData = {
+  metrics: MetricItem[];
+  payments: PaymentDetailItem[];
+  studentName: string;
 };
 
 export type AdminOverviewData = {
@@ -1048,6 +1102,131 @@ function describePaymentStatus(payment: PaymentRow) {
   return statusLabel(payment.status);
 }
 
+function paymentPeriodTypeLabel(value: string | null | undefined) {
+  const labels: Record<string, string> = {
+    course: "Курс",
+    lesson: "Занятие",
+    manual: "Произвольный период",
+    month: "Месяц",
+  };
+
+  return value ? labels[value] ?? value : "Период";
+}
+
+function formatPaymentPeriod(payment: PaymentRow) {
+  const label = paymentPeriodTypeLabel(payment.period_type);
+
+  if (payment.period_start && payment.period_end) {
+    return `${label}: ${formatDate(payment.period_start)} - ${formatDate(payment.period_end)}`;
+  }
+
+  if (payment.period_start) {
+    return `${label}: с ${formatDate(payment.period_start)}`;
+  }
+
+  if (payment.period_end) {
+    return `${label}: до ${formatDate(payment.period_end)}`;
+  }
+
+  return label;
+}
+
+function paymentStatusTone(payment: PaymentRow): PaymentDetailItem["statusTone"] {
+  if (payment.status === "paid" || payment.status === "exempt") {
+    return "ok";
+  }
+
+  if (isPaymentAttention(payment)) {
+    return "danger";
+  }
+
+  if (payment.status === "pending") {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
+function paymentContext(
+  payment: PaymentRow,
+  courses: Map<string, CourseRow>,
+  groups: Map<string, GroupRow>,
+) {
+  const group = payment.group_id ? groups.get(payment.group_id) : null;
+
+  if (group) {
+    return `${group.name} - ${courses.get(group.course_id)?.name ?? "курс"}`;
+  }
+
+  if (payment.course_id) {
+    return courses.get(payment.course_id)?.name ?? "Курс";
+  }
+
+  return "Учебный контекст";
+}
+
+function paymentMonthValue(payment: PaymentRow) {
+  return (payment.period_start ?? payment.due_at ?? payment.period_end ?? payment.created_at ?? formatMoscowDateValue(new Date())).slice(
+    0,
+    7,
+  );
+}
+
+function paymentMatchesFilters(payment: PaymentRow, filters: AdminPaymentFilters) {
+  if (filters.studentId && payment.student_id !== filters.studentId) {
+    return false;
+  }
+
+  if (filters.groupId && payment.group_id !== filters.groupId) {
+    return false;
+  }
+
+  if (filters.status && payment.status !== filters.status) {
+    return false;
+  }
+
+  if (filters.period && paymentMonthValue(payment) !== filters.period) {
+    return false;
+  }
+
+  return true;
+}
+
+function paymentPeriodOptions(payments: PaymentRow[]) {
+  const months = new Set(payments.map(paymentMonthValue).filter((value) => /^\d{4}-\d{2}$/.test(value)));
+
+  return [...months]
+    .sort((left, right) => right.localeCompare(left))
+    .map((monthValue) => ({ label: formatMonthLabel(monthValue), value: monthValue }));
+}
+
+function sumPaymentAmount(payments: PaymentRow[]) {
+  return payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+}
+
+function paymentDetails(
+  payments: PaymentRow[],
+  students: Map<string, StudentRow>,
+  courses: Map<string, CourseRow>,
+  groups: Map<string, GroupRow>,
+  includeInternalComment: boolean,
+) {
+  return payments.map((payment) => ({
+    amount: formatMoney(payment.amount, payment.currency),
+    attention: isPaymentAttention(payment),
+    comment: payment.comment ?? "",
+    context: paymentContext(payment, courses, groups),
+    due: formatDate(payment.due_at),
+    id: payment.id,
+    internalComment: includeInternalComment ? payment.internal_comment ?? "" : "",
+    period: formatPaymentPeriod(payment),
+    status: describePaymentStatus(payment),
+    statusTone: paymentStatusTone(payment),
+    statusValue: payment.status,
+    studentName: students.get(payment.student_id)?.name ?? "Ученик",
+  }));
+}
+
 async function getOrganization(client: SupabaseClient, organizationId: string) {
   const result = await client
     .from("organizations")
@@ -1510,6 +1689,147 @@ export async function getAdminStudents(organizationId: string) {
             : "не настроена",
         };
       }),
+    };
+  });
+}
+
+const paymentSelectFields =
+  "id,organization_id,student_id,course_id,group_id,individual_enrollment_id,amount,currency,period_type,period_start,period_end,due_at,status,comment,internal_comment,created_at,updated_at";
+
+export async function getAdminPayments(organizationId: string, filters: AdminPaymentFilters) {
+  return readSupabaseData<AdminPaymentsData>(async (client) => {
+    const { courses, groups, students } = await getBaseOrganizationData(client, organizationId);
+    const paymentsResult = await client
+      .from("payments")
+      .select(paymentSelectFields)
+      .eq("organization_id", organizationId)
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+    const payments = rows<PaymentRow>(paymentsResult, "Оплаты");
+    const activeFilters = {
+      groupId: filters.groupId ?? "",
+      period: filters.period ?? "",
+      status: filters.status ?? "",
+      studentId: filters.studentId ?? "",
+    };
+    const filteredPayments = payments.filter((payment) => paymentMatchesFilters(payment, activeFilters));
+    const courseMap = byId(courses);
+    const groupMap = byId(groups);
+    const studentMap = byId(students);
+    const currentMonth = currentMoscowMonthValue();
+    const nextMonth = addMonthValue(currentMonth, 1);
+    const filterCount = Object.values(activeFilters).filter(Boolean).length;
+    const attentionPayments = filteredPayments.filter(isPaymentAttention);
+    const paidPayments = filteredPayments.filter((payment) => payment.status === "paid");
+    const pendingPayments = filteredPayments.filter((payment) => payment.status === "pending" || payment.status === "overdue");
+
+    return {
+      activeFilters,
+      courseOptions: courses
+        .filter((course) => course.status === "active")
+        .map((course) => ({ label: course.name, value: course.id })),
+      defaultDueAt: formatMoscowDateValue(new Date()),
+      defaultPeriodEnd: addDaysToDateValue(`${nextMonth}-01`, -1),
+      defaultPeriodStart: `${currentMonth}-01`,
+      groupOptions: groups
+        .filter((group) => group.status === "active" || group.status === "recruiting")
+        .map((group) => ({
+          label: `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`,
+          value: group.id,
+        })),
+      metrics: [
+        {
+          label: "Оплаты",
+          value: String(filteredPayments.length),
+          detail: filterCount > 0 ? "в текущей выборке" : "всего в организации",
+        },
+        { label: "К вниманию", value: String(attentionPayments.length), detail: "просрочено или срок прошел" },
+        { label: "Оплачено", value: formatMoney(sumPaymentAmount(paidPayments), "RUB"), detail: "по выбранным оплатам" },
+        { label: "Ожидает", value: formatMoney(sumPaymentAmount(pendingPayments), "RUB"), detail: "pending и overdue" },
+      ],
+      payments: paymentDetails(filteredPayments, studentMap, courseMap, groupMap, true),
+      periodOptions: paymentPeriodOptions(payments),
+      studentOptions: students
+        .filter((student) => student.status === "active")
+        .map((student) => ({ label: student.name, value: student.id })),
+    };
+  });
+}
+
+export async function getTeacherPayments(organizationId: string, email: string) {
+  return readSupabaseData<TeacherPaymentsData>(async (client) => {
+    const teacher = await getUserByEmail(client, email);
+    const { courses, groups, students } = await getBaseOrganizationData(client, organizationId);
+    const teacherGroups = groups.filter((group) => group.teacher_id === teacher.id);
+    const groupIds = teacherGroups.map((group) => group.id);
+    const [groupStudentsResult, paymentsResult] = await Promise.all([
+      groupIds.length > 0
+        ? client.from("group_students").select("id,group_id,student_id,status").in("group_id", groupIds)
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("payments")
+        .select(paymentSelectFields)
+        .eq("organization_id", organizationId)
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false }),
+    ]);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Ученики преподавателя");
+    const payments = rows<PaymentRow>(paymentsResult, "Оплаты учеников преподавателя");
+    const activeStudentIds = new Set(
+      groupStudents.filter((item) => item.status === "active").map((item) => item.student_id),
+    );
+    const visiblePayments = payments.filter((payment) => activeStudentIds.has(payment.student_id));
+    const attentionPayments = visiblePayments.filter(isPaymentAttention);
+    const paidPayments = visiblePayments.filter((payment) => payment.status === "paid");
+    const courseMap = byId(courses);
+    const groupMap = byId(teacherGroups);
+    const studentMap = byId(students.filter((student) => activeStudentIds.has(student.id)));
+
+    return {
+      groups: teacherGroups.map((group) => `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`),
+      metrics: [
+        { label: "Ученики", value: String(activeStudentIds.size), detail: "в активных группах" },
+        { label: "Оплаты", value: String(visiblePayments.length), detail: "доступны для просмотра" },
+        { label: "К вниманию", value: String(attentionPayments.length), detail: "срок прошел или просрочено" },
+        { label: "Оплачено", value: formatMoney(sumPaymentAmount(paidPayments), "RUB"), detail: "по своим ученикам" },
+      ],
+      payments: paymentDetails(visiblePayments, studentMap, courseMap, groupMap, false),
+    };
+  });
+}
+
+export async function getStudentPayments(organizationId: string, email: string) {
+  return readSupabaseData<StudentPaymentsData>(async (client) => {
+    const user = await getUserByEmail(client, email);
+    const studentResult = await client
+      .from("students")
+      .select("id,user_id,name,phone,email,status")
+      .eq("organization_id", organizationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const student = single<StudentRow>(studentResult, "Карточка ученика");
+    const { courses, groups } = await getBaseOrganizationData(client, organizationId);
+    const paymentsResult = await client
+      .from("payments")
+      .select(paymentSelectFields)
+      .eq("organization_id", organizationId)
+      .eq("student_id", student.id)
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+    const payments = rows<PaymentRow>(paymentsResult, "Оплаты ученика");
+    const attentionPayments = payments.filter(isPaymentAttention);
+    const paidPayments = payments.filter((payment) => payment.status === "paid");
+    const courseMap = byId(courses);
+    const groupMap = byId(groups);
+
+    return {
+      metrics: [
+        { label: "Оплаты", value: String(payments.length), detail: "назначенные записи" },
+        { label: "К вниманию", value: String(attentionPayments.length), detail: "нужно уточнить оплату" },
+        { label: "Оплачено", value: formatMoney(sumPaymentAmount(paidPayments), "RUB"), detail: "по сохраненным оплатам" },
+      ],
+      payments: paymentDetails(payments, new Map([[student.id, student]]), courseMap, groupMap, false),
+      studentName: student.name,
     };
   });
 }
