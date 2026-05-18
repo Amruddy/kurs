@@ -15,15 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-5-lesson-page`.
-- Текущий этап: `MPMF 1.0 Stage 5. Lesson Page`.
+- Текущая ветка: `feat/mpmf-1-entry-page`.
+- Текущий этап: `MPMF 1.0 Entry Page`.
 - Активный план:
-  `docs/work-plans/active/12-mpmf-1-stage-5-lesson-page-plan.md`.
+  `docs/work-plans/active/13-mpmf-1-entry-page-plan.md`.
 - Статус: реализация проверена, ожидает подтверждения на commit/push.
-- Предыдущий этап: `MPMF 1.0 Stage 4. Calendar Journal`, завершен и смержен
-  в `main` через PR #33.
+- Предыдущий этап: `MPMF 1.0 Stage 5. Lesson Page`, завершен и смержен
+  в `main` через PR #34.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/11-mpmf-1-stage-4-calendar-journal-plan.md`.
+  `docs/work-plans/completed/12-mpmf-1-stage-5-lesson-page-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -156,17 +156,32 @@
 
 завершен и смержен в `main` через PR #33.
 
-## 4. Активный этап
-
 ### MPMF 1.0 Stage 5: Lesson Page
 
 План:
 
-`docs/work-plans/active/12-mpmf-1-stage-5-lesson-page-plan.md`
+`docs/work-plans/completed/12-mpmf-1-stage-5-lesson-page-plan.md`
 
 Маршруты:
 
 - `/teacher/lessons/[lessonId]`.
+
+Статус:
+
+завершен и смержен в `main` через PR #34.
+
+## 4. Активный этап
+
+### MPMF 1.0 Entry Page
+
+План:
+
+`docs/work-plans/active/13-mpmf-1-entry-page-plan.md`
+
+Маршруты:
+
+- `/`;
+- `/login`.
 
 ## 5. Следующий этап
 

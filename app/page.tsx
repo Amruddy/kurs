@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import { EntryPage } from "@/app/components/entry-page";
 
 export default function HomePage() {
-  redirect("/login");
+  return <EntryPage />;
 }
-

@@ -2,7 +2,7 @@
 
 ## 0. Статус
 
-- Статус плана: реализация проверена, ожидает подтверждения на commit/push.
+- Статус плана: завершен и смержен в `main` через PR #34.
 - Ветка: `feat/mpmf-1-stage-5-lesson-page`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 4. Calendar Journal`, PR #33.
@@ -137,3 +137,5 @@ Stage считается готовым, если:
     `Открыть прогресс ученика`;
   - тот же урок под `admin@example.test` в workspace преподавателя не раскрыл
     данные урока и показал `Урок: запись не найдена`.
+- Коммит stage: `b802760 Implement MPMF stage 5 lesson page`.
+- Merge commit: `d91dd0e Merge pull request #34 from Amruddy/feat/mpmf-1-stage-5-lesson-page`.
