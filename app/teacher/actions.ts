@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveTeacherGroupJournal } from "@/app/lib/data/teacher-write";
+import {
+  createTeacherLessonHomework,
+  createTeacherLessonMaterial,
+  saveTeacherGroupJournal,
+  saveTeacherLessonDetails,
+  saveTeacherLessonJournal,
+} from "@/app/lib/data/teacher-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
 async function requireTeacher() {
@@ -9,15 +15,31 @@ async function requireTeacher() {
 }
 
 export async function saveLessonJournal(lessonId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  const result = await saveTeacherLessonJournal({
+    email: session.email,
+    formData,
+    lessonId,
+    organizationId: session.organizationId,
+  });
+
   revalidatePath(`/teacher/lessons/${lessonId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}/journal`);
 }
 
 export async function saveLessonDetails(lessonId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  const result = await saveTeacherLessonDetails({
+    email: session.email,
+    formData,
+    lessonId,
+    organizationId: session.organizationId,
+  });
+
   revalidatePath(`/teacher/lessons/${lessonId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}/journal`);
 }
 
 export async function saveGroupJournal(groupId: string, formData: FormData) {
@@ -60,9 +82,17 @@ export async function createLessonProgress(lessonId: string, formData: FormData)
 }
 
 export async function createLessonHomework(lessonId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  const result = await createTeacherLessonHomework({
+    email: session.email,
+    formData,
+    lessonId,
+    organizationId: session.organizationId,
+  });
+
   revalidatePath(`/teacher/lessons/${lessonId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}/journal`);
 }
 
 export async function createGroupHomework(groupId: string, formData: FormData) {
@@ -78,9 +108,17 @@ export async function createTeacherHomework(formData: FormData) {
 }
 
 export async function createLessonMaterial(lessonId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  const result = await createTeacherLessonMaterial({
+    email: session.email,
+    formData,
+    lessonId,
+    organizationId: session.organizationId,
+  });
+
   revalidatePath(`/teacher/lessons/${lessonId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}`);
+  revalidatePath(`/teacher/groups/${result.groupId}/journal`);
 }
 
 export async function createGroupMaterial(groupId: string, formData: FormData) {

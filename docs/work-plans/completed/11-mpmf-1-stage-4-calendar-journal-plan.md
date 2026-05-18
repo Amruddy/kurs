@@ -2,10 +2,11 @@
 
 ## 0. Статус
 
-- Статус плана: реализация и проверки выполнены, ожидает команды на commit/push.
+- Статус плана: завершен, закоммичен и смержен в `main` через PR #33.
 - Ветка: `feat/mpmf-1-stage-4-calendar-journal`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 3. Teacher Groups`, PR #32.
+- Коммит stage: `d8aeb27 Implement stage 4 calendar journal`.
 
 ## 1. Цель
 
@@ -152,3 +153,6 @@ Stage считается готовым, если:
   браузерный smoke-check: dev-сервер вернул ошибку динамического идентификатора
   Server Action. Ручная проверка сохранения одной отметки оставлена в финальном
   checklist.
+- После подтверждения пользователя ветка была запушена и смержена в `main`
+  через PR #33. `main` обновлен до merge-коммита
+  `a91a5e5 Merge pull request #33 from Amruddy/feat/mpmf-1-stage-4-calendar-journal`.

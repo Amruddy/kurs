@@ -51,6 +51,7 @@ type CourseRow = {
   description: string | null;
   type: string;
   format: string;
+  lesson_mark_scale: string | null;
   status: string;
 };
 
@@ -85,6 +86,7 @@ type LessonRow = {
   teacher_id: string;
   starts_at: string;
   ends_at: string;
+  summary?: string | null;
   topic: string | null;
 };
 
@@ -398,6 +400,58 @@ export type TeacherGroupJournalData = {
   savedEntries: string;
 };
 
+export type TeacherLessonJournalEntry = {
+  attendanceMark: "" | "absent" | "excused" | "present";
+  internalComment: string;
+  isVisibleToStudent: boolean;
+  lessonMark: string;
+  teacherComment: string;
+};
+
+export type TeacherLessonStudent = {
+  contacts: string;
+  hasProgressRecord: boolean;
+  id: string;
+  journalEntry: TeacherLessonJournalEntry;
+  name: string;
+  progressHref: string;
+  status: string;
+};
+
+export type TeacherLessonHomeworkItem = {
+  description: string;
+  due: string;
+  id: string;
+  title: string;
+};
+
+export type TeacherLessonMaterialItem = {
+  content: string;
+  detail: string;
+  id: string;
+  title: string;
+  url: string | null;
+};
+
+export type TeacherLessonData = {
+  course: string;
+  group: string;
+  groupHref: string;
+  homework: TeacherLessonHomeworkItem[];
+  id: string;
+  journalHref: string;
+  lessonMarkOptions: SelectOption[];
+  lessonMarkScale: string;
+  materials: TeacherLessonMaterialItem[];
+  savedEntries: string;
+  startsAtLabel: string;
+  students: TeacherLessonStudent[];
+  summary: string;
+  teacher: string;
+  timeRange: string;
+  topic: string;
+};
+
 async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T>): Promise<DataResult<T>> {
   try {
     const client = createSupabaseAdminClient();
@@ -494,6 +548,16 @@ function formatDate(value: string | null | undefined) {
     day: "2-digit",
     month: "short",
     timeZone: "Europe/Moscow",
+  }).format(new Date(value));
+}
+
+function formatDateLong(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    timeZone: "Europe/Moscow",
+    weekday: "long",
+    year: "numeric",
   }).format(new Date(value));
 }
 
@@ -629,6 +693,51 @@ function attendanceTone(
   return "neutral";
 }
 
+function lessonMarkOptions(scale: string | null | undefined): SelectOption[] {
+  if (scale === "five_point") {
+    return [1, 2, 3, 4, 5].map((value) => ({ label: String(value), value: String(value) }));
+  }
+
+  if (scale === "ten_point") {
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => ({
+      label: String(value),
+      value: String(value),
+    }));
+  }
+
+  return [];
+}
+
+function lessonMarkScaleLabel(scale: string | null | undefined) {
+  if (scale === "five_point") {
+    return "5-балльная шкала";
+  }
+
+  if (scale === "ten_point") {
+    return "10-балльная шкала";
+  }
+
+  return "оценка за урок не используется";
+}
+
+function materialTypeLabel(value: string) {
+  const labels: Record<string, string> = {
+    link: "ссылка",
+    text: "текст",
+  };
+
+  return labels[value] ?? value;
+}
+
+function materialVisibilityLabel(value: string) {
+  const labels: Record<string, string> = {
+    teacher_only: "только преподавателю",
+    visible_to_students: "видно ученикам",
+  };
+
+  return labels[value] ?? value;
+}
+
 function isMoscowMonday(value: string) {
   return (
     new Intl.DateTimeFormat("en-US", {
@@ -722,7 +831,10 @@ async function getBaseOrganizationData(client: SupabaseClient, organizationId: s
   const [organizationResult, coursesResult, groupsResult, studentsResult, usersResult, membersResult] =
     await Promise.all([
       client.from("organizations").select("id,name,timezone").eq("id", organizationId).maybeSingle(),
-      client.from("courses").select("id,name,description,type,format,status").eq("organization_id", organizationId),
+      client
+        .from("courses")
+        .select("id,name,description,type,format,lesson_mark_scale,status")
+        .eq("organization_id", organizationId),
       client.from("groups").select("id,course_id,teacher_id,name,status").eq("organization_id", organizationId),
       client.from("students").select("id,user_id,name,phone,email,status").eq("organization_id", organizationId),
       client.from("users").select("id,name,email,status"),
@@ -1445,6 +1557,134 @@ export async function getTeacherGroupJournal(organizationId: string, email: stri
       lessons: journalLessons,
       students: journalStudents,
       savedEntries: String(journalEntries.length),
+    };
+  });
+}
+
+export async function getTeacherLessonDetail(organizationId: string, email: string, lessonId: string) {
+  return readSupabaseData<TeacherLessonData>(async (client) => {
+    const teacher = await getUserByEmail(client, email);
+    const lessonResult = await client
+      .from("lessons")
+      .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic,summary")
+      .eq("organization_id", organizationId)
+      .eq("id", lessonId)
+      .maybeSingle();
+
+    if (lessonResult.error) {
+      throw new Error(`Урок: ${lessonResult.error.message}`);
+    }
+
+    const lesson = lessonResult.data as LessonRow | null;
+
+    if (!lesson || lesson.teacher_id !== teacher.id || !lesson.group_id) {
+      throw new Error("Урок: запись не найдена.");
+    }
+
+    const { courses, groups, students, users } = await getBaseOrganizationData(client, organizationId);
+    const group = groups.find((item) => item.id === lesson.group_id && item.teacher_id === teacher.id);
+    const course = courses.find((item) => item.id === lesson.course_id);
+
+    if (!group || !course) {
+      throw new Error("Урок: запись не найдена.");
+    }
+
+    const [groupStudentsResult, journalResult, progressResult, homeworkResult, materialsResult] = await Promise.all([
+      client.from("group_students").select("id,group_id,student_id,status").eq("group_id", group.id),
+      client
+        .from("journal_entries")
+        .select("id,lesson_id,student_id,attendance_mark,lesson_mark,teacher_comment,internal_comment,is_visible_to_student")
+        .eq("lesson_id", lesson.id),
+      client
+        .from("progress_records")
+        .select("id,lesson_id,student_id")
+        .eq("organization_id", organizationId)
+        .eq("lesson_id", lesson.id),
+      client
+        .from("homework")
+        .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+        .eq("organization_id", organizationId)
+        .eq("lesson_id", lesson.id)
+        .eq("status", "active")
+        .order("due_at", { ascending: true, nullsFirst: false }),
+      client
+        .from("materials")
+        .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+        .eq("organization_id", organizationId)
+        .eq("status", "active")
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Состав урока");
+    const activeGroupStudents = groupStudents.filter((item) => item.status === "active");
+    const activeStudentIds = new Set(activeGroupStudents.map((item) => item.student_id));
+    const journalEntries = rows<JournalEntryRow>(journalResult, "Записи урока").filter((entry) =>
+      activeStudentIds.has(entry.student_id),
+    );
+    const progressRecords = rows<ProgressRecordLessonRow>(progressResult, "Прогресс урока").filter((record) =>
+      activeStudentIds.has(record.student_id),
+    );
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания урока");
+    const homeworkIds = new Set(homework.map((item) => item.id));
+    const materials = rows<MaterialRow>(materialsResult, "Материалы урока").filter(
+      (material) =>
+        material.lesson_id === lesson.id ||
+        (material.homework_id ? homeworkIds.has(material.homework_id) : false),
+    );
+    const studentMap = byId(students);
+    const userMap = byId(users);
+    const journalEntryMap = new Map(journalEntries.map((entry) => [entry.student_id, entry]));
+    const progressStudentIds = new Set(progressRecords.map((record) => record.student_id));
+
+    return {
+      course: course.name,
+      group: group.name,
+      groupHref: `/teacher/groups/${group.id}`,
+      homework: homework.map((item) => ({
+        description: item.description ?? "Описание не заполнено",
+        due: formatDate(item.due_at),
+        id: item.id,
+        title: item.title,
+      })),
+      id: lesson.id,
+      journalHref: `/teacher/groups/${group.id}/journal`,
+      lessonMarkOptions: lessonMarkOptions(course.lesson_mark_scale),
+      lessonMarkScale: lessonMarkScaleLabel(course.lesson_mark_scale),
+      materials: materials.map((item) => ({
+        content: item.content ?? "",
+        detail: `${materialTypeLabel(item.type)}; ${materialVisibilityLabel(item.visibility)}`,
+        id: item.id,
+        title: item.title,
+        url: item.url,
+      })),
+      savedEntries: String(journalEntries.length),
+      startsAtLabel: formatDateLong(lesson.starts_at),
+      students: activeGroupStudents
+        .map((item) => {
+          const student = studentMap.get(item.student_id);
+          const entry = journalEntryMap.get(item.student_id);
+
+          return {
+            contacts: [student?.phone, student?.email].filter(Boolean).join(", ") || "контакты не заполнены",
+            hasProgressRecord: progressStudentIds.has(item.student_id),
+            id: item.student_id,
+            journalEntry: {
+              attendanceMark: normalizeAttendanceMark(entry?.attendance_mark ?? null),
+              internalComment: entry?.internal_comment ?? "",
+              isVisibleToStudent: entry?.is_visible_to_student ?? false,
+              lessonMark: entry?.lesson_mark ?? "",
+              teacherComment: entry?.teacher_comment ?? "",
+            },
+            name: student?.name ?? "Ученик",
+            progressHref: `/teacher/students/${item.student_id}`,
+            status: statusLabel(item.status),
+          };
+        })
+        .sort((left, right) => left.name.localeCompare(right.name, "ru")),
+      summary: lesson.summary ?? "",
+      teacher: userMap.get(teacher.id)?.name ?? teacher.name,
+      timeRange: `${formatTimeOfDate(lesson.starts_at)}-${formatTimeOfDate(lesson.ends_at)}`,
+      topic: lesson.topic ?? "",
     };
   });
 }

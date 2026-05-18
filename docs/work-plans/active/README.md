@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`11-mpmf-1-stage-4-calendar-journal-plan.md`
+`12-mpmf-1-stage-5-lesson-page-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/10-mpmf-1-stage-3-teacher-groups-plan.md`
+`../completed/11-mpmf-1-stage-4-calendar-journal-plan.md`
 
 Codex перед разработкой должен читать:
 
