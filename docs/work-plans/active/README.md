@@ -1,29 +1,20 @@
 # Active Plans
 
-Эта папка хранит текущие рабочие планы и завершенные планы, которые остаются
-источником контекста для дальнейшей разработки.
-
-Завершенный базовый MVP:
-
-`01-mvp-implementation-plan.md`
-
-Завершенное UI-направление System A:
-
-`02-system-a-ui-implementation-plan.md`
+Эта папка хранит текущий активный рабочий план.
 
 Текущий активный технический план:
 
-`05-admin-crud-foundation-plan.md`
+`06-mpmf-1-spec-rewrite-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/04-supabase-foundation-plan.md`
+`../completed/05-admin-crud-foundation-plan.md`
 
 Codex перед разработкой должен читать:
 
-- `../00-before-stage-0-checklist.md`;
 - текущий активный план;
-- связанные спецификации из `docs/specs/03-technical-specs/`.
+- `docs/roadmap/README.md`;
+- связанные спецификации из `docs/specs/`.
 
 Правило: если в этой папке появится несколько планов, в README нужно явно
 указать, какой из них активный сейчас.
