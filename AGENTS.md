@@ -43,6 +43,12 @@ Codex must use the project specifications as the source of truth before making c
 - When the user gives permission to finish the stage after checks, Codex should commit and push the stage branch. Codex does not open the pull request unless the user explicitly asks.
 - Do not revert user changes unless explicitly requested.
 
+## Completion Notification
+
+- После завершения работы Codex должен явно уведомить пользователя, что работа
+  завершена, и кратко перечислить итог: ветку, коммиты, проверки и следующий
+  ожидаемый шаг.
+
 ## Branch Workflow For MPMF 1.0 Stages
 
 - Новый MPMF 1.0 stage нельзя реализовывать напрямую в `main`.
