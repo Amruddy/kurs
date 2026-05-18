@@ -57,6 +57,7 @@ Codex must use the project specifications as the source of truth before making c
 - После автоматической проверки Codex сам выполняет базовую smoke-проверку stage, если это возможно локально.
 - После своей smoke-проверки Codex кратко пишет пользователю, что уже проверено, и дает ручной smoke-чеклист только как необязательную финальную проверку.
 - Ветка stage коммитится и пушится после явной команды пользователя продолжать; ручная проверка пользователя не обязательна, если пользователь ее пропускает.
+- Сообщение пользователя `готово` после отчета Codex о проверках считается явной командой продолжать: Codex сам коммитит и пушит текущую stage-ветку.
 - Pull request открывает пользователь. После merge пользователь сообщает Codex, Codex возвращается на `main`, обновляет его из GitHub и только потом начинает следующую stage-ветку.
 - После подтверждения пользователя ветка stage пушится в GitHub и готовится к pull request.
 - Следующий stage нельзя начинать, пока предыдущий stage не смержен.
@@ -76,9 +77,7 @@ The current active implementation source of truth is named in:
 
 Current active technical plan:
 
-No active technical plan is selected yet. Use:
-
-`docs/work-plans/active/README.md`
+`docs/work-plans/active/07-mpmf-1-implementation-roadmap-plan.md`
 
 Use the roadmap and `docs/work-plans/active/README.md` to determine whether a
 stage is active. If no active plan is selected, create or update the next stage

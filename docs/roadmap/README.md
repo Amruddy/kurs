@@ -15,10 +15,11 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `main`.
-- Текущий этап: следующий stage еще не выбран.
-- Активный план: отсутствует.
-- Статус: `MPMF 1.0 Spec Rewrite` завершен и смержен в `main` через PR #27.
+- Текущая ветка: `docs/mpmf-1-implementation-roadmap`.
+- Текущий этап: `MPMF 1.0 Implementation Roadmap`.
+- Активный план:
+  `docs/work-plans/active/07-mpmf-1-implementation-roadmap-plan.md`.
+- Статус: идет фиксация полного roadmap реализации версии 1.0.
 - Предыдущий этап: `MPMF 1.0 Spec Rewrite`, завершен и смержен в `main`.
 - Запись предыдущего этапа:
   `docs/work-plans/completed/06-mpmf-1-spec-rewrite-plan.md`.
@@ -85,18 +86,24 @@
 
 ## 4. Активный этап
 
-Активного stage сейчас нет. Следующий stage нужно выбрать перед созданием новой
-ветки.
+### Stage 5: MPMF 1.0 Implementation Roadmap
+
+План:
+
+`docs/work-plans/active/07-mpmf-1-implementation-roadmap-plan.md`
+
+Результат:
+
+`docs/roadmap/mpmf-1-implementation-roadmap.md`
 
 ## 5. Следующий этап
 
-Следующий stage выбирается после утверждения направления реализации.
+Следующий stage выбирается после утверждения полного roadmap реализации.
 
-Предварительный порядок реализации по текущим спецификациям:
+Полный roadmap реализации:
 
-1. `/admin/groups/[groupId]` - карточка группы.
-2. Расписание группы и создание занятий.
-3. `/teacher/groups/[groupId]`.
-4. `/teacher/groups/[groupId]/journal`.
-5. `/teacher/lessons/[lessonId]`.
-6. `/student/schedule`.
+`docs/roadmap/mpmf-1-implementation-roadmap.md`
+
+Первый кодовый stage по этому roadmap:
+
+`Stage 1. Admin Group Detail`
