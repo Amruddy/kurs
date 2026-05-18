@@ -270,6 +270,8 @@ export type TeacherGroupItem = {
   status: string;
   students: string;
   nextLesson: string;
+  nextLessonId: string | null;
+  problems: string;
 };
 
 export type TeacherStudentItem = {
@@ -288,6 +290,51 @@ export type StudentOverviewData = {
   materials: string[];
   progress: string[];
   payments: PaymentSummary[];
+};
+
+export type TeacherGroupDetailStudent = {
+  id: string;
+  name: string;
+  contacts: string;
+  payment: string;
+  status: string;
+};
+
+export type TeacherGroupScheduleRule = {
+  id: string;
+  weekday: string;
+  timeRange: string;
+  period: string;
+};
+
+export type TeacherGroupHomeworkItem = {
+  id: string;
+  title: string;
+  due: string;
+  description: string;
+};
+
+export type TeacherGroupMaterialItem = {
+  id: string;
+  title: string;
+  detail: string;
+};
+
+export type TeacherGroupDetailData = {
+  id: string;
+  name: string;
+  course: string;
+  teacher: string;
+  status: string;
+  metrics: MetricItem[];
+  nextLesson: LessonSummary | null;
+  problemSignals: ProblemSignal[];
+  students: TeacherGroupDetailStudent[];
+  scheduleRules: TeacherGroupScheduleRule[];
+  recentLessons: LessonSummary[];
+  homework: TeacherGroupHomeworkItem[];
+  materials: TeacherGroupMaterialItem[];
+  paymentSignals: PaymentSummary[];
 };
 
 async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T>): Promise<DataResult<T>> {
@@ -493,6 +540,22 @@ function summarizePayments(
     due: formatDate(payment.due_at),
     status: describePaymentStatus(payment),
   }));
+}
+
+function summarizeScheduleRules(scheduleRules: ScheduleRuleRow[]) {
+  return scheduleRules
+    .slice()
+    .sort(
+      (left, right) =>
+        weekdayOrderValue(left.weekday) - weekdayOrderValue(right.weekday) ||
+        left.start_time.localeCompare(right.start_time),
+    )
+    .map((rule) => ({
+      id: rule.id,
+      weekday: weekdayLabel(rule.weekday),
+      timeRange: `${formatTime(rule.start_time)}-${formatTime(rule.end_time)}`,
+      period: `с ${formatDate(rule.starts_on)} ${rule.ends_on ? `до ${formatDate(rule.ends_on)}` : "без окончания"}`,
+    }));
 }
 
 async function getBaseOrganizationData(client: SupabaseClient, organizationId: string) {
@@ -725,19 +788,7 @@ export async function getAdminGroupDetail(organizationId: string, groupId: strin
           status: statusLabel(item.status),
         };
       }),
-      scheduleRules: scheduleRules
-        .slice()
-        .sort(
-          (left, right) =>
-            weekdayOrderValue(left.weekday) - weekdayOrderValue(right.weekday) ||
-            left.start_time.localeCompare(right.start_time),
-        )
-        .map((rule) => ({
-          id: rule.id,
-          weekday: weekdayLabel(rule.weekday),
-          timeRange: `${formatTime(rule.start_time)}-${formatTime(rule.end_time)}`,
-          period: `с ${formatDate(rule.starts_on)} ${rule.ends_on ? `до ${formatDate(rule.ends_on)}` : "без окончания"}`,
-        })),
+      scheduleRules: summarizeScheduleRules(scheduleRules),
       upcomingLessons: summarizeLessons(lessons, courseMap, new Map([[group.id, group]])),
       studentOptions: students
         .filter((student) => student.status === "active" && !activeStudentIds.has(student.id))
@@ -851,7 +902,7 @@ export async function getTeacherGroups(organizationId: string, email: string) {
     const { courses, groups } = await getBaseOrganizationData(client, organizationId);
     const teacherGroups = groups.filter((group) => group.teacher_id === teacher.id);
     const groupIds = teacherGroups.map((group) => group.id);
-    const [groupStudentsResult, lessonsResult] = await Promise.all([
+    const [groupStudentsResult, lessonsResult, scheduleRulesResult, paymentsResult] = await Promise.all([
       groupIds.length > 0
         ? client.from("group_students").select("id,group_id,student_id,status").in("group_id", groupIds)
         : Promise.resolve({ data: [], error: null }),
@@ -863,24 +914,219 @@ export async function getTeacherGroups(organizationId: string, email: string) {
             .gte("starts_at", new Date().toISOString())
             .order("starts_at", { ascending: true })
         : Promise.resolve({ data: [], error: null }),
+      groupIds.length > 0
+        ? client
+            .from("schedule_rules")
+            .select("id,target_type,target_id,weekday,start_time,end_time,starts_on,ends_on,status")
+            .eq("organization_id", organizationId)
+            .eq("target_type", "group")
+            .in("target_id", groupIds)
+            .eq("status", "active")
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("payments")
+        .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
+        .eq("organization_id", organizationId),
     ]);
     const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Состав групп преподавателя");
     const lessons = rows<LessonRow>(lessonsResult, "Занятия групп преподавателя");
+    const scheduleRules = rows<ScheduleRuleRow>(scheduleRulesResult, "Расписание групп преподавателя");
+    const payments = rows<PaymentRow>(paymentsResult, "Оплата учеников преподавателя");
     const courseMap = byId(courses);
 
     return {
       groups: teacherGroups.map((group) => {
         const nextLesson = lessons.find((lesson) => lesson.group_id === group.id);
+        const activeGroupStudents = groupStudents.filter((item) => item.group_id === group.id && item.status === "active");
+        const activeStudentIds = new Set(activeGroupStudents.map((item) => item.student_id));
+        const attentionPayments = payments
+          .filter((payment) => activeStudentIds.has(payment.student_id))
+          .filter((payment) => payment.group_id === group.id || payment.course_id === group.course_id)
+          .filter(isPaymentAttention);
+        const problems = [
+          activeGroupStudents.length === 0 ? "нет учеников" : null,
+          scheduleRules.some((rule) => rule.target_id === group.id) ? null : "нет расписания",
+          nextLesson ? null : "нет ближайшего урока",
+          attentionPayments.length > 0 ? `оплата: ${attentionPayments.length}` : null,
+        ].filter(Boolean);
 
         return {
           id: group.id,
           name: group.name,
           course: courseMap.get(group.course_id)?.name ?? "Курс",
           status: groupStatusLabel(group.status),
-          students: String(groupStudents.filter((item) => item.group_id === group.id && item.status === "active").length),
+          students: String(activeGroupStudents.length),
           nextLesson: nextLesson ? formatDateTime(nextLesson.starts_at) : "нет ближайшего занятия",
+          nextLessonId: nextLesson?.id ?? null,
+          problems: problems.join(", ") || "без критичных признаков",
         };
       }),
+    };
+  });
+}
+
+export async function getTeacherGroupDetail(organizationId: string, email: string, groupId: string) {
+  return readSupabaseData<TeacherGroupDetailData>(async (client) => {
+    const teacher = await getUserByEmail(client, email);
+    const { courses, groups, students, users } = await getBaseOrganizationData(client, organizationId);
+    const group = groups.find((item) => item.id === groupId && item.teacher_id === teacher.id);
+
+    if (!group) {
+      throw new Error("Группа: запись не найдена.");
+    }
+
+    const now = new Date().toISOString();
+    const [groupStudentsResult, scheduleRulesResult, upcomingLessonsResult, recentLessonsResult, homeworkResult, materialsResult, paymentsResult] =
+      await Promise.all([
+        client.from("group_students").select("id,group_id,student_id,status").eq("group_id", groupId),
+        client
+          .from("schedule_rules")
+          .select("id,target_type,target_id,weekday,start_time,end_time,starts_on,ends_on,status")
+          .eq("organization_id", organizationId)
+          .eq("target_type", "group")
+          .eq("target_id", groupId)
+          .eq("status", "active")
+          .order("weekday", { ascending: true })
+          .order("start_time", { ascending: true }),
+        client
+          .from("lessons")
+          .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+          .eq("organization_id", organizationId)
+          .eq("group_id", groupId)
+          .gte("starts_at", now)
+          .order("starts_at", { ascending: true })
+          .limit(5),
+        client
+          .from("lessons")
+          .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+          .eq("organization_id", organizationId)
+          .eq("group_id", groupId)
+          .lt("starts_at", now)
+          .order("starts_at", { ascending: false })
+          .limit(5),
+        client
+          .from("homework")
+          .select("id,course_id,group_id,student_id,title,description,due_at,status")
+          .eq("organization_id", organizationId)
+          .eq("status", "active")
+          .order("due_at", { ascending: true, nullsFirst: false })
+          .limit(20),
+        client
+          .from("materials")
+          .select("id,course_id,group_id,student_id,title,type,content,url,visibility,status")
+          .eq("organization_id", organizationId)
+          .eq("status", "active")
+          .limit(20),
+        client
+          .from("payments")
+          .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
+          .eq("organization_id", organizationId),
+      ]);
+
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Состав группы преподавателя");
+    const scheduleRules = rows<ScheduleRuleRow>(scheduleRulesResult, "Расписание группы преподавателя");
+    const upcomingLessons = rows<LessonRow>(upcomingLessonsResult, "Ближайшие занятия группы преподавателя");
+    const recentLessons = rows<LessonRow>(recentLessonsResult, "Последние занятия группы преподавателя");
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания группы преподавателя");
+    const materials = rows<MaterialRow>(materialsResult, "Материалы группы преподавателя");
+    const payments = rows<PaymentRow>(paymentsResult, "Оплата группы преподавателя");
+    const courseMap = byId(courses);
+    const groupMap = new Map([[group.id, group]]);
+    const studentMap = byId(students);
+    const userMap = byId(users);
+    const activeGroupStudents = groupStudents.filter((item) => item.status === "active");
+    const activeStudentIds = new Set(activeGroupStudents.map((item) => item.student_id));
+    const groupPayments = payments.filter(
+      (payment) =>
+        activeStudentIds.has(payment.student_id) &&
+        (payment.group_id === group.id || payment.course_id === group.course_id),
+    );
+    const attentionPayments = groupPayments.filter(isPaymentAttention);
+    const nextLesson = summarizeLessons(upcomingLessons.slice(0, 1), courseMap, groupMap)[0] ?? null;
+    const visibleHomework = homework
+      .filter((item) => item.group_id === group.id)
+      .slice(0, 5)
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        due: formatDate(item.due_at),
+        description: item.description ?? "Описание не заполнено",
+      }));
+    const visibleMaterials = materials
+      .filter((item) => item.group_id === group.id || (item.course_id === group.course_id && !item.student_id))
+      .slice(0, 5)
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        detail: `${item.type === "link" ? "ссылка" : "текст"}; ${
+          item.visibility === "visible_to_students" ? "видно ученикам" : "только преподавателю"
+        }`,
+      }));
+    const problemSignals: ProblemSignal[] = [
+      activeGroupStudents.length === 0
+        ? {
+            detail: "В активном составе пока нет учеников.",
+            label: "Нет учеников",
+            tone: "warning",
+          }
+        : null,
+      scheduleRules.length === 0
+        ? {
+            detail: "Активное расписание для группы не найдено.",
+            label: "Нет расписания",
+            tone: "warning",
+          }
+        : null,
+      upcomingLessons.length === 0
+        ? {
+            detail: "Ближайшие занятия еще не созданы.",
+            label: "Нет ближайшего урока",
+            tone: "warning",
+          }
+        : null,
+      attentionPayments.length > 0
+        ? {
+            detail: `Есть записи оплаты, которым нужно внимание: ${attentionPayments.length}.`,
+            label: "Оплата",
+            tone: "danger",
+          }
+        : null,
+    ].filter((item): item is ProblemSignal => item !== null);
+
+    return {
+      id: group.id,
+      name: group.name,
+      course: courseMap.get(group.course_id)?.name ?? "Курс",
+      teacher: group.teacher_id ? userMap.get(group.teacher_id)?.name ?? teacher.name : teacher.name,
+      status: groupStatusLabel(group.status),
+      metrics: [
+        { label: "Ученики", value: String(activeGroupStudents.length) },
+        { label: "Расписание", value: String(scheduleRules.length) },
+        { label: "Ближайшие уроки", value: String(upcomingLessons.length) },
+        { label: "Оплата к вниманию", value: String(attentionPayments.length) },
+      ],
+      nextLesson,
+      problemSignals,
+      students: activeGroupStudents.map((item) => {
+        const student = studentMap.get(item.student_id);
+        const studentPayment = groupPayments.find((payment) => payment.student_id === item.student_id && isPaymentAttention(payment)) ??
+          groupPayments.find((payment) => payment.student_id === item.student_id);
+
+        return {
+          id: item.student_id,
+          name: student?.name ?? "Ученик",
+          contacts: [student?.phone, student?.email].filter(Boolean).join(", ") || "контакты не заполнены",
+          status: statusLabel(item.status),
+          payment: studentPayment
+            ? `${formatMoney(studentPayment.amount, studentPayment.currency)} - ${describePaymentStatus(studentPayment)}`
+            : "не настроена",
+        };
+      }),
+      scheduleRules: summarizeScheduleRules(scheduleRules),
+      recentLessons: summarizeLessons(recentLessons, courseMap, groupMap),
+      homework: visibleHomework,
+      materials: visibleMaterials,
+      paymentSignals: summarizePayments(attentionPayments.slice(0, 5), studentMap, courseMap, groupMap),
     };
   });
 }
