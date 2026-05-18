@@ -39,7 +39,7 @@ const navByWorkspace: Record<WorkspaceRole, NavItem[]> = {
   ],
 };
 
-const publicNav: NavItem[] = [{ href: "/login", icon: "login", label: "Вход" }];
+const publicNav: NavItem[] = [{ href: "/", icon: "login", label: "Вход" }];
 
 function WorkspaceSwitcher({ session }: { session: DevSession }) {
   if (session.roles.length < 2) {
@@ -63,7 +63,7 @@ function WorkspaceSwitcher({ session }: { session: DevSession }) {
 }
 
 function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | null }) {
-  const homePath = session ? workspaceConfig[session.activeWorkspace].homePath : "/login";
+  const homePath = session ? workspaceConfig[session.activeWorkspace].homePath : "/";
   const workspaceLabel = session ? workspaceConfig[session.activeWorkspace].label : "Dev-вход";
 
   return (
@@ -130,6 +130,14 @@ function MobileNav({ items }: { items: NavItem[] }) {
 export async function AppShell({ children }: { children: ReactNode }) {
   const session = await getDevSession();
   const items = session ? navByWorkspace[session.activeWorkspace] : publicNav;
+
+  if (!session) {
+    return (
+      <div className="public-shell">
+        <main className="public-main">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
