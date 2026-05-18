@@ -94,7 +94,7 @@ function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | n
         ) : (
           <>
             <strong>Тестовый режим</strong>
-            <p>Выберите роль для ручной проверки MVP.</p>
+            <p>Выберите роль для ручной проверки версии 1.0.</p>
           </>
         )}
       </div>

@@ -9,6 +9,12 @@
   plans.
 - `04-supabase-foundation-plan.md` - чистое подключение Supabase, schema/seed,
   data-layer чтения и базовые страницы с dev-данными.
+- `05-admin-crud-foundation-plan.md` - базовые административные формы создания
+  курса, ученика, группы и назначения ученика в группу поверх Supabase.
+- `01-initial-product-implementation-plan.md` - исторический план первой
+  рабочей реализации до перехода к `MPMF 1.0`.
+- `02-system-a-ui-implementation-plan.md` - исторический план UI-направления
+  System A.
 
 Формат будущей записи:
 
