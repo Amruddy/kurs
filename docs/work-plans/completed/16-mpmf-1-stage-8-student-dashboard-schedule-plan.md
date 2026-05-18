@@ -2,12 +2,10 @@
 
 ## 0. Статус
 
-- Статус плана: реализация и проверки завершены, ожидается подтверждение на
-  commit/push.
+- Статус плана: завершен и смержен в `main` через PR #38.
 - Ветка: `feat/mpmf-1-stage-8-student-dashboard-schedule`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
-- Предыдущий завершенный stage: `MPMF 1.0 Stage 7. Homework And Materials`,
-  PR #37.
+- Предыдущий завершенный stage: `MPMF 1.0 Stage 7. Homework And Materials`, PR #37.
 
 ## 1. Цель
 

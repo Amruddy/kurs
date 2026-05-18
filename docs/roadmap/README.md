@@ -15,15 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-8-student-dashboard-schedule`.
-- Текущий этап: `MPMF 1.0 Stage 8. Student Schedule And Dashboard`.
+- Текущая ветка: `feat/mpmf-1-stage-9-student-learning-cabinet`.
+- Текущий этап: `MPMF 1.0 Stage 9. Student Learning Cabinet`.
 - Активный план:
-  `docs/work-plans/active/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`.
-- Статус: активная реализация.
-- Предыдущий этап: `MPMF 1.0 Stage 7. Homework And Materials`, завершен и
-  смержен в `main` через PR #37.
+  `docs/work-plans/active/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`.
+- Статус: реализация и проверки завершены, ожидается подтверждение на commit/push.
+- Предыдущий этап: `MPMF 1.0 Stage 8. Student Schedule And Dashboard`, завершен и
+  смержен в `main` через PR #38.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/15-mpmf-1-stage-7-homework-materials-plan.md`.
+  `docs/work-plans/completed/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -217,18 +217,35 @@
 
 завершен и смержен в `main` через PR #37.
 
-## 4. Активный этап
-
 ### MPMF 1.0 Stage 8: Student Schedule And Dashboard
 
 План:
 
-`docs/work-plans/active/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`
+`docs/work-plans/completed/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`
 
 Маршруты:
 
 - `/student`;
 - `/student/schedule`.
+
+Статус:
+
+завершен и смержен в `main` через PR #38.
+
+## 4. Активный этап
+
+### MPMF 1.0 Stage 9: Student Learning Cabinet
+
+План:
+
+`docs/work-plans/active/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`
+
+Маршруты:
+
+- `/student/homework`;
+- `/student/materials`;
+- `/student/progress`;
+- `/student/attendance`.
 
 Статус:
 
@@ -238,7 +255,7 @@
 
 Следующий stage после merge текущего stage:
 
-`Stage 9. Student Learning Cabinet`
+`Stage 10. Payments`
 
 Полный roadmap реализации:
 

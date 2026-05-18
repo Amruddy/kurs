@@ -417,6 +417,27 @@ export type StudentScheduleData = {
   studentName: string;
 };
 
+export type StudentAttendanceStatus = "absent" | "excused" | "present" | "unknown";
+
+export type StudentAttendanceItem = {
+  course: string;
+  date: string;
+  group: string;
+  id: string;
+  lesson: string;
+  mark: string;
+  status: StudentAttendanceStatus;
+  teacherComment: string;
+  timeRange: string;
+};
+
+export type StudentAttendanceData = {
+  attendance: StudentAttendanceItem[];
+  groups: string[];
+  metrics: MetricItem[];
+  studentName: string;
+};
+
 export type TeacherGroupDetailStudent = {
   id: string;
   name: string;
@@ -898,6 +919,28 @@ function attendanceTone(
   }
 
   return "neutral";
+}
+
+function studentAttendanceStatus(
+  lesson: LessonRow,
+  entry: JournalEntryRow | undefined,
+): { label: string; status: StudentAttendanceStatus } {
+  const mark = normalizeAttendanceMark(entry?.attendance_mark ?? null);
+  const isFuture = new Date(lesson.starts_at).getTime() > Date.now();
+
+  if (mark === "absent") {
+    return { label: "отсутствовал", status: "absent" };
+  }
+
+  if (mark === "excused") {
+    return { label: "уважительная причина", status: "excused" };
+  }
+
+  if (mark === "present" || (!isFuture && Boolean(entry))) {
+    return { label: "присутствовал", status: "present" };
+  }
+
+  return { label: "не отмечено", status: "unknown" };
 }
 
 function lessonMarkOptions(scale: string | null | undefined): SelectOption[] {
@@ -2953,6 +2996,88 @@ export async function getStudentSchedule(organizationId: string, email: string) 
         { label: "Ближайшие занятия", value: String(scheduleLessons.length) },
         { label: "Группы", value: String(visibleGroups.length) },
         { label: "Курсы", value: String(courseIds.size) },
+      ],
+      studentName: student.name,
+    };
+  });
+}
+
+export async function getStudentAttendance(organizationId: string, email: string) {
+  return readSupabaseData<StudentAttendanceData>(async (client) => {
+    const user = await getUserByEmail(client, email);
+    const studentResult = await client
+      .from("students")
+      .select("id,user_id,name,phone,email,status")
+      .eq("organization_id", organizationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const student = single<StudentRow>(studentResult, "Карточка ученика");
+    const { courses, groups } = await getBaseOrganizationData(client, organizationId);
+    const groupStudentsResult = await client
+      .from("group_students")
+      .select("id,group_id,student_id,status")
+      .eq("student_id", student.id);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Группы посещаемости ученика");
+    const activeGroupIds = new Set(groupStudents.filter((item) => item.status === "active").map((item) => item.group_id));
+    const visibleGroups = groups.filter((group) => activeGroupIds.has(group.id));
+    const lessonsResult =
+      activeGroupIds.size > 0
+        ? await client
+            .from("lessons")
+            .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
+            .in("group_id", [...activeGroupIds])
+            .lte("starts_at", new Date().toISOString())
+            .order("starts_at", { ascending: false })
+            .limit(40)
+        : { data: [], error: null };
+    const lessons = rows<LessonRow>(lessonsResult, "Посещаемость ученика");
+    const lessonIds = lessons.map((lesson) => lesson.id);
+    const journalResult =
+      lessonIds.length > 0
+        ? await client
+            .from("journal_entries")
+            .select("id,lesson_id,student_id,attendance_mark,lesson_mark,teacher_comment,internal_comment,is_visible_to_student")
+            .eq("student_id", student.id)
+            .in("lesson_id", lessonIds)
+        : { data: [], error: null };
+    const journalEntries = rows<JournalEntryRow>(journalResult, "Записи посещаемости ученика").filter(
+      (entry) => entry.student_id === student.id,
+    );
+    const journalByLessonId = new Map(journalEntries.map((entry) => [entry.lesson_id, entry]));
+    const courseMap = byId(courses);
+    const groupMap = byId(visibleGroups);
+    const attendance = lessons.map((lesson) => {
+      const entry = journalByLessonId.get(lesson.id);
+      const status = studentAttendanceStatus(lesson, entry);
+      const group = lesson.group_id ? groupMap.get(lesson.group_id) : null;
+
+      return {
+        course: courseMap.get(lesson.course_id)?.name ?? "Курс",
+        date: formatDateLong(lesson.starts_at),
+        group: group?.name ?? "индивидуальное занятие",
+        id: lesson.id,
+        lesson: lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "Занятие",
+        mark: status.label,
+        status: status.status,
+        teacherComment: entry?.is_visible_to_student ? entry.teacher_comment ?? "" : "",
+        timeRange: `${formatTimeOfDate(lesson.starts_at)}-${formatTimeOfDate(lesson.ends_at)}`,
+      };
+    });
+    const absentCount = attendance.filter((item) => item.status === "absent").length;
+    const excusedCount = attendance.filter((item) => item.status === "excused").length;
+
+    return {
+      attendance,
+      groups: visibleGroups.map((group) => `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`),
+      metrics: [
+        { label: "Занятий", value: String(attendance.length) },
+        { label: "Присутствовал", value: String(attendance.filter((item) => item.status === "present").length) },
+        {
+          label: "Пропуски",
+          value: String(absentCount + excusedCount),
+          detail: excusedCount > 0 ? `${absentCount} без причины, ${excusedCount} уважит.` : undefined,
+        },
       ],
       studentName: student.name,
     };
