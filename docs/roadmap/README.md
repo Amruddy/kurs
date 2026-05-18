@@ -15,15 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-4-calendar-journal`.
-- Текущий этап: `MPMF 1.0 Stage 4. Calendar Journal`.
+- Текущая ветка: `feat/mpmf-1-stage-5-lesson-page`.
+- Текущий этап: `MPMF 1.0 Stage 5. Lesson Page`.
 - Активный план:
-  `docs/work-plans/active/11-mpmf-1-stage-4-calendar-journal-plan.md`.
-- Статус: реализация и проверки выполнены, ожидает команды на commit/push.
-- Предыдущий этап: `MPMF 1.0 Stage 3. Teacher Groups`, завершен и смержен
-  в `main` через PR #32.
+  `docs/work-plans/active/12-mpmf-1-stage-5-lesson-page-plan.md`.
+- Статус: реализация проверена, ожидает подтверждения на commit/push.
+- Предыдущий этап: `MPMF 1.0 Stage 4. Calendar Journal`, завершен и смержен
+  в `main` через PR #33.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/10-mpmf-1-stage-3-teacher-groups-plan.md`.
+  `docs/work-plans/completed/11-mpmf-1-stage-4-calendar-journal-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -142,23 +142,37 @@
 
 завершен и смержен в `main` через PR #32.
 
-## 4. Активный этап
-
 ### MPMF 1.0 Stage 4: Calendar Journal
 
 План:
 
-`docs/work-plans/active/11-mpmf-1-stage-4-calendar-journal-plan.md`
+`docs/work-plans/completed/11-mpmf-1-stage-4-calendar-journal-plan.md`
 
 Маршруты:
 
 - `/teacher/groups/[groupId]/journal`.
 
+Статус:
+
+завершен и смержен в `main` через PR #33.
+
+## 4. Активный этап
+
+### MPMF 1.0 Stage 5: Lesson Page
+
+План:
+
+`docs/work-plans/active/12-mpmf-1-stage-5-lesson-page-plan.md`
+
+Маршруты:
+
+- `/teacher/lessons/[lessonId]`.
+
 ## 5. Следующий этап
 
 Следующий stage после merge текущего stage:
 
-`Stage 5. Lesson Page`
+`Stage 6. Tajweed Progress`
 
 Полный roadmap реализации:
 

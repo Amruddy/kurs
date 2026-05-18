@@ -47,7 +47,8 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -706,7 +707,8 @@ button {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--border-strong);
@@ -716,8 +718,16 @@ select {
   padding: 0 12px;
 }
 
+textarea {
+  min-height: 96px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
 input:focus,
 select:focus,
+textarea:focus,
 button:focus-visible,
 a:focus-visible,
 summary:focus-visible {
@@ -739,6 +749,10 @@ summary:focus-visible {
 
 .form-note {
   margin-top: 12px !important;
+}
+
+.full-width-field {
+  grid-column: 1 / -1;
 }
 
 .weekday-picker {
@@ -1278,6 +1292,90 @@ td a,
 
 .journal-table td[data-future="true"] {
   background: #f8fafc;
+}
+
+.lesson-journal-table {
+  min-width: 1120px;
+  table-layout: auto;
+}
+
+.lesson-journal-table th,
+.lesson-journal-table td {
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.lesson-journal-table thead th {
+  height: auto;
+  background: var(--surface-muted);
+}
+
+.lesson-journal-student-head,
+.lesson-journal-student-name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 240px;
+  min-width: 240px;
+  background: var(--surface);
+  text-align: left !important;
+}
+
+.lesson-journal-student-head {
+  z-index: 2;
+  background: var(--surface-muted) !important;
+}
+
+.lesson-journal-student-name {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.lesson-journal-student-name a {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.lesson-journal-student-name span,
+.lesson-progress-cell span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.lesson-journal-control,
+.lesson-journal-textarea {
+  width: 100%;
+}
+
+.lesson-journal-control {
+  min-width: 96px;
+}
+
+.lesson-journal-textarea {
+  min-width: 190px;
+  min-height: 76px;
+}
+
+.lesson-visible-checkbox {
+  min-width: 132px;
+  color: var(--text) !important;
+  font-size: 13px !important;
+}
+
+.lesson-progress-cell {
+  display: grid;
+  min-width: 190px;
+  gap: 8px;
+}
+
+.lesson-create-form {
+  border-top: 1px solid var(--border);
+  margin-top: 14px;
+  padding-top: 14px;
 }
 
 .director-grid {
