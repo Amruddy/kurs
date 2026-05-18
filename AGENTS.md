@@ -15,11 +15,11 @@ Codex must use the project specifications as the source of truth before making c
 
 - Read `docs/roadmap/README.md` before implementation.
 - Read relevant files in `docs/specs/` before implementation.
-- Read the active work plan in `docs/work-plans/active/`.
+- Read the active work plan in `docs/work-plans/active/` if one exists.
 - If a feature is not described in the specs, do not implement it.
 - If a spec is unclear, clarify or update the spec before coding.
-- Follow the active work plan named by `docs/roadmap/README.md` and
-  `docs/work-plans/active/README.md`.
+- Follow `docs/roadmap/README.md` and the active work plan named by
+  `docs/work-plans/active/README.md` when an active plan is selected.
 
 ## Working Order
 
@@ -76,6 +76,10 @@ The current active implementation source of truth is named in:
 
 Current active technical plan:
 
-`docs/work-plans/active/06-mpmf-1-spec-rewrite-plan.md`
+No active technical plan is selected yet. Use:
 
-Use the roadmap and the current status section in the active work plan to determine the next stage.
+`docs/work-plans/active/README.md`
+
+Use the roadmap and `docs/work-plans/active/README.md` to determine whether a
+stage is active. If no active plan is selected, create or update the next stage
+plan before coding.
