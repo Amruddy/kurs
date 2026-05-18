@@ -33,6 +33,8 @@
 - `14-mpmf-1-stage-6-tajweed-progress-plan.md` - прогресс таджвида:
   карточка ученика преподавателя, правила, ошибки, записи прогресса и
   read-only `/student/progress`.
+- `15-mpmf-1-stage-7-homework-materials-plan.md` - домашние задания и
+  материалы: рабочие разделы преподавателя и read-only разделы ученика.
 - `01-initial-product-implementation-plan.md` - исторический план первой
   рабочей реализации до перехода к `MPMF 1.0`.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления

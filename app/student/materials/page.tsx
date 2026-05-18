@@ -1,4 +1,4 @@
-import { InfoList, MetricGrid, SupabaseDataPage } from "@/app/components/supabase-data-page";
+import { SupabaseDataPage } from "@/app/components/supabase-data-page";
 import { getStudentMaterials } from "@/app/lib/data/supabase-read";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
@@ -9,47 +9,54 @@ export default async function StudentMaterialsPage() {
   return (
     <SupabaseDataPage
       title="Материалы"
-      description="Текстовые материалы и ссылки, которые преподаватель открыл ученику."
+      description="Тексты и ссылки, которые преподаватель открыл ученику."
       result={result}
     >
-      {(data) => (
-        <>
-          <section className="student-overview-grid">
-            <div className="panel student-main-panel">
-              <div className="section-heading">
-                <div>
-                  <h2>{data.studentName}</h2>
-                  <p>{data.groups.join("; ") || "активные группы не найдены"}</p>
-                </div>
-              </div>
-            </div>
-          </section>
+      {(data) => {
+        const linkCount = data.materials.filter((material) => material.url).length;
 
-          <div className="section">
-            <MetricGrid items={data.metrics} />
+        return (
+          <div className="student-dashboard">
+            <section className="student-compact-grid">
+              <article className="panel student-compact-card">
+                <h2>Открытые материалы</h2>
+                <strong>{data.materials.length}</strong>
+              </article>
+              <article className="panel student-compact-card">
+                <h2>Ссылки</h2>
+                <strong>{linkCount}</strong>
+              </article>
+              <article className="panel student-compact-card">
+                <h2>Группы</h2>
+                <strong>{data.groups.length}</strong>
+              </article>
+            </section>
+
+            {data.materials.length > 0 ? (
+              <section className="student-detail-list">
+                {data.materials.map((material) => (
+                  <article className="panel student-detail-card" key={material.id}>
+                    <span className="student-card-meta">{material.detail}</span>
+                    {material.url ? (
+                      <a href={material.url} rel="noreferrer" target="_blank">
+                        {material.title}
+                      </a>
+                    ) : (
+                      <strong>{material.title}</strong>
+                    )}
+                    {material.content ? <p>{material.content}</p> : null}
+                  </article>
+                ))}
+              </section>
+            ) : (
+              <section className="panel student-compact-card">
+                <h2>Материалов пока нет</h2>
+                <p>Открытые преподавателем материалы появятся здесь.</p>
+              </section>
+            )}
           </div>
-
-          <section className="panel section">
-            <h2>Открытые материалы</h2>
-            <InfoList
-              emptyText="Открытых материалов пока нет."
-              items={data.materials.map((material) => (
-                <div className="info-row" key={material.id}>
-                  <span>{material.detail}</span>
-                  {material.url ? (
-                    <a href={material.url} rel="noreferrer" target="_blank">
-                      {material.title}
-                    </a>
-                  ) : (
-                    <strong>{material.title}</strong>
-                  )}
-                  {material.content ? <p>{material.content}</p> : null}
-                </div>
-              ))}
-            />
-          </section>
-        </>
-      )}
+        );
+      }}
     </SupabaseDataPage>
   );
 }

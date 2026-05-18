@@ -2,7 +2,7 @@
 
 ## 0. Статус
 
-- Статус плана: реализация проверена, ожидает подтверждения на commit/push.
+- Статус плана: завершен и смержен в `main` через PR #37.
 - Ветка: `feat/mpmf-1-stage-7-homework-materials`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 6. Tajweed Progress`, PR #36.

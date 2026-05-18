@@ -15,15 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-7-homework-materials`.
-- Текущий этап: `MPMF 1.0 Stage 7. Homework And Materials`.
+- Текущая ветка: `feat/mpmf-1-stage-8-student-dashboard-schedule`.
+- Текущий этап: `MPMF 1.0 Stage 8. Student Schedule And Dashboard`.
 - Активный план:
-  `docs/work-plans/active/15-mpmf-1-stage-7-homework-materials-plan.md`.
-- Статус: реализация проверена, ожидает подтверждения на commit/push.
-- Предыдущий этап: `MPMF 1.0 Stage 6. Tajweed Progress`, завершен и смержен
-  в `main` через PR #36.
+  `docs/work-plans/active/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`.
+- Статус: активная реализация.
+- Предыдущий этап: `MPMF 1.0 Stage 7. Homework And Materials`, завершен и
+  смержен в `main` через PR #37.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/14-mpmf-1-stage-6-tajweed-progress-plan.md`.
+  `docs/work-plans/completed/15-mpmf-1-stage-7-homework-materials-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -200,13 +200,11 @@
 
 завершен и смержен в `main` через PR #36.
 
-## 4. Активный этап
-
 ### MPMF 1.0 Stage 7: Homework And Materials
 
 План:
 
-`docs/work-plans/active/15-mpmf-1-stage-7-homework-materials-plan.md`
+`docs/work-plans/completed/15-mpmf-1-stage-7-homework-materials-plan.md`
 
 Маршруты:
 
@@ -215,11 +213,32 @@
 - `/student/homework`;
 - `/student/materials`.
 
+Статус:
+
+завершен и смержен в `main` через PR #37.
+
+## 4. Активный этап
+
+### MPMF 1.0 Stage 8: Student Schedule And Dashboard
+
+План:
+
+`docs/work-plans/active/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`
+
+Маршруты:
+
+- `/student`;
+- `/student/schedule`.
+
+Статус:
+
+реализация и проверки завершены, ожидается подтверждение на commit/push.
+
 ## 5. Следующий этап
 
 Следующий stage после merge текущего stage:
 
-`Stage 8. Student Schedule And Dashboard`
+`Stage 9. Student Learning Cabinet`
 
 Полный roadmap реализации:
 
