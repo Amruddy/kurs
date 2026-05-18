@@ -105,6 +105,7 @@ type HomeworkRow = {
   course_id: string;
   group_id: string | null;
   student_id: string | null;
+  lesson_id?: string | null;
   title: string;
   description: string | null;
   due_at: string | null;
@@ -116,12 +117,31 @@ type MaterialRow = {
   course_id: string | null;
   group_id: string | null;
   student_id: string | null;
+  lesson_id?: string | null;
+  homework_id?: string | null;
   title: string;
   type: string;
   content: string | null;
   url: string | null;
   visibility: string;
   status: string;
+};
+
+type JournalEntryRow = {
+  id: string;
+  lesson_id: string;
+  student_id: string;
+  attendance_mark: string | null;
+  lesson_mark: string | null;
+  teacher_comment: string | null;
+  internal_comment: string | null;
+  is_visible_to_student: boolean;
+};
+
+type ProgressRecordLessonRow = {
+  id: string;
+  lesson_id: string | null;
+  student_id: string;
 };
 
 type PaymentRow = {
@@ -337,6 +357,47 @@ export type TeacherGroupDetailData = {
   paymentSignals: PaymentSummary[];
 };
 
+export type TeacherJournalCell = {
+  attendanceMark: "" | "absent" | "excused" | "present";
+  attendanceTone: "danger" | "neutral" | "ok" | "warning";
+  id: string;
+  indicators: string[];
+  isFuture: boolean;
+  lessonId: string;
+  studentId: string;
+};
+
+export type TeacherJournalLesson = {
+  id: string;
+  day: string;
+  isWeekStart: boolean;
+  timeRange: string;
+  topic: string;
+  weekday: string;
+};
+
+export type TeacherJournalStudent = {
+  id: string;
+  name: string;
+  status: string;
+  cells: TeacherJournalCell[];
+};
+
+export type TeacherGroupJournalData = {
+  id: string;
+  name: string;
+  course: string;
+  teacher: string;
+  status: string;
+  monthLabel: string;
+  monthValue: string;
+  previousMonth: string;
+  nextMonth: string;
+  lessons: TeacherJournalLesson[];
+  students: TeacherJournalStudent[];
+  savedEntries: string;
+};
+
 async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T>): Promise<DataResult<T>> {
   try {
     const client = createSupabaseAdminClient();
@@ -390,6 +451,37 @@ function formatDateTime(value: string | null | undefined) {
     minute: "2-digit",
     month: "short",
     timeZone: "Europe/Moscow",
+  }).format(new Date(value));
+}
+
+function formatDateShort(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "Europe/Moscow",
+  }).format(new Date(value));
+}
+
+function formatMonthLabel(monthValue: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    month: "long",
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+  }).format(new Date(`${monthValue}-01T00:00:00+03:00`));
+}
+
+function formatTimeOfDate(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Moscow",
+  }).format(new Date(value));
+}
+
+function weekdayShortLabel(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Europe/Moscow",
+    weekday: "short",
   }).format(new Date(value));
 }
 
@@ -476,6 +568,74 @@ function weekdayLabel(value: number) {
 
 function weekdayOrderValue(value: number) {
   return value === 0 ? 7 : value;
+}
+
+function currentMoscowMonthValue() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+  }).formatToParts(new Date());
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+
+  return `${values.get("year")}-${values.get("month")}`;
+}
+
+function normalizeMonthValue(value: string | null | undefined) {
+  return value && /^\d{4}-\d{2}$/.test(value) ? value : currentMoscowMonthValue();
+}
+
+function addMonthValue(monthValue: string, delta: number) {
+  const [year, month] = monthValue.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1 + delta, 1));
+  const nextMonth = String(date.getUTCMonth() + 1).padStart(2, "0");
+
+  return `${date.getUTCFullYear()}-${nextMonth}`;
+}
+
+function monthBoundaryIso(monthValue: string) {
+  return new Date(`${monthValue}-01T00:00:00+03:00`).toISOString();
+}
+
+function journalKey(lessonId: string, studentId: string) {
+  return `${lessonId}:${studentId}`;
+}
+
+function normalizeAttendanceMark(value: string | null): TeacherJournalCell["attendanceMark"] {
+  if (value === "present" || value === "absent" || value === "excused") {
+    return value;
+  }
+
+  return "";
+}
+
+function attendanceTone(
+  attendanceMark: TeacherJournalCell["attendanceMark"],
+  isFuture: boolean,
+  hasSavedEntry: boolean,
+): TeacherJournalCell["attendanceTone"] {
+  if (attendanceMark === "absent") {
+    return "danger";
+  }
+
+  if (attendanceMark === "excused") {
+    return "warning";
+  }
+
+  if (attendanceMark === "present" || (!isFuture && hasSavedEntry)) {
+    return "ok";
+  }
+
+  return "neutral";
+}
+
+function isMoscowMonday(value: string) {
+  return (
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Moscow",
+      weekday: "short",
+    }).format(new Date(value)) === "Mon"
+  );
 }
 
 function isPaymentAttention(payment: PaymentRow) {
@@ -1127,6 +1287,164 @@ export async function getTeacherGroupDetail(organizationId: string, email: strin
       homework: visibleHomework,
       materials: visibleMaterials,
       paymentSignals: summarizePayments(attentionPayments.slice(0, 5), studentMap, courseMap, groupMap),
+    };
+  });
+}
+
+export async function getTeacherGroupJournal(organizationId: string, email: string, groupId: string, month: string | null | undefined) {
+  return readSupabaseData<TeacherGroupJournalData>(async (client) => {
+    const teacher = await getUserByEmail(client, email);
+    const { courses, groups, students, users } = await getBaseOrganizationData(client, organizationId);
+    const group = groups.find((item) => item.id === groupId && item.teacher_id === teacher.id);
+
+    if (!group) {
+      throw new Error("Группа: запись не найдена.");
+    }
+
+    const monthValue = normalizeMonthValue(month);
+    const nextMonth = addMonthValue(monthValue, 1);
+    const [lessonsResult, groupStudentsResult] = await Promise.all([
+      client
+        .from("lessons")
+        .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+        .eq("organization_id", organizationId)
+        .eq("group_id", groupId)
+        .gte("starts_at", monthBoundaryIso(monthValue))
+        .lt("starts_at", monthBoundaryIso(nextMonth))
+        .order("starts_at", { ascending: true }),
+      client.from("group_students").select("id,group_id,student_id,status").eq("group_id", groupId),
+    ]);
+
+    const lessons = rows<LessonRow>(lessonsResult, "Уроки журнала группы");
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Состав журнала группы");
+    const lessonIds = lessons.map((lesson) => lesson.id);
+    const activeGroupStudents = groupStudents.filter((item) => item.status === "active");
+    const activeStudentIds = new Set(activeGroupStudents.map((item) => item.student_id));
+    const [journalResult, progressResult, homeworkResult, materialsResult] = await Promise.all([
+      lessonIds.length > 0
+        ? client
+            .from("journal_entries")
+            .select("id,lesson_id,student_id,attendance_mark,lesson_mark,teacher_comment,internal_comment,is_visible_to_student")
+            .in("lesson_id", lessonIds)
+        : Promise.resolve({ data: [], error: null }),
+      lessonIds.length > 0
+        ? client.from("progress_records").select("id,lesson_id,student_id").eq("organization_id", organizationId).in("lesson_id", lessonIds)
+        : Promise.resolve({ data: [], error: null }),
+      lessonIds.length > 0
+        ? client
+            .from("homework")
+            .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+            .eq("organization_id", organizationId)
+            .eq("status", "active")
+            .in("lesson_id", lessonIds)
+        : Promise.resolve({ data: [], error: null }),
+      lessonIds.length > 0
+        ? client
+            .from("materials")
+            .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+            .eq("organization_id", organizationId)
+            .eq("status", "active")
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const journalEntries = rows<JournalEntryRow>(journalResult, "Записи журнала группы").filter((entry) =>
+      activeStudentIds.has(entry.student_id),
+    );
+    const progressRecords = rows<ProgressRecordLessonRow>(progressResult, "Прогресс журнала группы").filter(
+      (record) => record.lesson_id && activeStudentIds.has(record.student_id),
+    );
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания журнала группы");
+    const materials = rows<MaterialRow>(materialsResult, "Материалы журнала группы").filter(
+      (material) => material.group_id === group.id || material.course_id === group.course_id,
+    );
+    const courseMap = byId(courses);
+    const studentMap = byId(students);
+    const userMap = byId(users);
+    const journalEntryMap = new Map(journalEntries.map((entry) => [journalKey(entry.lesson_id, entry.student_id), entry]));
+    const progressKeys = new Set(
+      progressRecords
+        .filter((record): record is ProgressRecordLessonRow & { lesson_id: string } => record.lesson_id !== null)
+        .map((record) => journalKey(record.lesson_id, record.student_id)),
+    );
+    const homeworkByLessonId = new Map<string, HomeworkRow[]>();
+    const homeworkIdToLessonId = new Map<string, string>();
+
+    for (const item of homework) {
+      if (!item.lesson_id) {
+        continue;
+      }
+
+      const items = homeworkByLessonId.get(item.lesson_id) ?? [];
+      items.push(item);
+      homeworkByLessonId.set(item.lesson_id, items);
+      homeworkIdToLessonId.set(item.id, item.lesson_id);
+    }
+
+    const materialLessonIds = new Set(
+      materials
+        .map((material) => material.lesson_id ?? (material.homework_id ? homeworkIdToLessonId.get(material.homework_id) : null))
+        .filter((lessonId): lessonId is string => Boolean(lessonId)),
+    );
+    const now = Date.now();
+    const journalLessons = lessons.map((lesson) => ({
+      id: lesson.id,
+      day: formatDateShort(lesson.starts_at),
+      isWeekStart: isMoscowMonday(lesson.starts_at),
+      timeRange: `${formatTimeOfDate(lesson.starts_at)}-${formatTimeOfDate(lesson.ends_at)}`,
+      topic: lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "Урок",
+      weekday: weekdayShortLabel(lesson.starts_at),
+    }));
+    const journalStudents = activeGroupStudents
+      .map((item) => {
+        const student = studentMap.get(item.student_id);
+        const name = student?.name ?? "Ученик";
+
+        return {
+          id: item.student_id,
+          name,
+          status: statusLabel(item.status),
+          cells: lessons.map((lesson) => {
+            const key = journalKey(lesson.id, item.student_id);
+            const entry = journalEntryMap.get(key);
+            const attendanceMark = normalizeAttendanceMark(entry?.attendance_mark ?? null);
+            const isFuture = new Date(lesson.starts_at).getTime() > now;
+            const indicators = [
+              entry?.lesson_mark ? `Оценка ${entry.lesson_mark}` : null,
+              entry?.teacher_comment ? "Комментарий" : null,
+              entry?.internal_comment ? "Внутренний комментарий" : null,
+              progressKeys.has(key) ? "Прогресс" : null,
+              homeworkByLessonId.has(lesson.id) ? "ДЗ" : null,
+              materialLessonIds.has(lesson.id) ? "Материал" : null,
+              !isFuture && entry && !attendanceMark ? "Пусто = П" : null,
+            ].filter((indicator): indicator is string => indicator !== null);
+
+            return {
+              attendanceMark,
+              attendanceTone: attendanceTone(attendanceMark, isFuture, Boolean(entry)),
+              id: key,
+              indicators,
+              isFuture,
+              lessonId: lesson.id,
+              studentId: item.student_id,
+            };
+          }),
+        };
+      })
+      .sort((left, right) => left.name.localeCompare(right.name, "ru"));
+
+    return {
+      id: group.id,
+      name: group.name,
+      course: courseMap.get(group.course_id)?.name ?? "Курс",
+      teacher: group.teacher_id ? userMap.get(group.teacher_id)?.name ?? teacher.name : teacher.name,
+      status: groupStatusLabel(group.status),
+      monthLabel: formatMonthLabel(monthValue),
+      monthValue,
+      previousMonth: addMonthValue(monthValue, -1),
+      nextMonth,
+      lessons: journalLessons,
+      students: journalStudents,
+      savedEntries: String(journalEntries.length),
     };
   });
 }

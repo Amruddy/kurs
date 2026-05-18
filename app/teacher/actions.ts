@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { saveTeacherGroupJournal } from "@/app/lib/data/teacher-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
 async function requireTeacher() {
-  await requireWorkspace("teacher");
+  return requireWorkspace("teacher");
 }
 
 export async function saveLessonJournal(lessonId: string, formData: FormData) {
@@ -20,8 +21,13 @@ export async function saveLessonDetails(lessonId: string, formData: FormData) {
 }
 
 export async function saveGroupJournal(groupId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  await saveTeacherGroupJournal({
+    email: session.email,
+    formData,
+    groupId,
+    organizationId: session.organizationId,
+  });
   revalidatePath(`/teacher/groups/${groupId}/journal`);
 }
 
