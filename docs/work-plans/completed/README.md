@@ -13,6 +13,8 @@
   курса, ученика, группы и назначения ученика в группу поверх Supabase.
 - `06-mpmf-1-spec-rewrite-plan.md` - переписывание спецификаций под `MPMF 1.0`,
   добавление page-by-page контрактов и перенос завершенных планов.
+- `07-mpmf-1-implementation-roadmap-plan.md` - полный roadmap реализации
+  `MPMF 1.0` и выбор первого кодового stage `Admin Group Detail`.
 - `01-initial-product-implementation-plan.md` - исторический план первой
   рабочей реализации до перехода к `MPMF 1.0`.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления
