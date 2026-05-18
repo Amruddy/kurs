@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`13-mpmf-1-entry-page-plan.md`
+`14-mpmf-1-stage-6-tajweed-progress-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/12-mpmf-1-stage-5-lesson-page-plan.md`
+`../completed/13-mpmf-1-entry-page-plan.md`
 
 Codex перед разработкой должен читать:
 

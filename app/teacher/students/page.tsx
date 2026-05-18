@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DataTable, SupabaseDataPage } from "@/app/components/supabase-data-page";
 import { getTeacherStudents } from "@/app/lib/data/supabase-read";
 import { requireWorkspace } from "@/app/lib/dev-auth";
@@ -23,6 +24,14 @@ export default async function TeacherStudentsPage() {
               { header: "Контакты", render: (student) => student.contacts },
               { header: "Группы", render: (student) => student.groups },
               { header: "Оплата", render: (student) => student.payment },
+              {
+                header: "Действие",
+                render: (student) => (
+                  <Link className="secondary-button compact-button" href={`/teacher/students/${student.id}`}>
+                    Открыть прогресс
+                  </Link>
+                ),
+              },
             ]}
           />
         </section>

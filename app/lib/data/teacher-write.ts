@@ -17,6 +17,21 @@ type SaveTeacherLessonInput = {
   organizationId: string;
 };
 
+type SaveTeacherStudentProgressInput = {
+  email: string;
+  formData: FormData;
+  organizationId: string;
+  studentId: string;
+};
+
+type UpdateTeacherProgressRuleInput = SaveTeacherStudentProgressInput & {
+  ruleId: string;
+};
+
+type UpdateTeacherProgressErrorInput = SaveTeacherStudentProgressInput & {
+  errorId: string;
+};
+
 type TeacherUserRow = {
   id: string;
 };
@@ -30,6 +45,11 @@ type TeacherLessonGroupRow = {
   course_id: string;
   id: string;
   teacher_id: string | null;
+};
+
+type TeacherProgressGroupRow = {
+  course_id: string;
+  id: string;
 };
 
 type TeacherLessonRow = {
@@ -77,6 +97,13 @@ type TeacherLessonContext = {
   course: TeacherCourseRow;
   group: TeacherLessonGroupRow;
   lesson: TeacherLessonRow;
+  teacher: TeacherUserRow;
+};
+
+type TeacherStudentProgressContext = {
+  courseIds: Set<string>;
+  groupIds: Set<string>;
+  studentId: string;
   teacher: TeacherUserRow;
 };
 
@@ -241,6 +268,27 @@ function parseDueAt(formData: FormData) {
   return new Date(`${value}T00:00:00+03:00`).toISOString();
 }
 
+function parseProgressLevel(value: string) {
+  if (value === "") {
+    return null;
+  }
+
+  if (value === "excellent" || value === "good" || value === "satisfactory" || value === "poor") {
+    return value;
+  }
+
+  throw new Error("Уровень прогресса: неверное значение.");
+}
+
+function optionalUuid(value: string, context: string) {
+  if (value.length === 0) {
+    return null;
+  }
+
+  assertUuid(value, context);
+  return value;
+}
+
 async function getTeacherByEmail(supabase: SupabaseClient, email: string) {
   const teacherResult = await supabase.from("users").select("id").eq("email", email).maybeSingle();
 
@@ -300,6 +348,99 @@ async function getTeacherLessonContext(supabase: SupabaseClient, input: SaveTeac
   }
 
   return { course, group, lesson, teacher };
+}
+
+async function getTeacherStudentProgressContext(
+  supabase: SupabaseClient,
+  input: SaveTeacherStudentProgressInput,
+): Promise<TeacherStudentProgressContext> {
+  assertUuid(input.studentId, "Ученик");
+
+  const teacher = await getTeacherByEmail(supabase, input.email);
+  const groupsResult = await supabase
+    .from("groups")
+    .select("id,course_id")
+    .eq("organization_id", input.organizationId)
+    .eq("teacher_id", teacher.id);
+
+  assertWriteSuccess(groupsResult.error, "Проверка групп преподавателя");
+
+  const groups = (groupsResult.data ?? []) as TeacherProgressGroupRow[];
+  const groupIds = groups.map((group) => group.id);
+  const membershipsResult =
+    groupIds.length > 0
+      ? await supabase
+          .from("group_students")
+          .select("student_id,status,group_id")
+          .in("group_id", groupIds)
+          .eq("student_id", input.studentId)
+      : { data: [], error: null };
+
+  assertWriteSuccess(membershipsResult.error, "Проверка ученика преподавателя");
+
+  const activeGroupIds = new Set(
+    ((membershipsResult.data ?? []) as Array<GroupStudentStatusRow & { group_id: string }>)
+      .filter((membership) => membership.status === "active")
+      .map((membership) => membership.group_id),
+  );
+
+  if (activeGroupIds.size === 0) {
+    throw new Error("Ученик: запись не найдена.");
+  }
+
+  const courseIds = new Set(
+    groups
+      .filter((group) => activeGroupIds.has(group.id))
+      .map((group) => group.course_id),
+  );
+
+  return {
+    courseIds,
+    groupIds: activeGroupIds,
+    studentId: input.studentId,
+    teacher,
+  };
+}
+
+function assertAllowedCourse(courseId: string, context: TeacherStudentProgressContext) {
+  assertUuid(courseId, "Курс прогресса");
+
+  if (!context.courseIds.has(courseId)) {
+    throw new Error("Прогресс: курс не относится к ученику преподавателя.");
+  }
+}
+
+async function assertAllowedLesson(
+  supabase: SupabaseClient,
+  context: TeacherStudentProgressContext,
+  organizationId: string,
+  lessonId: string | null,
+  courseId: string,
+) {
+  if (!lessonId) {
+    return;
+  }
+
+  const lessonResult = await supabase
+    .from("lessons")
+    .select("id,course_id,group_id,teacher_id")
+    .eq("id", lessonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(lessonResult.error, "Проверка урока прогресса");
+
+  const lesson = lessonResult.data as TeacherLessonRow | null;
+
+  if (
+    !lesson ||
+    lesson.teacher_id !== context.teacher.id ||
+    lesson.course_id !== courseId ||
+    !lesson.group_id ||
+    !context.groupIds.has(lesson.group_id)
+  ) {
+    throw new Error("Прогресс: урок не относится к ученику преподавателя.");
+  }
 }
 
 export async function saveTeacherGroupJournal(input: SaveTeacherGroupJournalInput) {
@@ -542,4 +683,136 @@ export async function createTeacherLessonMaterial(input: SaveTeacherLessonInput)
   assertWriteSuccess(result.error, "Добавление материала");
 
   return { groupId: context.group.id };
+}
+
+export async function createTeacherProgressRule(input: SaveTeacherStudentProgressInput) {
+  const supabase = createSupabaseAdminClient();
+  const context = await getTeacherStudentProgressContext(supabase, input);
+  const courseId = requiredText(input.formData, "course_id", "Курс прогресса");
+
+  assertAllowedCourse(courseId, context);
+
+  const result = await supabase.from("student_progress_rules").insert({
+    course_id: courseId,
+    is_active: true,
+    is_visible_to_student: parseCheckbox(input.formData, "is_visible_to_student", "Видимость правила"),
+    level: parseProgressLevel(formText(input.formData, "level", "Уровень правила")),
+    name: requiredText(input.formData, "name", "Название правила"),
+    note: nullableText(input.formData, "note", "Комментарий правила"),
+    organization_id: input.organizationId,
+    sort_order: 0,
+    student_id: context.studentId,
+  });
+
+  assertWriteSuccess(result.error, "Добавление правила прогресса");
+}
+
+export async function updateTeacherProgressRule(input: UpdateTeacherProgressRuleInput) {
+  const supabase = createSupabaseAdminClient();
+  const context = await getTeacherStudentProgressContext(supabase, input);
+
+  assertUuid(input.ruleId, "Правило прогресса");
+
+  const result = await supabase
+    .from("student_progress_rules")
+    .update({
+      is_active: parseCheckbox(input.formData, "is_active", "Активность правила"),
+      is_visible_to_student: parseCheckbox(input.formData, "is_visible_to_student", "Видимость правила"),
+      level: parseProgressLevel(formText(input.formData, "level", "Уровень правила")),
+      name: requiredText(input.formData, "name", "Название правила"),
+      note: nullableText(input.formData, "note", "Комментарий правила"),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.ruleId)
+    .eq("organization_id", input.organizationId)
+    .eq("student_id", context.studentId)
+    .in("course_id", [...context.courseIds])
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Сохранение правила прогресса");
+
+  if (!result.data) {
+    throw new Error("Правило прогресса: запись не найдена.");
+  }
+}
+
+export async function createTeacherProgressError(input: SaveTeacherStudentProgressInput) {
+  const supabase = createSupabaseAdminClient();
+  const context = await getTeacherStudentProgressContext(supabase, input);
+  const courseId = requiredText(input.formData, "course_id", "Курс прогресса");
+
+  assertAllowedCourse(courseId, context);
+
+  const result = await supabase.from("student_progress_errors").insert({
+    course_id: courseId,
+    is_active: true,
+    is_visible_to_student: parseCheckbox(input.formData, "is_visible_to_student", "Видимость ошибки"),
+    name: requiredText(input.formData, "name", "Название ошибки"),
+    note: nullableText(input.formData, "note", "Комментарий ошибки"),
+    organization_id: input.organizationId,
+    student_id: context.studentId,
+  });
+
+  assertWriteSuccess(result.error, "Добавление ошибки прогресса");
+}
+
+export async function updateTeacherProgressError(input: UpdateTeacherProgressErrorInput) {
+  const supabase = createSupabaseAdminClient();
+  const context = await getTeacherStudentProgressContext(supabase, input);
+
+  assertUuid(input.errorId, "Ошибка прогресса");
+
+  const result = await supabase
+    .from("student_progress_errors")
+    .update({
+      is_active: parseCheckbox(input.formData, "is_active", "Активность ошибки"),
+      is_visible_to_student: parseCheckbox(input.formData, "is_visible_to_student", "Видимость ошибки"),
+      name: requiredText(input.formData, "name", "Название ошибки"),
+      note: nullableText(input.formData, "note", "Комментарий ошибки"),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.errorId)
+    .eq("organization_id", input.organizationId)
+    .eq("student_id", context.studentId)
+    .in("course_id", [...context.courseIds])
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Сохранение ошибки прогресса");
+
+  if (!result.data) {
+    throw new Error("Ошибка прогресса: запись не найдена.");
+  }
+}
+
+export async function createTeacherProgressRecord(input: SaveTeacherStudentProgressInput & { lessonId: string | null }) {
+  const supabase = createSupabaseAdminClient();
+  const context = await getTeacherStudentProgressContext(supabase, input);
+  const courseId = requiredText(input.formData, "course_id", "Курс прогресса");
+  const lessonId = input.lessonId ?? optionalUuid(formText(input.formData, "lesson_id", "Урок прогресса"), "Урок прогресса");
+  const repeatNote = nullableText(input.formData, "repeat_note", "Что повторить");
+  const studentComment = nullableText(input.formData, "student_comment", "Комментарий ученику");
+  const internalComment = nullableText(input.formData, "internal_comment", "Внутренний комментарий");
+
+  assertAllowedCourse(courseId, context);
+  await assertAllowedLesson(supabase, context, input.organizationId, lessonId, courseId);
+
+  if (!repeatNote && !studentComment && !internalComment) {
+    throw new Error("Запись прогресса: заполните что повторить или комментарий.");
+  }
+
+  const result = await supabase.from("progress_records").insert({
+    course_id: courseId,
+    created_by: context.teacher.id,
+    internal_comment: internalComment,
+    is_visible_to_student: parseCheckbox(input.formData, "is_visible_to_student", "Видимость записи прогресса"),
+    lesson_id: lessonId,
+    organization_id: input.organizationId,
+    repeat_note: repeatNote,
+    student_comment: studentComment,
+    student_id: context.studentId,
+  });
+
+  assertWriteSuccess(result.error, "Добавление записи прогресса");
 }

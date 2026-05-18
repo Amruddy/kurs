@@ -2,7 +2,7 @@
 
 ## 0. Статус
 
-- Статус плана: реализация проверена, ожидает подтверждения на commit/push.
+- Статус плана: завершен и смержен в `main` через PR #35.
 - Ветка: `feat/mpmf-1-entry-page`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 5. Lesson Page`, PR #34.
@@ -85,3 +85,5 @@
   - `/login` вернул HTTP 200 и содержит тот же входной экран;
   - `/teacher` под `teacher@example.test` сохранил внутренний AppShell:
     содержит `Разделы`, `Обзор` и `workspace-topbar`.
+- Коммит stage: `2807a42 Build public entry page`.
+- Merge commit: `b73adc6 Merge pull request #35 from Amruddy/feat/mpmf-1-entry-page`.
