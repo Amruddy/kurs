@@ -4,9 +4,14 @@ import { revalidatePath } from "next/cache";
 import {
   createTeacherLessonHomework,
   createTeacherLessonMaterial,
+  createTeacherProgressError,
+  createTeacherProgressRecord,
+  createTeacherProgressRule,
   saveTeacherGroupJournal,
   saveTeacherLessonDetails,
   saveTeacherLessonJournal,
+  updateTeacherProgressError,
+  updateTeacherProgressRule,
 } from "@/app/lib/data/teacher-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
@@ -54,21 +59,66 @@ export async function saveGroupJournal(groupId: string, formData: FormData) {
 }
 
 export async function createProgressRule(studentId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  await createTeacherProgressRule({
+    email: session.email,
+    formData,
+    organizationId: session.organizationId,
+    studentId,
+  });
   revalidatePath(`/teacher/students/${studentId}`);
+  revalidatePath("/student/progress");
+}
+
+export async function updateProgressRule(ruleId: string, studentId: string, formData: FormData) {
+  const session = await requireTeacher();
+  await updateTeacherProgressRule({
+    email: session.email,
+    formData,
+    organizationId: session.organizationId,
+    ruleId,
+    studentId,
+  });
+  revalidatePath(`/teacher/students/${studentId}`);
+  revalidatePath("/student/progress");
 }
 
 export async function createProgressError(studentId: string, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  await createTeacherProgressError({
+    email: session.email,
+    formData,
+    organizationId: session.organizationId,
+    studentId,
+  });
   revalidatePath(`/teacher/students/${studentId}`);
+  revalidatePath("/student/progress");
+}
+
+export async function updateProgressError(errorId: string, studentId: string, formData: FormData) {
+  const session = await requireTeacher();
+  await updateTeacherProgressError({
+    email: session.email,
+    errorId,
+    formData,
+    organizationId: session.organizationId,
+    studentId,
+  });
+  revalidatePath(`/teacher/students/${studentId}`);
+  revalidatePath("/student/progress");
 }
 
 export async function createProgressRecord(studentId: string, lessonId: string | null, formData: FormData) {
-  void formData;
-  await requireTeacher();
+  const session = await requireTeacher();
+  await createTeacherProgressRecord({
+    email: session.email,
+    formData,
+    lessonId,
+    organizationId: session.organizationId,
+    studentId,
+  });
   revalidatePath(`/teacher/students/${studentId}`);
+  revalidatePath("/student/progress");
 
   if (lessonId) {
     revalidatePath(`/teacher/lessons/${lessonId}`);
