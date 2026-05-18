@@ -396,6 +396,7 @@ button {
 }
 
 .button,
+.danger-button,
 .secondary-button {
   display: inline-flex;
   min-height: 42px;
@@ -423,6 +424,17 @@ button {
   background: var(--primary-strong);
 }
 
+.danger-button {
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.danger-button:hover {
+  border-color: #84272d;
+  background: #84272d;
+}
+
 .secondary-button {
   border: 1px solid var(--border-strong);
   background: var(--surface);
@@ -435,6 +447,7 @@ button {
 }
 
 .button:disabled,
+.danger-button:disabled,
 .secondary-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -451,6 +464,43 @@ button {
   gap: 10px;
 }
 
+.group-settings {
+  position: relative;
+  justify-self: end;
+}
+
+.group-settings summary {
+  list-style: none;
+}
+
+.group-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.group-settings-actions {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  display: grid;
+  min-width: 230px;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 10px;
+}
+
+.group-settings-actions .page-create-action {
+  justify-self: stretch;
+}
+
+.group-settings-actions .page-create-action > .button {
+  width: 100%;
+  justify-content: flex-start;
+}
+
 .link-button {
   display: inline-flex;
   align-items: center;
@@ -463,6 +513,32 @@ button {
   min-height: 36px;
   padding: 0 11px;
   font-size: 13px;
+}
+
+.icon-button {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+}
+
+.trash-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .form-grid .button,
@@ -665,6 +741,30 @@ summary:focus-visible {
   margin-top: 12px !important;
 }
 
+.weekday-picker {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 0;
+  padding: 12px;
+}
+
+.weekday-picker legend {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.weekday-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
 .subsection-title {
   margin-top: 20px !important;
 }
@@ -678,6 +778,29 @@ summary:focus-visible {
 
 .inline-form select {
   width: min(220px, 100%);
+}
+
+.confirm-submit-control {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+}
+
+.confirm-submit-button {
+  min-width: 36px;
+}
+
+.confirm-submit-hint {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .table-wrap,
@@ -792,6 +915,43 @@ td a,
 
 .info-row p {
   grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.schedule-card-list {
+  display: grid;
+  gap: 10px;
+}
+
+.schedule-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 12px 18px;
+  background: var(--surface);
+}
+
+.schedule-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.schedule-card strong {
+  display: block;
+  color: var(--primary);
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.schedule-card p {
+  margin-top: 4px;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
@@ -1572,6 +1732,16 @@ td a,
     justify-self: start;
   }
 
+  .group-settings {
+    justify-self: start;
+  }
+
+  .group-settings-actions {
+    right: auto;
+    left: 0;
+    width: min(260px, calc(100vw - 32px));
+  }
+
   .page-create-overlay {
     top: 72px;
     right: 12px;
@@ -1607,6 +1777,11 @@ td a,
   }
 
   .lesson-row {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-card,
+  .weekday-options {
     grid-template-columns: 1fr;
   }
 

@@ -15,15 +15,15 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-1-admin-group-detail`.
-- Текущий этап: `MPMF 1.0 Stage 1. Admin Group Detail`.
+- Текущая ветка: `feat/mpmf-1-stage-2-group-schedule-lessons`.
+- Текущий этап: `MPMF 1.0 Stage 2. Group Schedule And Lessons`.
 - Активный план:
-  `docs/work-plans/active/08-mpmf-1-stage-1-admin-group-detail-plan.md`.
+  `docs/work-plans/active/09-mpmf-1-stage-2-group-schedule-lessons-plan.md`.
 - Статус: реализация и проверки выполнены, ожидает команды на commit/push.
-- Предыдущий этап: `MPMF 1.0 Implementation Roadmap`, завершен и смержен в
-  `main` через PR #29.
+- Предыдущий этап: `MPMF 1.0 Stage 1. Admin Group Detail`, завершен и смержен
+  в `main` через PR #30.
 - Запись предыдущего этапа:
-  `docs/work-plans/completed/07-mpmf-1-implementation-roadmap-plan.md`.
+  `docs/work-plans/completed/08-mpmf-1-stage-1-admin-group-detail-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -99,13 +99,27 @@
 
 завершен и смержен в `main` через PR #29.
 
-## 4. Активный этап
-
 ### MPMF 1.0 Stage 1: Admin Group Detail
 
 План:
 
-`docs/work-plans/active/08-mpmf-1-stage-1-admin-group-detail-plan.md`
+`docs/work-plans/completed/08-mpmf-1-stage-1-admin-group-detail-plan.md`
+
+Маршрут:
+
+`/admin/groups/[groupId]`
+
+Статус:
+
+завершен и смержен в `main` через PR #30.
+
+## 4. Активный этап
+
+### MPMF 1.0 Stage 2: Group Schedule And Lessons
+
+План:
+
+`docs/work-plans/active/09-mpmf-1-stage-2-group-schedule-lessons-plan.md`
 
 Маршрут:
 
@@ -115,7 +129,7 @@
 
 Следующий stage после merge текущего stage:
 
-`Stage 2. Group Schedule And Lessons`
+`Stage 3. Teacher Groups`
 
 Полный roadmap реализации:
 

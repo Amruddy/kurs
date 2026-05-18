@@ -15,6 +15,8 @@
   добавление page-by-page контрактов и перенос завершенных планов.
 - `07-mpmf-1-implementation-roadmap-plan.md` - полный roadmap реализации
   `MPMF 1.0` и выбор первого кодового stage `Admin Group Detail`.
+- `08-mpmf-1-stage-1-admin-group-detail-plan.md` - административная карточка
+  группы: данные группы, состав, базовое редактирование и проблемные признаки.
 - `01-initial-product-implementation-plan.md` - исторический план первой
   рабочей реализации до перехода к `MPMF 1.0`.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления
