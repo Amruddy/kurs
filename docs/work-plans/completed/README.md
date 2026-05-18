@@ -17,6 +17,8 @@
   `MPMF 1.0` и выбор первого кодового stage `Admin Group Detail`.
 - `08-mpmf-1-stage-1-admin-group-detail-plan.md` - административная карточка
   группы: данные группы, состав, базовое редактирование и проблемные признаки.
+- `09-mpmf-1-stage-2-group-schedule-lessons-plan.md` - расписание группы и
+  создание занятий: правила расписания, генерация уроков и ближайшие занятия.
 - `01-initial-product-implementation-plan.md` - исторический план первой
   рабочей реализации до перехода к `MPMF 1.0`.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления

@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`09-mpmf-1-stage-2-group-schedule-lessons-plan.md`
+`10-mpmf-1-stage-3-teacher-groups-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/08-mpmf-1-stage-1-admin-group-detail-plan.md`
+`../completed/09-mpmf-1-stage-2-group-schedule-lessons-plan.md`
 
 Codex перед разработкой должен читать:
 
