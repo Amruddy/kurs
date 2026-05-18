@@ -2,7 +2,7 @@
 
 ## 0. Статус
 
-- Статус плана: реализация и проверки выполнены, ожидает команды на commit/push.
+- Статус плана: завершен и смержен в `main` через PR #32.
 - Ветка: `feat/mpmf-1-stage-3-teacher-groups`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 2. Group Schedule And Lessons`, PR #31.
@@ -147,6 +147,8 @@ Stage считается готовым, если:
   материалы и оплата к вниманию.
 - На странице группы преподавателя не добавлены админские действия изменения
   группы, состава или расписания.
+- Stage закоммичен в `b7f57a0 Implement stage 3 teacher groups`, запушен в
+  `feat/mpmf-1-stage-3-teacher-groups` и смержен в `main` через PR #32.
 
 ## 9. Выполненные проверки
 
