@@ -8,8 +8,10 @@ import {
 import { ConfirmSubmitButton } from "@/app/components/confirm-submit-button";
 import { PageCreateAction } from "@/app/components/page-create-action";
 import { DataTable, InfoList, MetricGrid, SupabaseDataPage } from "@/app/components/supabase-data-page";
-import { getAdminStudentDetail } from "@/app/lib/data/supabase-read";
-import { requireWorkspace } from "@/app/lib/dev-auth";
+import { getAdminStudentDetail, type AdminStudentDetailData } from "@/app/lib/data/supabase-read";
+import { hasPermission, requireWorkspace } from "@/app/lib/dev-auth";
+import { updateStudentPaymentDetails } from "@/app/payments/actions";
+import { PaymentEditFields } from "@/app/payments/payment-form-fields";
 
 type AdminStudentPageProps = {
   params: Promise<{
@@ -23,8 +25,28 @@ const studentStatuses = [
   { label: "Архив", value: "archived" },
 ];
 
+function StudentPaymentDetailsForm({
+  payment,
+  studentId,
+}: {
+  payment: AdminStudentDetailData["payments"][number];
+  studentId: string;
+}) {
+  const action = updateStudentPaymentDetails.bind(null, studentId, payment.id);
+
+  return (
+    <form action={action} className="form-grid">
+      <PaymentEditFields payment={payment} />
+      <button className="button" type="submit">
+        Сохранить оплату
+      </button>
+    </form>
+  );
+}
+
 export default async function AdminStudentPage({ params }: AdminStudentPageProps) {
   const session = await requireWorkspace("admin");
+  const canWritePayments = hasPermission(session, "payments:write");
   const { studentId } = await params;
   const result = await getAdminStudentDetail(session.organizationId, studentId);
 
@@ -272,6 +294,11 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
                       <p>
                         {payment.due}; {payment.status}
                       </p>
+                      {canWritePayments ? (
+                        <PageCreateAction buttonLabel="Изменить оплату" title={`Оплата: ${data.name}`}>
+                          <StudentPaymentDetailsForm payment={payment} studentId={data.id} />
+                        </PageCreateAction>
+                      ) : null}
                     </div>
                   ))}
                 />

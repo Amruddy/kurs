@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   createAdminPayment,
+  createBulkAdminPayments,
   normalizePaymentPeriodType,
   normalizePaymentStatus,
+  updateAdminPaymentDetails,
   updateAdminPaymentStatus,
 } from "@/app/lib/data/payment-write";
 import { requireWorkspacePermission } from "@/app/lib/dev-auth";
@@ -46,7 +48,7 @@ function amountValue(formData: FormData) {
   return amount;
 }
 
-function paymentInput(
+function paymentBaseInput(
   session: Awaited<ReturnType<typeof requireAdmin>>,
   formData: FormData,
   overrides: { courseId?: string | null; groupId?: string | null } = {},
@@ -68,7 +70,32 @@ function paymentInput(
     periodStart: optionalString(formData, "periodStart"),
     periodType,
     status,
+  };
+}
+
+function paymentInput(
+  session: Awaited<ReturnType<typeof requireAdmin>>,
+  formData: FormData,
+  overrides: { courseId?: string | null; groupId?: string | null } = {},
+) {
+  return {
+    ...paymentBaseInput(session, formData, overrides),
     studentId: requiredString(formData, "studentId", "Ученик"),
+  };
+}
+
+function paymentDetailsInput(session: Awaited<ReturnType<typeof requireAdmin>>, formData: FormData) {
+  return {
+    amount: amountValue(formData),
+    changedBy: session.userId,
+    comment: optionalString(formData, "comment"),
+    currency: (optionalString(formData, "currency") ?? "RUB").toUpperCase(),
+    dueAt: optionalString(formData, "dueAt"),
+    internalComment: optionalString(formData, "internalComment"),
+    organizationId: session.organizationId,
+    periodEnd: optionalString(formData, "periodEnd"),
+    periodStart: optionalString(formData, "periodStart"),
+    periodType: normalizePaymentPeriodType(optionalString(formData, "periodType") ?? "month"),
   };
 }
 
@@ -96,6 +123,33 @@ export async function createPayment(formData: FormData) {
   redirect("/admin/payments");
 }
 
+export async function addPayment(formData: FormData) {
+  const session = await requireAdmin();
+  const targetType = requiredString(formData, "targetType", "Кому добавить оплату");
+
+  if (targetType === "group") {
+    const groupId = requiredString(formData, "groupId", "Группа");
+    const result = await createBulkAdminPayments({
+      ...paymentBaseInput(session, formData, { courseId: null, groupId }),
+      targetType: "group",
+    });
+
+    revalidatePaymentPages();
+    revalidatePath(`/admin/groups/${groupId}`);
+    redirect(`/admin/payments?created=${result.createdCount}&skipped=${result.skippedCount}`);
+  }
+
+  if (targetType === "student") {
+    const input = paymentInput(session, formData);
+
+    await createAdminPayment(input);
+    revalidatePaymentPages(input.studentId);
+    redirect("/admin/payments?created=1&skipped=0");
+  }
+
+  throw new Error("Кому добавить оплату: выберите группу или одного ученика.");
+}
+
 export async function createCoursePayment(courseId: string, formData: FormData) {
   const session = await requireAdmin();
   const input = paymentInput(session, formData, { courseId });
@@ -116,6 +170,43 @@ export async function createGroupPayment(groupId: string, formData: FormData) {
   redirect(`/admin/groups/${groupId}`);
 }
 
+export async function createCoursePayments(formData: FormData) {
+  const session = await requireAdmin();
+  const courseId = requiredString(formData, "courseId", "Курс");
+  const result = await createBulkAdminPayments({
+    ...paymentBaseInput(session, formData, { courseId, groupId: null }),
+    targetType: "course",
+  });
+
+  revalidatePaymentPages();
+  revalidatePath(`/admin/courses/${courseId}`);
+  redirect(`/admin/payments?created=${result.createdCount}&skipped=${result.skippedCount}`);
+}
+
+export async function createGroupPayments(formData: FormData) {
+  const session = await requireAdmin();
+  const groupId = requiredString(formData, "groupId", "Группа");
+  const result = await createBulkAdminPayments({
+    ...paymentBaseInput(session, formData, { courseId: null, groupId }),
+    targetType: "group",
+  });
+
+  revalidatePaymentPages();
+  revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/payments?created=${result.createdCount}&skipped=${result.skippedCount}`);
+}
+
+export async function updatePaymentDetails(paymentId: string, formData: FormData) {
+  const session = await requireAdmin();
+  const result = await updateAdminPaymentDetails({
+    ...paymentDetailsInput(session, formData),
+    paymentId,
+  });
+
+  revalidatePaymentPages(result.studentId);
+  redirect("/admin/payments");
+}
+
 export async function updatePaymentStatus(paymentId: string, formData: FormData) {
   const session = await requireAdmin();
   const result = await updateAdminPaymentStatus({
@@ -130,14 +221,11 @@ export async function updatePaymentStatus(paymentId: string, formData: FormData)
   redirect("/admin/payments");
 }
 
-export async function updateStudentPayment(studentId: string, paymentId: string, formData: FormData) {
+export async function updateStudentPaymentDetails(studentId: string, paymentId: string, formData: FormData) {
   const session = await requireAdmin();
-  await updateAdminPaymentStatus({
-    changedBy: session.userId,
-    comment: optionalString(formData, "historyComment"),
-    organizationId: session.organizationId,
+  await updateAdminPaymentDetails({
+    ...paymentDetailsInput(session, formData),
     paymentId,
-    status: normalizePaymentStatus(requiredString(formData, "status", "Статус оплаты")),
   });
 
   revalidatePaymentPages(studentId);

@@ -223,11 +223,19 @@ export type LessonSummary = {
 };
 
 export type PaymentSummary = {
+  amountValue?: string;
   id: string;
   studentName: string;
   context: string;
   amount: string;
+  comment?: string;
+  currency?: string;
   due: string;
+  dueAt?: string;
+  internalComment?: string;
+  periodEnd?: string;
+  periodStart?: string;
+  periodTypeValue?: string;
   status: string;
 };
 
@@ -240,16 +248,25 @@ export type AdminPaymentFilters = {
 
 export type PaymentDetailItem = {
   amount: string;
+  amountValue: string;
   attention: boolean;
   comment: string;
   context: string;
+  contextHref: string;
+  currency: string;
   due: string;
+  dueAt: string;
+  groupId: string;
   id: string;
   internalComment: string;
   period: string;
+  periodEnd: string;
+  periodStart: string;
+  periodTypeValue: string;
   status: string;
   statusTone: "danger" | "neutral" | "ok" | "warning";
   statusValue: string;
+  studentId: string;
   studentName: string;
 };
 
@@ -259,6 +276,7 @@ export type AdminPaymentsData = {
   defaultDueAt: string;
   defaultPeriodEnd: string;
   defaultPeriodStart: string;
+  groupStudentOptions: GroupStudentSelectOption[];
   groupOptions: SelectOption[];
   metrics: MetricItem[];
   payments: PaymentDetailItem[];
@@ -356,6 +374,10 @@ export type SelectOption = {
   value: string;
 };
 
+export type GroupStudentSelectOption = SelectOption & {
+  groupId: string;
+};
+
 export type AdminGroupsData = {
   groups: AdminGroupItem[];
   courseOptions: SelectOption[];
@@ -444,7 +466,7 @@ export type AdminStudentDetailData = {
   materials: TeacherGroupMaterialItem[];
   metrics: MetricItem[];
   name: string;
-  payments: PaymentSummary[];
+  payments: PaymentDetailItem[];
   phone: string;
   records: ProgressRecordItem[];
   rules: ProgressRuleItem[];
@@ -1327,16 +1349,29 @@ function paymentDetails(
 ) {
   return payments.map((payment) => ({
     amount: formatMoney(payment.amount, payment.currency),
+    amountValue: String(payment.amount),
     attention: isPaymentAttention(payment),
     comment: payment.comment ?? "",
     context: paymentContext(payment, courses, groups),
+    contextHref: payment.group_id
+      ? `/admin/groups/${payment.group_id}`
+      : payment.course_id
+        ? `/admin/courses/${payment.course_id}`
+        : "",
+    currency: payment.currency,
     due: formatDate(payment.due_at),
+    dueAt: payment.due_at ?? "",
+    groupId: payment.group_id ?? "",
     id: payment.id,
     internalComment: includeInternalComment ? payment.internal_comment ?? "" : "",
     period: formatPaymentPeriod(payment),
+    periodEnd: payment.period_end ?? "",
+    periodStart: payment.period_start ?? "",
+    periodTypeValue: payment.period_type ?? "month",
     status: describePaymentStatus(payment),
     statusTone: paymentStatusTone(payment),
     statusValue: payment.status,
+    studentId: payment.student_id,
     studentName: students.get(payment.student_id)?.name ?? "Ученик",
   }));
 }
@@ -1495,7 +1530,15 @@ function summarizePayments(
       courses.get(payment.course_id ?? "")?.name ??
       "Учебный контекст",
     amount: formatMoney(payment.amount, payment.currency),
+    amountValue: String(payment.amount),
+    comment: payment.comment ?? "",
+    currency: payment.currency,
     due: formatDate(payment.due_at),
+    dueAt: payment.due_at ?? "",
+    internalComment: payment.internal_comment ?? "",
+    periodEnd: payment.period_end ?? "",
+    periodStart: payment.period_start ?? "",
+    periodTypeValue: payment.period_type ?? "month",
     status: describePaymentStatus(payment),
   }));
 }
@@ -2006,7 +2049,7 @@ export async function getAdminStudentDetail(organizationId: string, studentId: s
           .limit(120),
         client
           .from("payments")
-          .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
+          .select(paymentSelectFields)
           .eq("organization_id", organizationId)
           .eq("student_id", student.id),
       ]);
@@ -2102,7 +2145,7 @@ export async function getAdminStudentDetail(organizationId: string, studentId: s
         { label: "Оплаты", value: String(payments.filter(isPaymentAttention).length), detail: "требуют внимания" },
       ],
       name: student.name,
-      payments: summarizePayments(payments, new Map([[student.id, student]]), courseMap, groupMap),
+      payments: paymentDetails(payments, new Map([[student.id, student]]), courseMap, groupMap, true),
       phone: student.phone ?? "",
       records: records.map((item) => {
         const lesson = item.lesson_id ? lessonMap.get(item.lesson_id) : null;
@@ -2200,13 +2243,22 @@ const paymentSelectFields =
 export async function getAdminPayments(organizationId: string, filters: AdminPaymentFilters) {
   return readSupabaseData<AdminPaymentsData>(async (client) => {
     const { courses, groups, students } = await getBaseOrganizationData(client, organizationId);
-    const paymentsResult = await client
-      .from("payments")
-      .select(paymentSelectFields)
-      .eq("organization_id", organizationId)
-      .order("due_at", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+    const activeGroups = groups.filter((group) => group.status === "active" || group.status === "recruiting");
+    const activeStudents = students.filter((student) => student.status === "active");
+    const activeGroupIds = activeGroups.map((group) => group.id);
+    const [paymentsResult, groupStudentsResult] = await Promise.all([
+      client
+        .from("payments")
+        .select(paymentSelectFields)
+        .eq("organization_id", organizationId)
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false }),
+      activeGroupIds.length > 0
+        ? client.from("group_students").select("id,group_id,student_id,status").in("group_id", activeGroupIds).eq("status", "active")
+        : Promise.resolve({ data: [], error: null }),
+    ]);
     const payments = rows<PaymentRow>(paymentsResult, "Оплаты");
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Ученики групп для оплаты");
     const activeFilters = {
       groupId: filters.groupId ?? "",
       period: filters.period ?? "",
@@ -2232,11 +2284,16 @@ export async function getAdminPayments(organizationId: string, filters: AdminPay
       defaultDueAt: formatMoscowDateValue(new Date()),
       defaultPeriodEnd: addDaysToDateValue(`${nextMonth}-01`, -1),
       defaultPeriodStart: `${currentMonth}-01`,
-      groupOptions: groups
-        .filter((group) => group.status === "active" || group.status === "recruiting")
-        .map((group) => ({
+      groupOptions: activeGroups.map((group) => ({
           label: `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`,
           value: group.id,
+        })),
+      groupStudentOptions: groupStudents
+        .filter((membership) => activeStudents.some((student) => student.id === membership.student_id))
+        .map((membership) => ({
+          groupId: membership.group_id,
+          label: studentMap.get(membership.student_id)?.name ?? "Ученик",
+          value: membership.student_id,
         })),
       metrics: [
         {
@@ -2250,9 +2307,7 @@ export async function getAdminPayments(organizationId: string, filters: AdminPay
       ],
       payments: paymentDetails(filteredPayments, studentMap, courseMap, groupMap, true),
       periodOptions: paymentPeriodOptions(payments),
-      studentOptions: students
-        .filter((student) => student.status === "active")
-        .map((student) => ({ label: student.name, value: student.id })),
+      studentOptions: activeStudents.map((student) => ({ label: student.name, value: student.id })),
     };
   });
 }
