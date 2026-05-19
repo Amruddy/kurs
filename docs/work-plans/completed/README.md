@@ -25,6 +25,7 @@
 - `21-mpmf-1-stage-13-mass-payment-creation-plan.md` - единое добавление оплаты группе или одному ученику, редактирование деталей оплат и смена статуса из общего списка.
 - `22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md` - автоматический smoke-check основных маршрутов администратора, преподавателя и ученика.
 - `23-mpmf-1-stage-15-mobile-ux-polish-plan.md` - mobile/UX polish рабочих экранов, таблиц, журнала, форм и общих UI-паттернов.
+- `24-mpmf-1-stage-16-release-hardening-plan.md` - финальный hardening MPMF 1.0, release readiness и известные ограничения.
 - `01-initial-product-implementation-plan.md` - исторический план первой рабочей реализации.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления System A.
 

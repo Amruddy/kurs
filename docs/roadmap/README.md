@@ -15,12 +15,12 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-16-release-hardening`.
-- Текущий этап: `MPMF 1.0 Stage 16. MPMF 1.0 Release Hardening`.
-- Активный план: `docs/work-plans/active/24-mpmf-1-stage-16-release-hardening-plan.md`.
-- Статус: активная реализация.
-- Предыдущий этап: `MPMF 1.0 Stage 15. Mobile And UX Polish`, завершен и смержен в `main`.
-- Запись предыдущего этапа: `docs/work-plans/completed/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`.
+- Текущая ветка: `feat/production-auth-real-accounts-plan`.
+- Текущий этап: `Production Auth And Real Accounts. Specs And Foundation Plan`.
+- Активный план: `docs/work-plans/active/25-production-auth-real-accounts-plan.md`.
+- Статус: активная подготовка следующего блока.
+- Предыдущий блок: `MPMF 1.0`, завершен и смержен в `main`.
+- Запись завершения MPMF 1.0: `docs/release/mpmf-1-release-readiness.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -57,23 +57,27 @@
 - Stage 13: Mass Payment Creation, PR #43.
 - Stage 14: Cross-role Smoke Flow, PR #44.
 - Stage 15: Mobile And UX Polish, PR #45.
+- Stage 16: MPMF 1.0 Release Hardening, PR #46.
 
 ## 4. Активный этап
 
-### MPMF 1.0 Stage 16: MPMF 1.0 Release Hardening
+### Production Auth And Real Accounts
 
 План:
 
-`docs/work-plans/active/24-mpmf-1-stage-16-release-hardening-plan.md`
+`docs/work-plans/active/25-production-auth-real-accounts-plan.md`
 
-Маршруты:
+Roadmap:
 
-- `/admin`;
-- `/teacher`;
-- `/student`;
-- финальная проверка всех основных рабочих областей;
-- Supabase schema/seed;
-- release readiness и known limitations.
+`docs/roadmap/production-auth-and-real-accounts-roadmap.md`
+
+Фокус:
+
+- настоящая авторизация через Supabase Auth;
+- email/password вход;
+- приглашения преподавателей и учеников;
+- связь auth-пользователя с `users`, ролями, организацией и карточкой ученика;
+- dev-auth только как локальный инструмент разработки.
 
 Статус:
 
@@ -83,8 +87,8 @@
 
 Следующий stage после merge текущего stage:
 
-`MPMF 1.0 завершен. Следующий roadmap открывается отдельно.`
+`Auth Stage 2. Supabase Auth Session Foundation`
 
 После него:
 
-`Production Auth And Real Accounts` как первый кандидат следующего блока.
+`Auth Stage 3. Account Linking And Schema`

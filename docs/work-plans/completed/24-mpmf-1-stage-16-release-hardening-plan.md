@@ -2,10 +2,11 @@
 
 ## 0. Статус
 
-- Статус плана: активная реализация.
+- Статус плана: завершен.
 - Ветка: `feat/mpmf-1-stage-16-release-hardening`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
-- Предыдущий завершенный stage: `MPMF 1.0 Stage 15. Mobile And UX Polish`, смержен в `main`.
+- Stage завершен, закоммичен и смержен в `main` через PR #46.
+- Коммит stage: `9003ba3 Finalize MPMF 1.0 release hardening`.
 
 ## 1. Цель
 

@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`24-mpmf-1-stage-16-release-hardening-plan.md`
+`25-production-auth-real-accounts-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
+`../completed/24-mpmf-1-stage-16-release-hardening-plan.md`
 
 Codex перед разработкой должен читать:
 

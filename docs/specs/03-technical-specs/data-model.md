@@ -97,15 +97,23 @@ Next.js app -> app/lib/supabase/* + app/lib/data/* -> Supabase
 Минимальные поля:
 
 - `id`;
+- `auth_user_id`, если профиль связан с Supabase Auth;
 - `name`;
 - `email` или другой логин;
 - `phone`, если используется;
+- `auth_status` - `profile_only`, `invited`, `active`, `disabled`, если включен production auth;
+- `invited_at`, если было отправлено приглашение;
+- `last_sign_in_at`, если известно из auth-события или синхронизации;
 - `status` - активный, приостановлен, архивный;
 - `created_at`;
 - `updated_at`.
 
 Пользователь сам по себе не определяет полный доступ. Доступ определяется его
 ролями и правами внутри организации.
+
+После MPMF 1.0 production-auth блок связывает `User` с Supabase Auth через
+`auth_user_id`. Внутренний `users.id` остается доменным идентификатором, чтобы
+не переписывать связи учебной истории.
 
 ### 3.2. OrganizationMember
 
