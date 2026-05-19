@@ -2,8 +2,11 @@
 
 ## 0. Статус
 
-- Статус плана: активная подготовка следующего блока.
+- Статус плана: завершен и смержен.
 - Ветка: `feat/production-auth-real-accounts-plan`.
+- Commit: `6583548 Prepare production auth real accounts plan`.
+- PR: `#47`.
+- Merge commit: `0401543`.
 - Roadmap: `docs/roadmap/production-auth-and-real-accounts-roadmap.md`.
 - Предыдущий завершенный блок: `MPMF 1.0`, завершен через Stage 16 и смержен в `main`.
 
@@ -72,6 +75,6 @@
 
 ## 7. Следующий stage
 
-После merge подготовительного stage следующим должен идти:
+После merge подготовительного stage следующим идет:
 
 `Auth Stage 2. Supabase Auth Session Foundation`

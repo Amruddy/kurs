@@ -34,11 +34,11 @@ Codex must use the project specifications as the source of truth before making c
 ## Development Rules
 
 - Keep changes small and tied to one verifiable stage.
-- Do not mix unrelated MPMF 1.0 stages in one commit.
+- Do not mix unrelated stages or roadmap blocks in one commit.
 - Prefer existing project patterns once the application code exists.
 - Run available checks after changes.
 - After automated checks, Codex should run a basic smoke-check itself whenever the project can be checked locally.
-- Before committing and pushing an MPMF 1.0 stage, summarize in Russian what Codex already checked and provide a short optional manual smoke-check checklist for the user.
+- Before committing and pushing a stage, summarize in Russian what Codex already checked and provide a short optional manual smoke-check checklist for the user.
 - The user may skip manual review and explicitly tell Codex to continue. If the user asks to review manually, do not commit, push, or move to the next MPMF 1.0 stage until the user explicitly confirms to continue.
 - When the user gives permission to finish the stage after checks, Codex should commit and push the stage branch. Codex does not open the pull request unless the user explicitly asks.
 - Do not revert user changes unless explicitly requested.
@@ -49,9 +49,9 @@ Codex must use the project specifications as the source of truth before making c
   завершена, и кратко перечислить итог: ветку, коммиты, проверки и следующий
   ожидаемый шаг.
 
-## Branch Workflow For MPMF 1.0 Stages
+## Branch Workflow For Project Stages
 
-- Новый MPMF 1.0 stage нельзя реализовывать напрямую в `main`.
+- Новый stage нельзя реализовывать напрямую в `main`.
 - Когда пользователь явно говорит начать код для stage, нужно создать отдельную ветку от актуального `main`.
 - В ветку stage коммитится только завершенная и проверенная работа этого stage.
 - После автоматической проверки Codex сам выполняет базовую smoke-проверку stage, если это возможно локально.
@@ -65,7 +65,7 @@ Codex must use the project specifications as the source of truth before making c
 - Цикл для каждого stage: обновить `main`, создать ветку stage, реализовать, проверить, закоммитить, запушить, открыть pull request, смержить, снова обновить `main`.
 - Если пользователь сообщает, что PR/stage смержен, Codex должен сам выполнить переход на `main` и обновление из GitHub перед обсуждением или началом следующего этапа. Пользователь не обязан отдельно писать команду "перейди на main".
 
-## Current MPMF 1.0 Direction
+## Current Release 1.0 Direction
 
 The current roadmap is:
 
@@ -77,7 +77,7 @@ The current active implementation source of truth is named in:
 
 Current active technical plan:
 
-`docs/work-plans/active/25-production-auth-real-accounts-plan.md`
+`docs/work-plans/active/27-auth-stage-2-supabase-auth-session-foundation-plan.md`
 
 Use the roadmap and `docs/work-plans/active/README.md` to determine whether a
 stage is active. If no active plan is selected, create or update the next stage

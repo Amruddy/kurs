@@ -9,16 +9,19 @@
 Источники правды:
 
 - спецификации продукта: `docs/specs/`;
+- roadmap текущей релизной версии: `docs/roadmap/release-1-roadmap.md`;
+- roadmap production-auth подплана: `docs/roadmap/production-auth-and-real-accounts-roadmap.md`;
 - активный рабочий план: `docs/work-plans/active/`;
 - завершенные планы: `docs/work-plans/completed/`;
-- полный roadmap реализации: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
+- исторический roadmap MPMF 1.0: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/production-auth-real-accounts-plan`.
-- Текущий этап: `Production Auth And Real Accounts. Specs And Foundation Plan`.
-- Активный план: `docs/work-plans/active/25-production-auth-real-accounts-plan.md`.
-- Статус: активная подготовка следующего блока.
+- Текущий большой блок: `Release 1.0`.
+- Последний documentation stage: `Release Roadmap Setup`.
+- Активный stage: `Auth Stage 2. Supabase Auth Session Foundation`.
+- Активный план: `docs/work-plans/active/27-auth-stage-2-supabase-auth-session-foundation-plan.md`.
+- Планируемая ветка следующего кодового stage: `feat/auth-stage-2-supabase-session-foundation`.
 - Предыдущий блок: `MPMF 1.0`, завершен и смержен в `main`.
 - Запись завершения MPMF 1.0: `docs/release/mpmf-1-release-readiness.md`.
 
@@ -59,36 +62,52 @@
 - Stage 15: Mobile And UX Polish, PR #45.
 - Stage 16: MPMF 1.0 Release Hardening, PR #46.
 
-## 4. Активный этап
+## 4. Текущий релизный блок
+
+### Release 1.0
+
+Roadmap:
+
+`docs/roadmap/release-1-roadmap.md`
+
+Фокус:
+
+- настоящая авторизация через Supabase Auth;
+- реальные email-приглашения преподавателей и учеников;
+- связь auth-пользователя с `users`, ролями, организацией и карточкой ученика;
+- финальный UI/UX redesign после production auth;
+- production hardening и release candidate smoke.
+
+Важное решение:
+
+финальный дизайн входит в `Release 1.0` как отдельный обязательный stage после production auth. Текущий UI не считается финальным.
+
+## 5. Активный подплан
 
 ### Production Auth And Real Accounts
-
-План:
-
-`docs/work-plans/active/25-production-auth-real-accounts-plan.md`
 
 Roadmap:
 
 `docs/roadmap/production-auth-and-real-accounts-roadmap.md`
 
-Фокус:
-
-- настоящая авторизация через Supabase Auth;
-- email/password вход;
-- приглашения преподавателей и учеников;
-- связь auth-пользователя с `users`, ролями, организацией и карточкой ученика;
-- dev-auth только как локальный инструмент разработки.
-
-Статус:
-
-активная реализация.
-
-## 5. Следующий этап
-
-Следующий stage после merge текущего stage:
+Активный stage:
 
 `Auth Stage 2. Supabase Auth Session Foundation`
+
+Активный work plan:
+
+`docs/work-plans/active/27-auth-stage-2-supabase-auth-session-foundation-plan.md`
 
 После него:
 
 `Auth Stage 3. Account Linking And Schema`
+
+## 6. Следующие крупные stages Release 1.0
+
+1. `Auth Stage 2. Supabase Auth Session Foundation`.
+2. `Auth Stage 3. Account Linking And Schema`.
+3. `Auth Stage 4. Admin Invitations`.
+4. `Auth Stage 5. Auth Smoke And Hardening`.
+5. `Final Design System And UX Polish`.
+6. `Production Hardening`.
+7. `Release Candidate Smoke And Notes`.
