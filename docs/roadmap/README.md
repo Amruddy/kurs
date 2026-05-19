@@ -15,12 +15,12 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-14-cross-role-smoke-flow`.
-- Текущий этап: `MPMF 1.0 Stage 14. Cross-role Smoke Flow`.
-- Активный план: `docs/work-plans/active/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`.
+- Текущая ветка: `feat/mpmf-1-stage-15-mobile-ux-polish`.
+- Текущий этап: `MPMF 1.0 Stage 15. Mobile And UX Polish`.
+- Активный план: `docs/work-plans/active/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`.
 - Статус: активная реализация.
-- Предыдущий этап: `MPMF 1.0 Stage 13. Mass Payment Creation`, завершен и смержен в `main`.
-- Запись предыдущего этапа: `docs/work-plans/completed/21-mpmf-1-stage-13-mass-payment-creation-plan.md`.
+- Предыдущий этап: `MPMF 1.0 Stage 14. Cross-role Smoke Flow`, завершен и смержен в `main`.
+- Запись предыдущего этапа: `docs/work-plans/completed/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -55,21 +55,22 @@
 - Stage 11: Admin Entity Completeness, PR #41.
 - Stage 12: Access, Empty States And Errors.
 - Stage 13: Mass Payment Creation, PR #43.
+- Stage 14: Cross-role Smoke Flow, PR #44.
 
 ## 4. Активный этап
 
-### MPMF 1.0 Stage 14: Cross-role Smoke Flow
+### MPMF 1.0 Stage 15: Mobile And UX Polish
 
 План:
 
-`docs/work-plans/active/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`
+`docs/work-plans/active/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
 
 Маршруты:
 
 - `/admin`;
 - `/teacher`;
 - `/student`;
-- основные списки и карточки трех рабочих областей.
+- ключевые рабочие списки, карточки, журнал, формы и пустые состояния.
 
 Статус:
 
@@ -79,8 +80,8 @@
 
 Следующий stage после merge текущего stage:
 
-`Stage 15. Mobile And UX Polish`
+`Stage 16. MPMF 1.0 Release Hardening`
 
 После него:
 
-`Stage 16. MPMF 1.0 Release Hardening`
+финальная подготовка MPMF 1.0 к завершению.

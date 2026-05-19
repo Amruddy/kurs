@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`
+`23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/21-mpmf-1-stage-13-mass-payment-creation-plan.md`
+`../completed/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`
 
 Codex перед разработкой должен читать:
 
