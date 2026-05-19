@@ -6,6 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
+    "smoke:roles": "node scripts/cross-role-smoke.mjs",
     "lint": "eslint ."
   },
   "dependencies": {
