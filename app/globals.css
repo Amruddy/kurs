@@ -827,8 +827,31 @@ body:has(.entry-shell) .main {
 }
 
 .empty-state {
+  display: grid;
+  gap: 6px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  padding: 14px;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.empty-state strong {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.technical-detail {
+  margin-top: 12px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
 }
 
 .muted-list {

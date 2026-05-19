@@ -19,10 +19,10 @@ import {
   updateAdminGroup,
   updateAdminStudent,
 } from "@/app/lib/data/admin-write";
-import { requireWorkspace } from "@/app/lib/dev-auth";
+import { requireWorkspace, requireWorkspacePermission, type Permission } from "@/app/lib/dev-auth";
 
-async function requireAdmin() {
-  return requireWorkspace("admin");
+async function requireAdmin(permission?: Permission) {
+  return permission ? requireWorkspacePermission("admin", permission) : requireWorkspace("admin");
 }
 
 function requiredString(formData: FormData, name: string, label: string) {
@@ -79,7 +79,7 @@ function lessonGenerationHorizon(formData: FormData): LessonGenerationHorizon {
 }
 
 export async function createCourse(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("courses:write");
 
   await createAdminCourse({
     organizationId: session.organizationId,
@@ -96,7 +96,7 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function updateCourse(courseId: string, formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("courses:write");
 
   await updateAdminCourse({
     organizationId: session.organizationId,
@@ -115,7 +115,7 @@ export async function updateCourse(courseId: string, formData: FormData) {
 }
 
 export async function archiveCourse(courseId: string) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("courses:write");
 
   await archiveAdminCourse({
     organizationId: session.organizationId,
@@ -144,7 +144,7 @@ export async function createTeacher(formData: FormData) {
 }
 
 export async function createStudent(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("students:write");
 
   await createAdminStudent({
     organizationId: session.organizationId,
@@ -158,14 +158,8 @@ export async function createStudent(formData: FormData) {
   redirect("/admin/students");
 }
 
-export async function createStudentInGroup(groupId: string, formData: FormData) {
-  void formData;
-  await requireAdmin();
-  revalidatePath(`/admin/groups/${groupId}`);
-}
-
 export async function updateStudent(studentId: string, formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("students:write");
 
   await updateAdminStudent({
     organizationId: session.organizationId,
@@ -183,7 +177,7 @@ export async function updateStudent(studentId: string, formData: FormData) {
 }
 
 export async function archiveStudent(studentId: string) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("students:write");
 
   await archiveAdminStudent({
     organizationId: session.organizationId,
@@ -197,7 +191,7 @@ export async function archiveStudent(studentId: string) {
 }
 
 export async function createGroup(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await createAdminGroup({
     organizationId: session.organizationId,
@@ -213,7 +207,7 @@ export async function createGroup(formData: FormData) {
 }
 
 export async function updateGroup(groupId: string, formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await updateAdminGroup({
     organizationId: session.organizationId,
@@ -230,7 +224,7 @@ export async function updateGroup(groupId: string, formData: FormData) {
 }
 
 export async function createGroupScheduleRule(groupId: string, formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await createAdminGroupScheduleRule({
     organizationId: session.organizationId,
@@ -249,7 +243,7 @@ export async function createGroupScheduleRule(groupId: string, formData: FormDat
 }
 
 export async function deleteScheduleRule(scheduleRuleId: string, groupId: string) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await deleteAdminGroupScheduleRule({
     organizationId: session.organizationId,
@@ -264,7 +258,7 @@ export async function deleteScheduleRule(scheduleRuleId: string, groupId: string
 }
 
 export async function generateLessonsForGroup(groupId: string, formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await generateAdminGroupLessons({
     organizationId: session.organizationId,
@@ -280,8 +274,8 @@ export async function generateLessonsForGroup(groupId: string, formData: FormDat
 
 export async function addStudentToGroup(groupId: string, formData: FormData) {
   const studentId = requiredString(formData, "studentId", "Ученик");
-  await requireAdmin();
-  await assignAdminStudentToGroup({ groupId, studentId });
+  const session = await requireAdmin("groups:write");
+  await assignAdminStudentToGroup({ organizationId: session.organizationId, groupId, studentId });
   revalidatePath("/admin");
   revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
@@ -289,12 +283,12 @@ export async function addStudentToGroup(groupId: string, formData: FormData) {
 }
 
 export async function assignStudentToGroup(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   const groupId = requiredString(formData, "groupId", "Группа");
   const studentId = requiredString(formData, "studentId", "Ученик");
 
-  await assignAdminStudentToGroup({ groupId, studentId });
+  await assignAdminStudentToGroup({ organizationId: session.organizationId, groupId, studentId });
 
   revalidatePath("/admin");
   revalidatePath("/admin/groups");
@@ -302,11 +296,11 @@ export async function assignStudentToGroup(formData: FormData) {
 }
 
 export async function assignStudentToGroupFromStudent(studentId: string, formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   const groupId = requiredString(formData, "groupId", "Группа");
 
-  await assignAdminStudentToGroup({ groupId, studentId });
+  await assignAdminStudentToGroup({ organizationId: session.organizationId, groupId, studentId });
 
   revalidatePath("/admin");
   revalidatePath("/admin/groups");
@@ -316,7 +310,7 @@ export async function assignStudentToGroupFromStudent(studentId: string, formDat
 }
 
 export async function removeStudentFromGroup(groupStudentId: string, groupId: string) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await removeAdminStudentFromGroup({
     organizationId: session.organizationId,
@@ -331,7 +325,7 @@ export async function removeStudentFromGroup(groupStudentId: string, groupId: st
 }
 
 export async function removeStudentFromGroupFromStudent(groupStudentId: string, groupId: string, studentId: string) {
-  const session = await requireAdmin();
+  const session = await requireAdmin("groups:write");
 
   await removeAdminStudentFromGroup({
     organizationId: session.organizationId,

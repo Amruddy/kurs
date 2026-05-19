@@ -20,6 +20,7 @@
 - `16-mpmf-1-stage-8-student-dashboard-schedule-plan.md` - первый экран и расписание ученика.
 - `17-mpmf-1-stage-9-student-learning-cabinet-plan.md` - учебный кабинет ученика.
 - `18-mpmf-1-stage-10-payments-plan.md` - ручной учет оплат, read-only просмотры оплат и платежные сигналы.
+- `19-mpmf-1-stage-11-admin-entity-completeness-plan.md` - завершение административных сущностей MPMF 1.0.
 - `01-initial-product-implementation-plan.md` - исторический план первой рабочей реализации.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления System A.
 

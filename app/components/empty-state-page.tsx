@@ -7,20 +7,14 @@ export function EmptyStatePage({ title, description }: EmptyStatePageProps) {
   return (
     <>
       <div className="page-heading">
-        <span className="status">Временный режим</span>
+        <span className="status">Раздел</span>
         <h1>{title}</h1>
-        <p>
-          {description ??
-            "Слой базы данных удален. Раздел сохранен как маршрут, но данные и действия будут добавлены заново после утверждения новой схемы."}
-        </p>
+        <p>{description ?? "В этом разделе пока нет данных для текущей рабочей области."}</p>
       </div>
 
       <section className="panel system-state">
-        <h2>Данных пока нет</h2>
-        <p>
-          Старая локальная база, миграции, seed и runtime-доступ к данным больше не используются.
-          Следующий шаг - спроектировать чистое подключение Supabase без переноса старых данных.
-        </p>
+        <h2>Пока пусто</h2>
+        <p>Данные появятся здесь после того, как будет заполнен связанный журнал или создана нужная запись.</p>
       </section>
     </>
   );
