@@ -2,10 +2,11 @@
 
 ## 0. Статус
 
-- Статус плана: активная реализация.
+- Статус плана: завершен.
 - Ветка: `feat/mpmf-1-stage-13-mass-payment-creation`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
-- Предыдущий завершенный stage: `MPMF 1.0 Stage 12. Access, Empty States And Errors`, смержен в `main`.
+- Stage завершен, закоммичен и смержен в `main` через PR #43.
+- Коммит stage: `91a7ef6 Implement stage 13 mass payment creation`.
 
 ## 1. Цель
 

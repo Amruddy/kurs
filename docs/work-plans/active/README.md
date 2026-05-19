@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`21-mpmf-1-stage-13-mass-payment-creation-plan.md`
+`22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/20-mpmf-1-stage-12-access-empty-states-errors-plan.md`
+`../completed/21-mpmf-1-stage-13-mass-payment-creation-plan.md`
 
 Codex перед разработкой должен читать:
 
