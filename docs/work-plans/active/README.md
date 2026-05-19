@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`25-production-auth-real-accounts-plan.md`
+`27-auth-stage-2-supabase-auth-session-foundation-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/24-mpmf-1-stage-16-release-hardening-plan.md`
+`../completed/26-release-1-roadmap-setup-plan.md`
 
 Codex перед разработкой должен читать:
 
