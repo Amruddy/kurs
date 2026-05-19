@@ -23,6 +23,7 @@
 - `19-mpmf-1-stage-11-admin-entity-completeness-plan.md` - завершение административных сущностей MPMF 1.0.
 - `20-mpmf-1-stage-12-access-empty-states-errors-plan.md` - права доступа, пустые состояния и страницы ошибок MPMF 1.0.
 - `21-mpmf-1-stage-13-mass-payment-creation-plan.md` - единое добавление оплаты группе или одному ученику, редактирование деталей оплат и смена статуса из общего списка.
+- `22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md` - автоматический smoke-check основных маршрутов администратора, преподавателя и ученика.
 - `01-initial-product-implementation-plan.md` - исторический план первой рабочей реализации.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления System A.
 

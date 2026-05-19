@@ -2,10 +2,11 @@
 
 ## 0. Статус
 
-- Статус плана: активная реализация.
+- Статус плана: завершен.
 - Ветка: `feat/mpmf-1-stage-14-cross-role-smoke-flow`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
-- Предыдущий завершенный stage: `MPMF 1.0 Stage 13. Mass Payment Creation`, смержен в `main`.
+- Stage завершен, закоммичен и смержен в `main` через PR #44.
+- Коммит stage: `8caaf8d Add stage 14 cross-role smoke flow`.
 
 ## 1. Цель
 

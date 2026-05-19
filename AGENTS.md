@@ -77,7 +77,7 @@ The current active implementation source of truth is named in:
 
 Current active technical plan:
 
-`docs/work-plans/active/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`
+`docs/work-plans/active/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
 
 Use the roadmap and `docs/work-plans/active/README.md` to determine whether a
 stage is active. If no active plan is selected, create or update the next stage
