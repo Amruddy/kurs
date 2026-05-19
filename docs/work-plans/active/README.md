@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`19-mpmf-1-stage-11-admin-entity-completeness-plan.md`
+`20-mpmf-1-stage-12-access-empty-states-errors-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/18-mpmf-1-stage-10-payments-plan.md`
+`../completed/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`
 
 Codex перед разработкой должен читать:
 

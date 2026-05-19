@@ -8,10 +8,10 @@ import {
   normalizePaymentStatus,
   updateAdminPaymentStatus,
 } from "@/app/lib/data/payment-write";
-import { requireWorkspace } from "@/app/lib/dev-auth";
+import { requireWorkspacePermission } from "@/app/lib/dev-auth";
 
 async function requireAdmin() {
-  return requireWorkspace("admin");
+  return requireWorkspacePermission("admin", "payments:write");
 }
 
 function requiredString(formData: FormData, name: string, label: string) {

@@ -15,12 +15,12 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-11-admin-entity-completeness`.
-- Текущий этап: `MPMF 1.0 Stage 11. Admin Entity Completeness`.
-- Активный план: `docs/work-plans/active/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`.
+- Текущая ветка: `feat/mpmf-1-stage-12-access-empty-states-errors`.
+- Текущий этап: `MPMF 1.0 Stage 12. Access, Empty States And Errors`.
+- Активный план: `docs/work-plans/active/20-mpmf-1-stage-12-access-empty-states-errors-plan.md`.
 - Статус: активная реализация.
-- Предыдущий этап: `MPMF 1.0 Stage 10. Payments`, завершен и смержен в `main` через PR #40.
-- Запись предыдущего этапа: `docs/work-plans/completed/18-mpmf-1-stage-10-payments-plan.md`.
+- Предыдущий этап: `MPMF 1.0 Stage 11. Admin Entity Completeness`, завершен и смержен в `main` через PR #41.
+- Запись предыдущего этапа: `docs/work-plans/completed/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -52,22 +52,22 @@
 - Stage 8: Student Dashboard And Schedule, PR #38.
 - Stage 9: Student Learning Cabinet, PR #39.
 - Stage 10: Payments, PR #40.
+- Stage 11: Admin Entity Completeness, PR #41.
 
 ## 4. Активный этап
 
-### MPMF 1.0 Stage 11: Admin Entity Completeness
+### MPMF 1.0 Stage 12: Access, Empty States And Errors
 
 План:
 
-`docs/work-plans/active/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`
+`docs/work-plans/active/20-mpmf-1-stage-12-access-empty-states-errors-plan.md`
 
 Маршруты:
 
-- `/admin/courses`;
-- `/admin/courses/[courseId]`;
-- `/admin/students`;
-- `/admin/students/[studentId]`;
-- `/admin/teachers`.
+- все рабочие области;
+- `/forbidden`;
+- `not-found`;
+- `error`.
 
 Статус:
 
@@ -77,4 +77,8 @@
 
 Следующий stage после merge текущего stage:
 
-`Stage 12. Access, Empty States And Errors`
+`Stage 13. Mass Payment Creation`
+
+После него:
+
+`Stage 14. Cross-role Smoke Flow`

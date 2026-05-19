@@ -61,6 +61,7 @@ type UpdateGroupInput = {
 };
 
 type AssignStudentToGroupInput = {
+  organizationId: string;
   groupId: string;
   studentId: string;
 };
@@ -119,6 +120,11 @@ type LessonIdRow = {
   id: string;
 };
 
+type OrganizationMemberRoleRow = {
+  roles: unknown;
+  status: string | null;
+};
+
 function assertWriteSuccess(error: { message: string } | null, context: string) {
   if (error) {
     throw new Error(`${context}: ${error.message}`);
@@ -140,6 +146,47 @@ function assertDateString(value: string, label: string) {
 function assertTimeString(value: string, label: string) {
   if (!/^\d{2}:\d{2}$/.test(value)) {
     throw new Error(`${label}: неверное время.`);
+  }
+}
+
+async function assertCourseInOrganization(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  organizationId: string,
+  courseId: string,
+) {
+  const courseResult = await client
+    .from("courses")
+    .select("id")
+    .eq("id", courseId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(courseResult.error, "Проверка курса");
+
+  if (!courseResult.data) {
+    throw new Error("Группа: выбранный курс не найден в текущей организации.");
+  }
+}
+
+async function assertTeacherInOrganization(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  organizationId: string,
+  teacherId: string,
+) {
+  const teacherResult = await client
+    .from("organization_members")
+    .select("roles,status")
+    .eq("organization_id", organizationId)
+    .eq("user_id", teacherId)
+    .maybeSingle();
+
+  assertWriteSuccess(teacherResult.error, "Проверка преподавателя");
+
+  const teacher = teacherResult.data as OrganizationMemberRoleRow | null;
+  const roles = Array.isArray(teacher?.roles) ? teacher.roles : [];
+
+  if (!teacher || teacher.status !== "active" || !roles.includes("teacher")) {
+    throw new Error("Группа: выбранный преподаватель не найден в текущей организации.");
   }
 }
 
@@ -454,7 +501,14 @@ export async function createAdminTeacher(input: CreateTeacherInput) {
 }
 
 export async function createAdminGroup(input: CreateGroupInput) {
+  assertAllowedValue(input.status, ["recruiting", "active", "paused", "completed", "archived"], "Статус группы");
+
   const supabase = createSupabaseAdminClient();
+  await Promise.all([
+    assertCourseInOrganization(supabase, input.organizationId, input.courseId),
+    assertTeacherInOrganization(supabase, input.organizationId, input.teacherId),
+  ]);
+
   const result = await supabase.from("groups").insert({
     organization_id: input.organizationId,
     course_id: input.courseId,
@@ -467,7 +521,14 @@ export async function createAdminGroup(input: CreateGroupInput) {
 }
 
 export async function updateAdminGroup(input: UpdateGroupInput) {
+  assertAllowedValue(input.status, ["recruiting", "active", "paused", "completed", "archived"], "Статус группы");
+
   const supabase = createSupabaseAdminClient();
+
+  if (input.teacherId) {
+    await assertTeacherInOrganization(supabase, input.organizationId, input.teacherId);
+  }
+
   const result = await supabase
     .from("groups")
     .update({
@@ -490,6 +551,28 @@ export async function updateAdminGroup(input: UpdateGroupInput) {
 
 export async function assignAdminStudentToGroup(input: AssignStudentToGroupInput) {
   const supabase = createSupabaseAdminClient();
+  const [groupResult, studentResult] = await Promise.all([
+    supabase
+      .from("groups")
+      .select("id")
+      .eq("id", input.groupId)
+      .eq("organization_id", input.organizationId)
+      .maybeSingle(),
+    supabase
+      .from("students")
+      .select("id")
+      .eq("id", input.studentId)
+      .eq("organization_id", input.organizationId)
+      .maybeSingle(),
+  ]);
+
+  assertWriteSuccess(groupResult.error, "Проверка группы");
+  assertWriteSuccess(studentResult.error, "Проверка ученика");
+
+  if (!groupResult.data || !studentResult.data) {
+    throw new Error("Назначение ученика в группу: группа или ученик не найдены в текущей организации.");
+  }
+
   const result = await supabase.from("group_students").upsert(
     {
       group_id: input.groupId,
