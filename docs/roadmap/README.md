@@ -4,26 +4,23 @@
 
 ## 0. Назначение
 
-Этот документ фиксирует текущий этап разработки и связывает стабильные
-спецификации с рабочими планами.
+Документ фиксирует текущий этап разработки и связывает стабильные спецификации с рабочими планами.
 
 Источники правды:
 
 - спецификации продукта: `docs/specs/`;
-- активный рабочий план, если он есть: `docs/work-plans/active/`;
-- завершенные планы: `docs/work-plans/completed/`.
+- активный рабочий план: `docs/work-plans/active/`;
+- завершенные планы: `docs/work-plans/completed/`;
+- полный roadmap реализации: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-10-payments`.
-- Текущий этап: `MPMF 1.0 Stage 10. Payments`.
-- Активный план:
-  `docs/work-plans/active/18-mpmf-1-stage-10-payments-plan.md`.
-- Статус: реализация и проверки завершены, ожидается подтверждение на commit/push.
-- Предыдущий этап: `MPMF 1.0 Stage 9. Student Learning Cabinet`, завершен и
-  смержен в `main` через PR #39.
-- Запись предыдущего этапа:
-  `docs/work-plans/completed/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`.
+- Текущая ветка: `feat/mpmf-1-stage-11-admin-entity-completeness`.
+- Текущий этап: `MPMF 1.0 Stage 11. Admin Entity Completeness`.
+- Активный план: `docs/work-plans/active/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`.
+- Статус: активная реализация.
+- Предыдущий этап: `MPMF 1.0 Stage 10. Payments`, завершен и смержен в `main` через PR #40.
+- Запись предыдущего этапа: `docs/work-plans/completed/18-mpmf-1-stage-10-payments-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -33,247 +30,51 @@
 
 1. обновить `main`;
 2. создать stage-ветку;
-3. обновить spec;
-4. обновить plan;
-5. выполнить работу;
-6. выполнить автоматические проверки;
-7. выполнить базовую smoke-проверку, если применимо;
-8. показать пользователю результат и короткий ручной чеклист;
-9. после явного разрешения пользователя закоммитить и запушить ветку;
-10. пользователь открывает и мержит pull request;
-11. после сообщения о merge Codex сам возвращается на `main` и обновляет его.
-
-## 3. Завершенные этапы
-
-### Stage 1: Remove Legacy Database Layer
-
-План:
-
-`docs/work-plans/completed/03-remove-legacy-database-layer-plan.md`
-
-Статус:
-
-завершен и смержен в `main` через PR #24.
-
-### Stage 2: Supabase Foundation
-
-План:
-
-`docs/work-plans/completed/04-supabase-foundation-plan.md`
-
-Статус:
-
-завершен и смержен в `main` через PR #25.
-
-### Stage 3: Admin CRUD Foundation
-
-План:
-
-`docs/work-plans/completed/05-admin-crud-foundation-plan.md`
-
-Статус:
-
-завершен и смержен в `main` через PR #26.
-
-### Stage 4: MPMF 1.0 Spec Rewrite
-
-План:
-
-`docs/work-plans/completed/06-mpmf-1-spec-rewrite-plan.md`
-
-Статус:
-
-завершен и смержен в `main` через PR #27.
-
-### Stage 5: MPMF 1.0 Implementation Roadmap
-
-План:
-
-`docs/work-plans/completed/07-mpmf-1-implementation-roadmap-plan.md`
-
-Результат:
-
-`docs/roadmap/mpmf-1-implementation-roadmap.md`
-
-Статус:
-
-завершен и смержен в `main` через PR #29.
-
-### MPMF 1.0 Stage 1: Admin Group Detail
-
-План:
-
-`docs/work-plans/completed/08-mpmf-1-stage-1-admin-group-detail-plan.md`
-
-Маршрут:
-
-`/admin/groups/[groupId]`
-
-Статус:
-
-завершен и смержен в `main` через PR #30.
-
-### MPMF 1.0 Stage 2: Group Schedule And Lessons
-
-План:
-
-`docs/work-plans/completed/09-mpmf-1-stage-2-group-schedule-lessons-plan.md`
-
-Маршрут:
-
-`/admin/groups/[groupId]`
-
-Статус:
-
-завершен и смержен в `main` через PR #31.
-
-### MPMF 1.0 Stage 3: Teacher Groups
-
-План:
-
-`docs/work-plans/completed/10-mpmf-1-stage-3-teacher-groups-plan.md`
-
-Маршруты:
-
-- `/teacher/groups`;
-- `/teacher/groups/[groupId]`.
-
-Статус:
-
-завершен и смержен в `main` через PR #32.
-
-### MPMF 1.0 Stage 4: Calendar Journal
-
-План:
-
-`docs/work-plans/completed/11-mpmf-1-stage-4-calendar-journal-plan.md`
-
-Маршруты:
-
-- `/teacher/groups/[groupId]/journal`.
-
-Статус:
-
-завершен и смержен в `main` через PR #33.
-
-### MPMF 1.0 Stage 5: Lesson Page
-
-План:
-
-`docs/work-plans/completed/12-mpmf-1-stage-5-lesson-page-plan.md`
-
-Маршруты:
-
-- `/teacher/lessons/[lessonId]`.
-
-Статус:
-
-завершен и смержен в `main` через PR #34.
-
-### MPMF 1.0 Entry Page
-
-План:
-
-`docs/work-plans/completed/13-mpmf-1-entry-page-plan.md`
-
-Маршруты:
-
-- `/`;
-- `/login`.
-
-Статус:
-
-завершен и смержен в `main` через PR #35.
-
-### MPMF 1.0 Stage 6: Tajweed Progress
-
-План:
-
-`docs/work-plans/completed/14-mpmf-1-stage-6-tajweed-progress-plan.md`
-
-Маршруты:
-
-- `/teacher/students/[studentId]`;
-- `/student/progress`.
-
-Статус:
-
-завершен и смержен в `main` через PR #36.
-
-### MPMF 1.0 Stage 7: Homework And Materials
-
-План:
-
-`docs/work-plans/completed/15-mpmf-1-stage-7-homework-materials-plan.md`
-
-Маршруты:
-
-- `/teacher/homework`;
-- `/teacher/materials`;
-- `/student/homework`;
-- `/student/materials`.
-
-Статус:
-
-завершен и смержен в `main` через PR #37.
-
-### MPMF 1.0 Stage 8: Student Schedule And Dashboard
-
-План:
-
-`docs/work-plans/completed/16-mpmf-1-stage-8-student-dashboard-schedule-plan.md`
-
-Маршруты:
-
-- `/student`;
-- `/student/schedule`.
-
-Статус:
-
-завершен и смержен в `main` через PR #38.
-
-### MPMF 1.0 Stage 9: Student Learning Cabinet
-
-План:
-
-`docs/work-plans/completed/17-mpmf-1-stage-9-student-learning-cabinet-plan.md`
-
-Маршруты:
-
-- `/student/homework`;
-- `/student/materials`;
-- `/student/progress`;
-- `/student/attendance`.
-
-Статус:
-
-завершен и смержен в `main` через PR #39.
+3. обновить spec/plan при необходимости;
+4. выполнить работу;
+5. выполнить автоматические проверки;
+6. выполнить базовую smoke-проверку, если применимо локально;
+7. показать результат пользователю и короткий ручной чеклист;
+8. после явного разрешения пользователя закоммитить и запушить ветку;
+9. пользователь открывает и мержит pull request;
+10. после merge Codex возвращается на `main` и обновляет его.
+
+## 3. Завершенные этапы MPMF 1.0
+
+- Stage 1: Admin Group Detail, PR #30.
+- Stage 2: Group Schedule And Lessons, PR #31.
+- Stage 3: Teacher Groups, PR #32.
+- Stage 4: Calendar Journal, PR #33.
+- Stage 5: Lesson Page, PR #34.
+- Entry Page, PR #35.
+- Stage 6: Tajweed Progress, PR #36.
+- Stage 7: Homework And Materials, PR #37.
+- Stage 8: Student Dashboard And Schedule, PR #38.
+- Stage 9: Student Learning Cabinet, PR #39.
+- Stage 10: Payments, PR #40.
 
 ## 4. Активный этап
 
-### MPMF 1.0 Stage 10: Payments
+### MPMF 1.0 Stage 11: Admin Entity Completeness
 
 План:
 
-`docs/work-plans/active/18-mpmf-1-stage-10-payments-plan.md`
+`docs/work-plans/active/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`
 
 Маршруты:
 
-- `/admin/payments`;
-- `/teacher/payments`;
-- `/student/payments`;
-- платежные блоки в карточках группы и ученика.
+- `/admin/courses`;
+- `/admin/courses/[courseId]`;
+- `/admin/students`;
+- `/admin/students/[studentId]`;
+- `/admin/teachers`.
 
 Статус:
 
-реализация и проверки завершены, ожидается подтверждение на commit/push.
+активная реализация.
 
 ## 5. Следующий этап
 
 Следующий stage после merge текущего stage:
 
-`Stage 11. Admin Entity Completeness`
-
-Полный roadmap реализации:
-
-`docs/roadmap/mpmf-1-implementation-roadmap.md`
+`Stage 12. Access, Empty States And Errors`

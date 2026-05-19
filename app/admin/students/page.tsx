@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DataTable, SupabaseDataPage } from "@/app/components/supabase-data-page";
 import { PageCreateAction } from "@/app/components/page-create-action";
 import { getAdminStudents } from "@/app/lib/data/supabase-read";
@@ -11,7 +12,7 @@ export default async function AdminStudentsPage() {
   return (
     <SupabaseDataPage
       title="Ученики"
-      description="Учебные карточки учеников и базовый статус оплаты из Supabase."
+      description="Учебные карточки учеников, активные группы, контакты и платежные сигналы."
       result={result}
     >
       {(data) => (
@@ -43,7 +44,14 @@ export default async function AdminStudentsPage() {
             keyForRow={(student) => student.id}
             emptyText="Ученики еще не созданы."
             columns={[
-              { header: "Ученик", render: (student) => <strong>{student.name}</strong> },
+              {
+                header: "Ученик",
+                render: (student) => (
+                  <Link href={`/admin/students/${student.id}`}>
+                    <strong>{student.name}</strong>
+                  </Link>
+                ),
+              },
               { header: "Контакты", render: (student) => student.contacts },
               { header: "Группы", render: (student) => student.groups },
               { header: "Оплата", render: (student) => student.payment },

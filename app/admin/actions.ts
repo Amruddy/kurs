@@ -3,15 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  archiveAdminCourse,
+  archiveAdminStudent,
   assignAdminStudentToGroup,
   createAdminCourse,
   createAdminGroup,
   createAdminGroupScheduleRule,
   createAdminStudent,
+  createAdminTeacher,
   deleteAdminGroupScheduleRule,
   generateAdminGroupLessons,
+  removeAdminStudentFromGroup,
   type LessonGenerationHorizon,
+  updateAdminCourse,
   updateAdminGroup,
+  updateAdminStudent,
 } from "@/app/lib/data/admin-write";
 import { requireWorkspace } from "@/app/lib/dev-auth";
 
@@ -90,20 +96,50 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function updateCourse(courseId: string, formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await updateAdminCourse({
+    organizationId: session.organizationId,
+    courseId,
+    name: requiredString(formData, "name", "Название курса"),
+    description: optionalString(formData, "description"),
+    format: requiredString(formData, "format", "Формат курса"),
+    lessonMarkScale: requiredString(formData, "lessonMarkScale", "Шкала оценок"),
+    status: requiredString(formData, "status", "Статус курса"),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/courses");
   revalidatePath(`/admin/courses/${courseId}`);
+  redirect(`/admin/courses/${courseId}`);
 }
 
 export async function archiveCourse(courseId: string) {
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await archiveAdminCourse({
+    organizationId: session.organizationId,
+    courseId,
+  });
+
+  revalidatePath("/admin");
   revalidatePath("/admin/courses");
   revalidatePath(`/admin/courses/${courseId}`);
+  redirect(`/admin/courses/${courseId}`);
 }
 
 export async function createTeacher(formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await createAdminTeacher({
+    organizationId: session.organizationId,
+    name: requiredString(formData, "name", "Имя преподавателя"),
+    email: requiredString(formData, "email", "Email преподавателя"),
+    phone: optionalString(formData, "phone"),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/teachers");
   redirect("/admin/teachers");
 }
 
@@ -129,10 +165,35 @@ export async function createStudentInGroup(groupId: string, formData: FormData) 
 }
 
 export async function updateStudent(studentId: string, formData: FormData) {
-  void formData;
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  await updateAdminStudent({
+    organizationId: session.organizationId,
+    studentId,
+    name: requiredString(formData, "name", "Имя ученика"),
+    phone: optionalString(formData, "phone"),
+    email: optionalString(formData, "email"),
+    status: requiredString(formData, "status", "Статус ученика"),
+  });
+
+  revalidatePath("/admin");
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${studentId}`);
+  redirect(`/admin/students/${studentId}`);
+}
+
+export async function archiveStudent(studentId: string) {
+  const session = await requireAdmin();
+
+  await archiveAdminStudent({
+    organizationId: session.organizationId,
+    studentId,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${studentId}`);
+  redirect(`/admin/students/${studentId}`);
 }
 
 export async function createGroup(formData: FormData) {
@@ -240,8 +301,48 @@ export async function assignStudentToGroup(formData: FormData) {
   redirect("/admin/groups");
 }
 
-export async function removeStudentFromGroup(groupStudentId: string, groupId: string) {
-  void groupStudentId;
+export async function assignStudentToGroupFromStudent(studentId: string, formData: FormData) {
   await requireAdmin();
+
+  const groupId = requiredString(formData, "groupId", "Группа");
+
+  await assignAdminStudentToGroup({ groupId, studentId });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${studentId}`);
+  redirect(`/admin/students/${studentId}`);
+}
+
+export async function removeStudentFromGroup(groupStudentId: string, groupId: string) {
+  const session = await requireAdmin();
+
+  await removeAdminStudentFromGroup({
+    organizationId: session.organizationId,
+    groupId,
+    groupStudentId,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}`);
+}
+
+export async function removeStudentFromGroupFromStudent(groupStudentId: string, groupId: string, studentId: string) {
+  const session = await requireAdmin();
+
+  await removeAdminStudentFromGroup({
+    organizationId: session.organizationId,
+    groupId,
+    groupStudentId,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
+  revalidatePath(`/admin/groups/${groupId}`);
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${studentId}`);
+  redirect(`/admin/students/${studentId}`);
 }

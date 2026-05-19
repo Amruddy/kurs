@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DataTable, SupabaseDataPage } from "@/app/components/supabase-data-page";
 import { PageCreateAction } from "@/app/components/page-create-action";
 import { getAdminCourses } from "@/app/lib/data/supabase-read";
@@ -11,7 +12,7 @@ export default async function AdminCoursesPage() {
   return (
     <SupabaseDataPage
       title="Курсы"
-      description="Минимальный список курсов из Supabase dev-проекта."
+      description="Курсы организации, формат обучения, статус и переходы в рабочие карточки курса."
       result={result}
     >
       {(data) => (
@@ -54,7 +55,14 @@ export default async function AdminCoursesPage() {
             keyForRow={(course) => course.id}
             emptyText="Курсы еще не созданы."
             columns={[
-              { header: "Курс", render: (course) => <strong>{course.name}</strong> },
+              {
+                header: "Курс",
+                render: (course) => (
+                  <Link href={`/admin/courses/${course.id}`}>
+                    <strong>{course.name}</strong>
+                  </Link>
+                ),
+              },
               { header: "Описание", render: (course) => course.description },
               { header: "Формат", render: (course) => course.format },
               { header: "Группы", render: (course) => course.groupCount },

@@ -18,6 +18,32 @@ type CreateStudentInput = {
   email: string | null;
 };
 
+type UpdateCourseInput = {
+  organizationId: string;
+  courseId: string;
+  name: string;
+  description: string | null;
+  format: string;
+  lessonMarkScale: string;
+  status: string;
+};
+
+type CreateTeacherInput = {
+  organizationId: string;
+  name: string;
+  email: string;
+  phone: string | null;
+};
+
+type UpdateStudentInput = {
+  organizationId: string;
+  studentId: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  status: string;
+};
+
 type CreateGroupInput = {
   organizationId: string;
   courseId: string;
@@ -37,6 +63,12 @@ type UpdateGroupInput = {
 type AssignStudentToGroupInput = {
   groupId: string;
   studentId: string;
+};
+
+type RemoveStudentFromGroupInput = {
+  organizationId: string;
+  groupId: string;
+  groupStudentId: string;
 };
 
 type CreateScheduleRuleInput = {
@@ -90,6 +122,12 @@ type LessonIdRow = {
 function assertWriteSuccess(error: { message: string } | null, context: string) {
   if (error) {
     throw new Error(`${context}: ${error.message}`);
+  }
+}
+
+function assertAllowedValue(value: string, allowed: string[], label: string) {
+  if (!allowed.includes(value)) {
+    throw new Error(`${label}: неверное значение.`);
   }
 }
 
@@ -234,6 +272,56 @@ export async function createAdminCourse(input: CreateCourseInput) {
   assertWriteSuccess(settingsResult.error, "Настройки прогресса курса");
 }
 
+export async function updateAdminCourse(input: UpdateCourseInput) {
+  assertAllowedValue(input.format, ["group", "individual", "both"], "Формат курса");
+  assertAllowedValue(input.lessonMarkScale, ["five_point", "ten_point"], "Шкала оценок");
+  assertAllowedValue(input.status, ["active", "archived"], "Статус курса");
+
+  const supabase = createSupabaseAdminClient();
+  const result = await supabase
+    .from("courses")
+    .update({
+      archived_at: input.status === "archived" ? new Date().toISOString() : null,
+      description: input.description,
+      format: input.format,
+      lesson_mark_scale: input.lessonMarkScale,
+      name: input.name,
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.courseId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Изменение курса");
+
+  if (!result.data) {
+    throw new Error("Изменение курса: курс не найден.");
+  }
+}
+
+export async function archiveAdminCourse(input: { organizationId: string; courseId: string }) {
+  const supabase = createSupabaseAdminClient();
+  const result = await supabase
+    .from("courses")
+    .update({
+      archived_at: new Date().toISOString(),
+      status: "archived",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.courseId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Архивация курса");
+
+  if (!result.data) {
+    throw new Error("Архивация курса: курс не найден.");
+  }
+}
+
 export async function createAdminStudent(input: CreateStudentInput) {
   const supabase = createSupabaseAdminClient();
   const result = await supabase.from("students").insert({
@@ -245,6 +333,124 @@ export async function createAdminStudent(input: CreateStudentInput) {
   });
 
   assertWriteSuccess(result.error, "Создание ученика");
+}
+
+export async function updateAdminStudent(input: UpdateStudentInput) {
+  assertAllowedValue(input.status, ["active", "paused", "archived"], "Статус ученика");
+
+  const supabase = createSupabaseAdminClient();
+  const result = await supabase
+    .from("students")
+    .update({
+      archived_at: input.status === "archived" ? new Date().toISOString() : null,
+      email: input.email,
+      name: input.name,
+      phone: input.phone,
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.studentId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Изменение ученика");
+
+  if (!result.data) {
+    throw new Error("Изменение ученика: ученик не найден.");
+  }
+}
+
+export async function archiveAdminStudent(input: { organizationId: string; studentId: string }) {
+  const supabase = createSupabaseAdminClient();
+  const result = await supabase
+    .from("students")
+    .update({
+      archived_at: new Date().toISOString(),
+      status: "archived",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.studentId)
+    .eq("organization_id", input.organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Архивация ученика");
+
+  if (!result.data) {
+    throw new Error("Архивация ученика: ученик не найден.");
+  }
+}
+
+export async function createAdminTeacher(input: CreateTeacherInput) {
+  const supabase = createSupabaseAdminClient();
+  const existingUserResult = await supabase.from("users").select("id").eq("email", input.email).maybeSingle();
+
+  assertWriteSuccess(existingUserResult.error, "Проверка преподавателя");
+
+  let userId = existingUserResult.data?.id as string | undefined;
+
+  if (userId) {
+    const updateUserResult = await supabase
+      .from("users")
+      .update({
+        name: input.name,
+        phone: input.phone,
+        status: "active",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    assertWriteSuccess(updateUserResult.error, "Обновление преподавателя");
+  } else {
+    const createUserResult = await supabase
+      .from("users")
+      .insert({
+        email: input.email,
+        name: input.name,
+        phone: input.phone,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    assertWriteSuccess(createUserResult.error, "Создание преподавателя");
+
+    if (!createUserResult.data) {
+      throw new Error("Создание преподавателя: Supabase не вернул id пользователя.");
+    }
+
+    userId = createUserResult.data.id;
+  }
+
+  const existingMemberResult = await supabase
+    .from("organization_members")
+    .select("roles,permissions")
+    .eq("organization_id", input.organizationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  assertWriteSuccess(existingMemberResult.error, "Проверка роли преподавателя");
+
+  const existingRoles = Array.isArray(existingMemberResult.data?.roles) ? existingMemberResult.data.roles : [];
+  const existingPermissions = Array.isArray(existingMemberResult.data?.permissions)
+    ? existingMemberResult.data.permissions
+    : [];
+  const roles = existingRoles.includes("teacher") ? existingRoles : [...existingRoles, "teacher"];
+
+  const memberResult = await supabase.from("organization_members").upsert(
+    {
+      organization_id: input.organizationId,
+      permissions: existingPermissions,
+      roles,
+      status: "active",
+      updated_at: new Date().toISOString(),
+      user_id: userId,
+    },
+    { onConflict: "organization_id,user_id" },
+  );
+
+  assertWriteSuccess(memberResult.error, "Роль преподавателя");
 }
 
 export async function createAdminGroup(input: CreateGroupInput) {
@@ -296,6 +502,40 @@ export async function assignAdminStudentToGroup(input: AssignStudentToGroupInput
   );
 
   assertWriteSuccess(result.error, "Назначение ученика в группу");
+}
+
+export async function removeAdminStudentFromGroup(input: RemoveStudentFromGroupInput) {
+  const supabase = createSupabaseAdminClient();
+  const groupResult = await supabase
+    .from("groups")
+    .select("id")
+    .eq("id", input.groupId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(groupResult.error, "Проверка группы");
+
+  if (!groupResult.data) {
+    throw new Error("Удаление ученика из группы: группа не найдена.");
+  }
+
+  const result = await supabase
+    .from("group_students")
+    .update({
+      left_at: new Date().toISOString().slice(0, 10),
+      status: "removed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.groupStudentId)
+    .eq("group_id", input.groupId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, "Удаление ученика из группы");
+
+  if (!result.data) {
+    throw new Error("Удаление ученика из группы: связь не найдена.");
+  }
 }
 
 export async function createAdminGroupScheduleRule(input: CreateScheduleRuleInput) {

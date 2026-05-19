@@ -35,6 +35,7 @@ type UserRow = {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   status: string;
 };
 
@@ -55,6 +56,13 @@ type CourseRow = {
   status: string;
 };
 
+type CourseProgressSettingsRow = {
+  id: string;
+  course_id: string;
+  name: string;
+  is_progress_enabled: boolean;
+};
+
 type GroupRow = {
   id: string;
   course_id: string;
@@ -68,6 +76,8 @@ type GroupStudentRow = {
   group_id: string;
   student_id: string;
   status: string;
+  joined_at?: string | null;
+  left_at?: string | null;
 };
 
 type StudentRow = {
@@ -284,6 +294,53 @@ export type AdminCourseItem = {
   groupCount: string;
 };
 
+export type AdminCourseDetailGroup = {
+  id: string;
+  name: string;
+  nextLesson: string;
+  status: string;
+  students: string;
+  teacher: string;
+};
+
+export type AdminCourseDetailStudent = {
+  id: string;
+  name: string;
+  contacts: string;
+  groups: string;
+  payment: string;
+  status: string;
+};
+
+export type AdminCourseMaterialItem = {
+  detail: string;
+  id: string;
+  title: string;
+};
+
+export type AdminCourseDetailData = {
+  description: string;
+  format: string;
+  formatValue: string;
+  groups: AdminCourseDetailGroup[];
+  id: string;
+  lessonMarkScale: string;
+  lessonMarkScaleValue: string;
+  materials: AdminCourseMaterialItem[];
+  metrics: MetricItem[];
+  name: string;
+  paymentSignals: PaymentSummary[];
+  progressSettings: {
+    enabled: string;
+    id: string | null;
+    name: string;
+  };
+  status: string;
+  statusValue: string;
+  students: AdminCourseDetailStudent[];
+  type: string;
+};
+
 export type AdminGroupItem = {
   id: string;
   name: string;
@@ -352,6 +409,63 @@ export type AdminStudentItem = {
   status: string;
   groups: string;
   payment: string;
+};
+
+export type AdminStudentGroupItem = {
+  course: string;
+  groupId: string;
+  groupStudentId: string;
+  joinedAt: string;
+  leftAt: string;
+  name: string;
+  status: string;
+  statusValue: string;
+  teacher: string;
+};
+
+export type AdminStudentLessonHistoryItem = {
+  attendance: string;
+  comment: string;
+  context: string;
+  id: string;
+  lesson: string;
+  when: string;
+};
+
+export type AdminStudentDetailData = {
+  contacts: string;
+  email: string;
+  errors: ProgressErrorItem[];
+  groupOptions: SelectOption[];
+  groups: AdminStudentGroupItem[];
+  homework: TeacherGroupHomeworkItem[];
+  id: string;
+  lessons: AdminStudentLessonHistoryItem[];
+  materials: TeacherGroupMaterialItem[];
+  metrics: MetricItem[];
+  name: string;
+  payments: PaymentSummary[];
+  phone: string;
+  records: ProgressRecordItem[];
+  rules: ProgressRuleItem[];
+  status: string;
+  statusValue: string;
+};
+
+export type AdminTeacherItem = {
+  activeGroups: string;
+  contacts: string;
+  groups: string;
+  id: string;
+  name: string;
+  status: string;
+  students: string;
+  upcomingLessons: string;
+};
+
+export type AdminTeachersData = {
+  metrics: MetricItem[];
+  teachers: AdminTeacherItem[];
 };
 
 export type TeacherOverviewData = {
@@ -1238,7 +1352,7 @@ async function getOrganization(client: SupabaseClient, organizationId: string) {
 }
 
 async function getUserByEmail(client: SupabaseClient, email: string) {
-  const result = await client.from("users").select("id,name,email,status").eq("email", email).maybeSingle();
+  const result = await client.from("users").select("id,name,email,phone,status").eq("email", email).maybeSingle();
 
   return single<UserRow>(result, `Пользователь ${email}`);
 }
@@ -1412,7 +1526,7 @@ async function getBaseOrganizationData(client: SupabaseClient, organizationId: s
         .eq("organization_id", organizationId),
       client.from("groups").select("id,course_id,teacher_id,name,status").eq("organization_id", organizationId),
       client.from("students").select("id,user_id,name,phone,email,status").eq("organization_id", organizationId),
-      client.from("users").select("id,name,email,status"),
+      client.from("users").select("id,name,email,phone,status"),
       client.from("organization_members").select("id,user_id,roles,permissions").eq("organization_id", organizationId),
     ]);
 
@@ -1478,6 +1592,126 @@ export async function getAdminCourses(organizationId: string) {
         status: statusLabel(course.status),
         groupCount: String(groups.filter((group) => group.course_id === course.id).length),
       })),
+    };
+  });
+}
+
+export async function getAdminCourseDetail(organizationId: string, courseId: string) {
+  return readSupabaseData<AdminCourseDetailData>(async (client) => {
+    const { courses, groups, students, users } = await getBaseOrganizationData(client, organizationId);
+    const course = courses.find((item) => item.id === courseId);
+
+    if (!course) {
+      throw new Error("Курс: запись не найдена.");
+    }
+
+    const courseGroups = groups.filter((group) => group.course_id === course.id);
+    const courseGroupIds = courseGroups.map((group) => group.id);
+    const now = new Date().toISOString();
+    const [settingsResult, groupStudentsResult, lessonsResult, materialsResult, paymentsResult] = await Promise.all([
+      client
+        .from("course_progress_settings")
+        .select("id,course_id,name,is_progress_enabled")
+        .eq("course_id", course.id)
+        .maybeSingle(),
+      courseGroupIds.length > 0
+        ? client.from("group_students").select("id,group_id,student_id,status,joined_at,left_at").in("group_id", courseGroupIds)
+        : Promise.resolve({ data: [], error: null }),
+      client
+        .from("lessons")
+        .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+        .eq("organization_id", organizationId)
+        .eq("course_id", course.id)
+        .gte("starts_at", now)
+        .order("starts_at", { ascending: true })
+        .limit(40),
+      client
+        .from("materials")
+        .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+        .eq("organization_id", organizationId)
+        .eq("course_id", course.id)
+        .neq("status", "archived")
+        .order("created_at", { ascending: false })
+        .limit(12),
+      client
+        .from("payments")
+        .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
+        .eq("organization_id", organizationId)
+        .eq("course_id", course.id),
+    ]);
+    if (settingsResult.error) {
+      throw new Error(`Настройки прогресса курса: ${settingsResult.error.message}`);
+    }
+
+    const settings = (settingsResult.data as CourseProgressSettingsRow | null) ?? null;
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Состав групп курса");
+    const lessons = rows<LessonRow>(lessonsResult, "Занятия курса");
+    const materials = rows<MaterialRow>(materialsResult, "Материалы курса");
+    const payments = rows<PaymentRow>(paymentsResult, "Оплаты курса");
+    const userMap = byId(users);
+    const studentMap = byId(students);
+    const groupMap = byId(courseGroups);
+    const activeMemberships = groupStudents.filter((item) => item.status === "active");
+    const activeStudentIds = new Set(activeMemberships.map((item) => item.student_id));
+    const courseStudents = students.filter((student) => activeStudentIds.has(student.id));
+    const attentionPayments = payments.filter(isPaymentAttention);
+
+    return {
+      description: course.description ?? "",
+      format: formatLabel(course.format),
+      formatValue: course.format,
+      groups: courseGroups.map((group) => {
+        const nextLesson = lessons.find((lesson) => lesson.group_id === group.id);
+
+        return {
+          id: group.id,
+          name: group.name,
+          nextLesson: nextLesson ? formatDateTime(nextLesson.starts_at) : "нет ближайшего занятия",
+          status: groupStatusLabel(group.status),
+          students: String(activeMemberships.filter((item) => item.group_id === group.id).length),
+          teacher: group.teacher_id ? userMap.get(group.teacher_id)?.name ?? "не назначен" : "не назначен",
+        };
+      }),
+      id: course.id,
+      lessonMarkScale: lessonMarkScaleLabel(course.lesson_mark_scale),
+      lessonMarkScaleValue: course.lesson_mark_scale ?? "five_point",
+      materials: materials.map((item) => ({
+        detail: `${materialTypeLabel(item.type)}; ${materialVisibilityLabel(item.visibility)}; ${materialStatusLabel(item.status)}`,
+        id: item.id,
+        title: item.title,
+      })),
+      metrics: [
+        { label: "Группы", value: String(courseGroups.length) },
+        { label: "Ученики", value: String(activeStudentIds.size), detail: "активные связи с группами" },
+        { label: "Ближайшие уроки", value: String(lessons.length) },
+        { label: "Оплаты", value: String(attentionPayments.length), detail: "требуют внимания" },
+      ],
+      name: course.name,
+      paymentSignals: summarizePayments(attentionPayments.slice(0, 6), studentMap, new Map([[course.id, course]]), groupMap),
+      progressSettings: {
+        enabled: settings?.is_progress_enabled ? "включен" : "выключен",
+        id: settings?.id ?? null,
+        name: settings?.name ?? "Прогресс курса не настроен",
+      },
+      status: statusLabel(course.status),
+      statusValue: course.status,
+      students: courseStudents.map((student) => {
+        const memberships = activeMemberships.filter((item) => item.student_id === student.id);
+        const studentPayments = payments.filter((payment) => payment.student_id === student.id);
+        const attentionPayment = studentPayments.find(isPaymentAttention) ?? studentPayments[0];
+
+        return {
+          contacts: [student.phone, student.email].filter(Boolean).join(", ") || "контакты не заполнены",
+          groups: memberships.map((item) => groupMap.get(item.group_id)?.name).filter(Boolean).join(", ") || "без группы",
+          id: student.id,
+          name: student.name,
+          payment: attentionPayment
+            ? `${formatMoney(attentionPayment.amount, attentionPayment.currency)} - ${describePaymentStatus(attentionPayment)}`
+            : "не настроена",
+          status: statusLabel(student.status),
+        };
+      }),
+      type: formatLabel(course.type),
     };
   });
 }
@@ -1687,6 +1921,273 @@ export async function getAdminStudents(organizationId: string) {
           payment: attentionPayment
             ? `${formatMoney(attentionPayment.amount, attentionPayment.currency)} - ${describePaymentStatus(attentionPayment)}`
             : "не настроена",
+        };
+      }),
+    };
+  });
+}
+
+export async function getAdminStudentDetail(organizationId: string, studentId: string) {
+  return readSupabaseData<AdminStudentDetailData>(async (client) => {
+    const { courses, groups, students, users } = await getBaseOrganizationData(client, organizationId);
+    const student = students.find((item) => item.id === studentId);
+
+    if (!student) {
+      throw new Error("Ученик: запись не найдена.");
+    }
+
+    const groupStudentsResult = await client
+      .from("group_students")
+      .select("id,group_id,student_id,status,joined_at,left_at")
+      .eq("student_id", student.id);
+    const memberships = rows<GroupStudentRow>(groupStudentsResult, "Группы ученика");
+    const activeGroupIds = new Set(memberships.filter((item) => item.status === "active").map((item) => item.group_id));
+    const groupIdList = [...new Set(memberships.map((item) => item.group_id))];
+    const visibleGroups = groups.filter((group) => groupIdList.includes(group.id));
+    const courseIds = new Set(visibleGroups.map((group) => group.course_id));
+    const courseIdList = [...courseIds];
+    const [lessonsResult, entriesResult, rulesResult, errorsResult, recordsResult, homeworkResult, materialsResult, paymentsResult] =
+      await Promise.all([
+        groupIdList.length > 0
+          ? client
+              .from("lessons")
+              .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+              .eq("organization_id", organizationId)
+              .in("group_id", groupIdList)
+              .order("starts_at", { ascending: false })
+              .limit(24)
+          : Promise.resolve({ data: [], error: null }),
+        client
+          .from("journal_entries")
+          .select("id,lesson_id,student_id,attendance_mark,lesson_mark,teacher_comment,internal_comment,is_visible_to_student")
+          .eq("student_id", student.id),
+        courseIdList.length > 0
+          ? client
+              .from("student_progress_rules")
+              .select("id,student_id,course_id,name,level,note,is_visible_to_student,is_active")
+              .eq("organization_id", organizationId)
+              .eq("student_id", student.id)
+              .in("course_id", courseIdList)
+              .order("sort_order", { ascending: true })
+              .order("created_at", { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
+        courseIdList.length > 0
+          ? client
+              .from("student_progress_errors")
+              .select("id,student_id,course_id,name,note,is_visible_to_student,is_active")
+              .eq("organization_id", organizationId)
+              .eq("student_id", student.id)
+              .in("course_id", courseIdList)
+              .order("created_at", { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
+        courseIdList.length > 0
+          ? client
+              .from("progress_records")
+              .select("id,student_id,course_id,lesson_id,repeat_note,student_comment,internal_comment,is_visible_to_student,created_at")
+              .eq("organization_id", organizationId)
+              .eq("student_id", student.id)
+              .in("course_id", courseIdList)
+              .order("created_at", { ascending: false })
+              .limit(12)
+          : Promise.resolve({ data: [], error: null }),
+        client
+          .from("homework")
+          .select("id,course_id,group_id,student_id,lesson_id,title,description,due_at,status")
+          .eq("organization_id", organizationId)
+          .neq("status", "archived")
+          .order("due_at", { ascending: true, nullsFirst: false })
+          .limit(80),
+        client
+          .from("materials")
+          .select("id,course_id,group_id,student_id,lesson_id,homework_id,title,type,content,url,visibility,status")
+          .eq("organization_id", organizationId)
+          .neq("status", "archived")
+          .order("created_at", { ascending: false })
+          .limit(120),
+        client
+          .from("payments")
+          .select("id,student_id,course_id,group_id,amount,currency,period_start,period_end,due_at,status")
+          .eq("organization_id", organizationId)
+          .eq("student_id", student.id),
+      ]);
+    const lessons = rows<LessonRow>(lessonsResult, "Учебная история ученика");
+    const entries = rows<JournalEntryRow>(entriesResult, "Журнал ученика");
+    const rules = rows<ProgressRuleRow>(rulesResult, "Правила прогресса ученика");
+    const errors = rows<ProgressErrorRow>(errorsResult, "Ошибки прогресса ученика");
+    const records = rows<ProgressRecordRow>(recordsResult, "Записи прогресса ученика");
+    const homework = rows<HomeworkRow>(homeworkResult, "Домашние задания ученика").filter(
+      (item) => item.student_id === student.id || (item.group_id ? activeGroupIds.has(item.group_id) : false),
+    );
+    const materials = rows<MaterialRow>(materialsResult, "Материалы ученика").filter(
+      (item) =>
+        item.student_id === student.id ||
+        (item.group_id ? activeGroupIds.has(item.group_id) : false) ||
+        (item.course_id ? courseIds.has(item.course_id) && !item.group_id && !item.student_id : false),
+    );
+    const payments = rows<PaymentRow>(paymentsResult, "Оплаты ученика");
+    const courseMap = byId(courses);
+    const groupMap = byId(groups);
+    const userMap = byId(users);
+    const lessonMap = byId(lessons);
+    const entryMap = new Map(entries.map((entry) => [entry.lesson_id, entry]));
+    const availableGroupOptions = groups
+      .filter((group) => {
+        const activeMembership = memberships.find((item) => item.group_id === group.id && item.status === "active");
+        return !activeMembership && (group.status === "active" || group.status === "recruiting");
+      })
+      .map((group) => ({
+        label: `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}`,
+        value: group.id,
+      }));
+    const absentCount = entries.filter((entry) => entry.attendance_mark === "absent").length;
+
+    return {
+      contacts: [student.phone, student.email].filter(Boolean).join(", ") || "контакты не заполнены",
+      email: student.email ?? "",
+      errors: errors.map((item) => ({
+        course: courseMap.get(item.course_id)?.name ?? "Курс",
+        courseId: item.course_id,
+        id: item.id,
+        isActive: item.is_active,
+        isVisibleToStudent: item.is_visible_to_student,
+        name: item.name,
+        note: item.note ?? "",
+      })),
+      groupOptions: availableGroupOptions,
+      groups: memberships.map((membership) => {
+        const group = groupMap.get(membership.group_id);
+
+        return {
+          course: courseMap.get(group?.course_id ?? "")?.name ?? "курс",
+          groupId: membership.group_id,
+          groupStudentId: membership.id,
+          joinedAt: formatDate(membership.joined_at),
+          leftAt: formatDate(membership.left_at),
+          name: group?.name ?? "Группа",
+          status: statusLabel(membership.status),
+          statusValue: membership.status,
+          teacher: group?.teacher_id ? userMap.get(group.teacher_id)?.name ?? "преподаватель" : "не назначен",
+        };
+      }),
+      homework: homework.slice(0, 6).map((item) => ({
+        description: item.description ?? "Описание не заполнено",
+        due: formatDate(item.due_at),
+        id: item.id,
+        title: item.title,
+      })),
+      id: student.id,
+      lessons: lessons.slice(0, 10).map((lesson) => {
+        const entry = entryMap.get(lesson.id);
+        const attendance = studentAttendanceStatus(lesson, entry);
+        const group = lesson.group_id ? groupMap.get(lesson.group_id) : null;
+
+        return {
+          attendance: attendance.label,
+          comment: entry?.teacher_comment ?? entry?.internal_comment ?? "",
+          context: group ? `${group.name} - ${courseMap.get(group.course_id)?.name ?? "курс"}` : courseMap.get(lesson.course_id)?.name ?? "курс",
+          id: lesson.id,
+          lesson: lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "Урок",
+          when: formatDateTime(lesson.starts_at),
+        };
+      }),
+      materials: materials.slice(0, 6).map((item) => ({
+        detail: `${materialTypeLabel(item.type)}; ${materialVisibilityLabel(item.visibility)}; ${materialStatusLabel(item.status)}`,
+        id: item.id,
+        title: item.title,
+      })),
+      metrics: [
+        { label: "Активные группы", value: String(activeGroupIds.size) },
+        { label: "Уроки", value: String(lessons.length), detail: "в учебной истории" },
+        { label: "Пропуски", value: String(absentCount) },
+        { label: "Оплаты", value: String(payments.filter(isPaymentAttention).length), detail: "требуют внимания" },
+      ],
+      name: student.name,
+      payments: summarizePayments(payments, new Map([[student.id, student]]), courseMap, groupMap),
+      phone: student.phone ?? "",
+      records: records.map((item) => {
+        const lesson = item.lesson_id ? lessonMap.get(item.lesson_id) : null;
+
+        return {
+          course: courseMap.get(item.course_id)?.name ?? "Курс",
+          courseId: item.course_id,
+          createdAt: formatDateTime(item.created_at),
+          id: item.id,
+          internalComment: item.internal_comment ?? "",
+          isVisibleToStudent: item.is_visible_to_student,
+          lesson: lesson
+            ? `${formatDateTime(lesson.starts_at)} - ${lesson.topic ?? courseMap.get(lesson.course_id)?.name ?? "урок"}`
+            : "без связи с уроком",
+          lessonId: item.lesson_id,
+          repeatNote: item.repeat_note ?? "",
+          studentComment: item.student_comment ?? "",
+        };
+      }),
+      rules: rules.map((item) => ({
+        course: courseMap.get(item.course_id)?.name ?? "Курс",
+        courseId: item.course_id,
+        id: item.id,
+        isActive: item.is_active,
+        isVisibleToStudent: item.is_visible_to_student,
+        level: progressLevelLabel(item.level),
+        levelValue: item.level ?? "",
+        name: item.name,
+        note: item.note ?? "",
+      })),
+      status: statusLabel(student.status),
+      statusValue: student.status,
+    };
+  });
+}
+
+export async function getAdminTeachers(organizationId: string) {
+  return readSupabaseData<AdminTeachersData>(async (client) => {
+    const { groups, members, students, users } = await getBaseOrganizationData(client, organizationId);
+    const teacherIds = new Set(members.filter((member) => member.roles.includes("teacher")).map((member) => member.user_id));
+    const teachers = users.filter((user) => teacherIds.has(user.id));
+    const teacherGroupIds = groups.filter((group) => group.teacher_id && teacherIds.has(group.teacher_id)).map((group) => group.id);
+    const [groupStudentsResult, lessonsResult] = await Promise.all([
+      teacherGroupIds.length > 0
+        ? client.from("group_students").select("id,group_id,student_id,status").in("group_id", teacherGroupIds)
+        : Promise.resolve({ data: [], error: null }),
+      teacherGroupIds.length > 0
+        ? client
+            .from("lessons")
+            .select("id,course_id,group_id,teacher_id,starts_at,ends_at,topic")
+            .eq("organization_id", organizationId)
+            .in("group_id", teacherGroupIds)
+            .gte("starts_at", new Date().toISOString())
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    const groupStudents = rows<GroupStudentRow>(groupStudentsResult, "Ученики преподавателей");
+    const lessons = rows<LessonRow>(lessonsResult, "Занятия преподавателей");
+
+    return {
+      metrics: [
+        { label: "Преподаватели", value: String(teachers.length) },
+        { label: "Активные", value: String(teachers.filter((teacher) => teacher.status === "active").length) },
+        { label: "Группы", value: String(groups.filter((group) => group.teacher_id && teacherIds.has(group.teacher_id)).length) },
+        { label: "Ученики", value: String(new Set(groupStudents.filter((item) => item.status === "active").map((item) => item.student_id)).size) },
+      ],
+      teachers: teachers.map((teacher) => {
+        const teacherGroups = groups.filter((group) => group.teacher_id === teacher.id);
+        const teacherGroupIdSet = new Set(teacherGroups.map((group) => group.id));
+        const activeGroupCount = teacherGroups.filter((group) => group.status === "active").length;
+        const activeStudentIds = new Set(
+          groupStudents
+            .filter((item) => item.status === "active" && teacherGroupIdSet.has(item.group_id))
+            .map((item) => item.student_id)
+            .filter((studentId) => students.some((student) => student.id === studentId)),
+        );
+
+        return {
+          activeGroups: String(activeGroupCount),
+          contacts: [teacher.phone, teacher.email].filter(Boolean).join(", ") || "контакты не заполнены",
+          groups: String(teacherGroups.length),
+          id: teacher.id,
+          name: teacher.name,
+          status: statusLabel(teacher.status),
+          students: String(activeStudentIds.size),
+          upcomingLessons: String(lessons.filter((lesson) => lesson.teacher_id === teacher.id).length),
         };
       }),
     };
