@@ -15,12 +15,12 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-12-access-empty-states-errors`.
-- Текущий этап: `MPMF 1.0 Stage 12. Access, Empty States And Errors`.
-- Активный план: `docs/work-plans/active/20-mpmf-1-stage-12-access-empty-states-errors-plan.md`.
+- Текущая ветка: `feat/mpmf-1-stage-13-mass-payment-creation`.
+- Текущий этап: `MPMF 1.0 Stage 13. Mass Payment Creation`.
+- Активный план: `docs/work-plans/active/21-mpmf-1-stage-13-mass-payment-creation-plan.md`.
 - Статус: активная реализация.
-- Предыдущий этап: `MPMF 1.0 Stage 11. Admin Entity Completeness`, завершен и смержен в `main` через PR #41.
-- Запись предыдущего этапа: `docs/work-plans/completed/19-mpmf-1-stage-11-admin-entity-completeness-plan.md`.
+- Предыдущий этап: `MPMF 1.0 Stage 12. Access, Empty States And Errors`, завершен и смержен в `main`.
+- Запись предыдущего этапа: `docs/work-plans/completed/20-mpmf-1-stage-12-access-empty-states-errors-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -53,21 +53,22 @@
 - Stage 9: Student Learning Cabinet, PR #39.
 - Stage 10: Payments, PR #40.
 - Stage 11: Admin Entity Completeness, PR #41.
+- Stage 12: Access, Empty States And Errors.
 
 ## 4. Активный этап
 
-### MPMF 1.0 Stage 12: Access, Empty States And Errors
+### MPMF 1.0 Stage 13: Mass Payment Creation
 
 План:
 
-`docs/work-plans/active/20-mpmf-1-stage-12-access-empty-states-errors-plan.md`
+`docs/work-plans/active/21-mpmf-1-stage-13-mass-payment-creation-plan.md`
 
 Маршруты:
 
-- все рабочие области;
-- `/forbidden`;
-- `not-found`;
-- `error`.
+- `/admin/payments`;
+- карточка курса;
+- карточка группы;
+- карточка ученика.
 
 Статус:
 
@@ -77,8 +78,8 @@
 
 Следующий stage после merge текущего stage:
 
-`Stage 13. Mass Payment Creation`
+`Stage 14. Cross-role Smoke Flow`
 
 После него:
 
-`Stage 14. Cross-role Smoke Flow`
+`Stage 15. Mobile Polish And Dashboard Refinement`

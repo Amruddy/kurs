@@ -19,6 +19,8 @@
   --danger-soft: #f8e4e6;
   --shadow: 0 12px 34px rgb(23 32 31 / 8%);
   --radius: 8px;
+  --control-radius: 6px;
+  --overlay-width: 900px;
   --sidebar-width: 264px;
   --content-max: 1180px;
   --gap: 16px;
@@ -630,16 +632,16 @@ body:has(.entry-shell) .main {
 .danger-button,
 .secondary-button {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 40px;
   max-width: 100%;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
+  border-radius: var(--control-radius);
   cursor: pointer;
-  padding: 0 15px;
+  padding: 0 14px;
   font-size: 14px;
-  font-weight: 800;
-  line-height: 1.2;
+  font-weight: 700;
+  line-height: 1.25;
   text-align: center;
   white-space: normal;
 }
@@ -741,7 +743,7 @@ body:has(.entry-shell) .main {
 .compact-button,
 .table-wrap .button,
 .table-wrap .secondary-button {
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 11px;
   font-size: 13px;
 }
@@ -826,6 +828,16 @@ body:has(.entry-shell) .main {
   font-weight: 800;
 }
 
+.success-message {
+  margin-bottom: var(--gap);
+  border: 1px solid #b8d8ca;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  padding: 12px 14px;
+  font-weight: 800;
+}
+
 .empty-state {
   display: grid;
   gap: 6px;
@@ -865,6 +877,37 @@ body:has(.entry-shell) .main {
   justify-self: end;
 }
 
+.payment-row-actions {
+  display: grid;
+  grid-template-columns: minmax(168px, 1fr);
+  gap: 8px;
+  min-width: 188px;
+  align-items: stretch;
+}
+
+.payment-row-actions .page-create-action,
+.info-row .page-create-action {
+  justify-self: stretch;
+}
+
+.payment-row-actions .page-create-action > .button,
+.info-row .page-create-action > .button {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.table-link {
+  color: var(--primary);
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
 .page-create-backdrop {
   position: fixed;
   inset: 0;
@@ -874,10 +917,11 @@ body:has(.entry-shell) .main {
 
 .page-create-overlay {
   position: absolute;
-  top: 82px;
-  right: 28px;
-  bottom: 28px;
-  left: calc(var(--sidebar-width) + 28px);
+  top: 78px;
+  right: 32px;
+  width: min(var(--overlay-width), calc(100vw - var(--sidebar-width) - 72px));
+  min-height: min(520px, calc(100vh - 112px));
+  max-height: calc(100vh - 112px);
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -896,8 +940,8 @@ body:has(.entry-shell) .main {
 
 .page-create-overlay-header h2 {
   margin: 0;
-  font-size: 28px;
-  line-height: 1.18;
+  font-size: 26px;
+  line-height: 1.25;
 }
 
 .create-disclosure,
@@ -1094,7 +1138,7 @@ table {
 th,
 td {
   border-bottom: 1px solid var(--border);
-  padding: 12px 10px;
+  padding: 14px 8px;
   text-align: left;
   vertical-align: middle;
 }
@@ -1102,13 +1146,14 @@ td {
 th {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 td a,
 .table-wrap th a {
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .table-wrap th a {
@@ -1119,7 +1164,7 @@ td a,
 .table-wrap th a span {
   color: var(--muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: capitalize;
 }
 
@@ -1170,14 +1215,15 @@ td a,
 .info-row strong,
 .info-row a {
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .info-row span {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .info-row p {
@@ -1841,11 +1887,92 @@ td a,
   color: var(--muted);
   padding: 0;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .payment-filter-form {
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  align-items: end;
+  gap: 16px;
   margin-top: 0;
+}
+
+.payment-list-heading {
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.payment-list-actions {
+  position: relative;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.payment-list-actions .page-create-action {
+  justify-self: end;
+}
+
+.payment-list-actions .page-create-action > .button,
+.payment-filter-disclosure summary {
+  min-width: 148px;
+  min-height: 40px;
+}
+
+.payment-filter-disclosure {
+  position: relative;
+}
+
+.payment-filter-disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.payment-filter-disclosure[open] summary {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.payment-filter-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.payment-filter-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 12;
+  width: min(1040px, calc(100vw - var(--sidebar-width) - 64px));
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 18px 50px rgb(23 32 31 / 18%);
+  padding: 20px;
+}
+
+.payment-filter-form label {
+  gap: 7px;
+  font-size: 14px;
+}
+
+.payment-filter-form select {
+  min-height: 46px;
+  padding: 0 12px;
+  font-size: 15px;
+}
+
+.payment-filter-actions {
+  grid-column: 1 / -1;
+  flex-wrap: nowrap;
+  align-items: end;
+}
+
+.payment-filter-actions .button,
+.payment-filter-actions .secondary-button {
+  min-height: 44px;
+  padding: 0 20px;
 }
 
 .payment-cell {
@@ -1856,7 +1983,8 @@ td a,
 
 .payment-cell strong {
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .payment-cell p {
@@ -1898,7 +2026,9 @@ td a,
 }
 
 .payment-inline-action select {
-  width: min(170px, 100%);
+  width: 100%;
+  min-height: 38px;
+  font-size: 13px;
 }
 
 .student-overview-grid {
@@ -2194,14 +2324,15 @@ td a,
 .student-list-item a,
 .student-group-card strong {
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .student-list-item > span,
 .student-group-card span {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .student-list-note {
@@ -2288,7 +2419,8 @@ td a,
 .teacher-group-card strong,
 .teacher-payment-row a {
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .teacher-list-item span,
@@ -2296,7 +2428,7 @@ td a,
 .teacher-payment-row span {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .teacher-payment-row {
@@ -2383,6 +2515,18 @@ td a,
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .payment-filter-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-filter-popover {
+    width: min(760px, calc(100vw - 64px));
+  }
+
+  .payment-filter-actions {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -2418,6 +2562,9 @@ td a,
     right: 16px;
     bottom: 92px;
     left: 16px;
+    width: auto;
+    min-height: 0;
+    max-height: none;
   }
 
   .mobile-nav {
@@ -2537,6 +2684,21 @@ td a,
     justify-self: start;
   }
 
+  .payment-list-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .payment-list-actions .page-create-action,
+  .payment-filter-disclosure {
+    flex: 1 1 180px;
+  }
+
+  .payment-list-actions .page-create-action > .button,
+  .payment-filter-disclosure summary {
+    width: 100%;
+  }
+
   .group-settings {
     justify-self: start;
   }
@@ -2552,6 +2714,9 @@ td a,
     right: 12px;
     bottom: 92px;
     left: 12px;
+    width: auto;
+    min-height: 0;
+    max-height: none;
     padding: 16px;
   }
 
@@ -2575,6 +2740,22 @@ td a,
   .inline-create-panel {
     position: static;
     width: 100%;
+  }
+
+  .payment-list-actions,
+  .payment-row-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .payment-filter-popover {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .payment-filter-form {
+    grid-template-columns: 1fr;
   }
 
   .student-next-lesson {

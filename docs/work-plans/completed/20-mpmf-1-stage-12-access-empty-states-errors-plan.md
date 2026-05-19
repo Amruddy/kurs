@@ -2,7 +2,7 @@
 
 ## 0. Статус
 
-- Статус плана: активная реализация.
+- Статус плана: завершен.
 - Ветка: `feat/mpmf-1-stage-12-access-empty-states-errors`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
 - Предыдущий завершенный stage: `MPMF 1.0 Stage 11. Admin Entity Completeness`, смержен в `main` через PR #41.
