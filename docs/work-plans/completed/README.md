@@ -1,58 +1,33 @@
 # Completed Plans
 
-Сюда нужно записывать результаты после завершения этапов разработки.
+Сюда записываются завершенные этапы разработки.
 
 ## Завершенные этапы
 
-- `03-remove-legacy-database-layer-plan.md` - удаление старого Prisma/local DB
-  слоя, временный режим без runtime-базы, реструктуризация specs/roadmap/work
-  plans.
-- `04-supabase-foundation-plan.md` - чистое подключение Supabase, schema/seed,
-  data-layer чтения и базовые страницы с dev-данными.
-- `05-admin-crud-foundation-plan.md` - базовые административные формы создания
-  курса, ученика, группы и назначения ученика в группу поверх Supabase.
-- `06-mpmf-1-spec-rewrite-plan.md` - переписывание спецификаций под `MPMF 1.0`,
-  добавление page-by-page контрактов и перенос завершенных планов.
-- `07-mpmf-1-implementation-roadmap-plan.md` - полный roadmap реализации
-  `MPMF 1.0` и выбор первого кодового stage `Admin Group Detail`.
-- `08-mpmf-1-stage-1-admin-group-detail-plan.md` - административная карточка
-  группы: данные группы, состав, базовое редактирование и проблемные признаки.
-- `09-mpmf-1-stage-2-group-schedule-lessons-plan.md` - расписание группы и
-  создание занятий: правила расписания, генерация уроков и ближайшие занятия.
-- `10-mpmf-1-stage-3-teacher-groups-plan.md` - рабочие страницы групп
-  преподавателя: список своих групп, карточка группы, ученики, последние
-  занятия и быстрые переходы к журналу и уроку.
-- `11-mpmf-1-stage-4-calendar-journal-plan.md` - календарный журнал группы
-  преподавателя: уроки выбранного месяца, строки учеников, быстрые отметки
-  посещаемости и переходы к странице урока.
-- `12-mpmf-1-stage-5-lesson-page-plan.md` - страница конкретного урока
-  преподавателя: учебная запись, посещаемость, оценки, комментарии, домашнее
-  задание и материалы урока.
-- `13-mpmf-1-entry-page-plan.md` - публичная входная страница `/` и `/login`
-  без внутреннего AppShell-бара, с объяснением продукта и входом по ролям.
-- `14-mpmf-1-stage-6-tajweed-progress-plan.md` - прогресс таджвида:
-  карточка ученика преподавателя, правила, ошибки, записи прогресса и
-  read-only `/student/progress`.
-- `15-mpmf-1-stage-7-homework-materials-plan.md` - домашние задания и
-  материалы: рабочие разделы преподавателя и read-only разделы ученика.
-- `16-mpmf-1-stage-8-student-dashboard-schedule-plan.md` - первый экран и расписание ученика:
-  компактный student-dashboard, список ближайших занятий и единая подача student-разделов.
-- `17-mpmf-1-stage-9-student-learning-cabinet-plan.md` - учебный кабинет ученика:
-  read-only домашние задания, материалы, прогресс и посещаемость в compact student-дизайне.
-- `01-initial-product-implementation-plan.md` - исторический план первой
-  рабочей реализации до перехода к `MPMF 1.0`.
-- `02-system-a-ui-implementation-plan.md` - исторический план UI-направления
-  System A.
+- `03-remove-legacy-database-layer-plan.md` - удаление старого Prisma/local DB слоя.
+- `04-supabase-foundation-plan.md` - подключение Supabase, schema/seed и базовый data-layer.
+- `05-admin-crud-foundation-plan.md` - базовые формы администратора для курсов, учеников, групп и назначений.
+- `06-mpmf-1-spec-rewrite-plan.md` - переписывание спецификаций под `MPMF 1.0`.
+- `07-mpmf-1-implementation-roadmap-plan.md` - roadmap реализации `MPMF 1.0`.
+- `08-mpmf-1-stage-1-admin-group-detail-plan.md` - административная карточка группы.
+- `09-mpmf-1-stage-2-group-schedule-lessons-plan.md` - расписание группы и создание занятий.
+- `10-mpmf-1-stage-3-teacher-groups-plan.md` - рабочие страницы групп преподавателя.
+- `11-mpmf-1-stage-4-calendar-journal-plan.md` - календарный журнал группы.
+- `12-mpmf-1-stage-5-lesson-page-plan.md` - страница конкретного урока.
+- `13-mpmf-1-entry-page-plan.md` - публичная входная страница `/` и `/login`.
+- `14-mpmf-1-stage-6-tajweed-progress-plan.md` - прогресс таджвида.
+- `15-mpmf-1-stage-7-homework-materials-plan.md` - домашние задания и материалы.
+- `16-mpmf-1-stage-8-student-dashboard-schedule-plan.md` - первый экран и расписание ученика.
+- `17-mpmf-1-stage-9-student-learning-cabinet-plan.md` - учебный кабинет ученика.
+- `18-mpmf-1-stage-10-payments-plan.md` - ручной учет оплат, read-only просмотры оплат и платежные сигналы.
+- `01-initial-product-implementation-plan.md` - исторический план первой рабочей реализации.
+- `02-system-a-ui-implementation-plan.md` - исторический план UI-направления System A.
 
-Формат будущей записи:
+## Формат будущей записи
 
 - какой этап выполнен;
 - что было сделано;
 - какие файлы или части приложения изменены;
 - какие проверки прошли;
 - какой коммит соответствует этапу;
-- что осталось на следующий этап.
-
-Пример будущего файла:
-
-`01-stage-0-completed.md`
+- что остается на следующий этап.
