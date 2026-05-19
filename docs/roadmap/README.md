@@ -15,12 +15,12 @@
 
 ## 1. Текущий статус
 
-- Текущая ветка: `feat/mpmf-1-stage-15-mobile-ux-polish`.
-- Текущий этап: `MPMF 1.0 Stage 15. Mobile And UX Polish`.
-- Активный план: `docs/work-plans/active/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`.
+- Текущая ветка: `feat/mpmf-1-stage-16-release-hardening`.
+- Текущий этап: `MPMF 1.0 Stage 16. MPMF 1.0 Release Hardening`.
+- Активный план: `docs/work-plans/active/24-mpmf-1-stage-16-release-hardening-plan.md`.
 - Статус: активная реализация.
-- Предыдущий этап: `MPMF 1.0 Stage 14. Cross-role Smoke Flow`, завершен и смержен в `main`.
-- Запись предыдущего этапа: `docs/work-plans/completed/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`.
+- Предыдущий этап: `MPMF 1.0 Stage 15. Mobile And UX Polish`, завершен и смержен в `main`.
+- Запись предыдущего этапа: `docs/work-plans/completed/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`.
 
 ## 2. Правило перехода между этапами
 
@@ -56,21 +56,24 @@
 - Stage 12: Access, Empty States And Errors.
 - Stage 13: Mass Payment Creation, PR #43.
 - Stage 14: Cross-role Smoke Flow, PR #44.
+- Stage 15: Mobile And UX Polish, PR #45.
 
 ## 4. Активный этап
 
-### MPMF 1.0 Stage 15: Mobile And UX Polish
+### MPMF 1.0 Stage 16: MPMF 1.0 Release Hardening
 
 План:
 
-`docs/work-plans/active/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
+`docs/work-plans/active/24-mpmf-1-stage-16-release-hardening-plan.md`
 
 Маршруты:
 
 - `/admin`;
 - `/teacher`;
 - `/student`;
-- ключевые рабочие списки, карточки, журнал, формы и пустые состояния.
+- финальная проверка всех основных рабочих областей;
+- Supabase schema/seed;
+- release readiness и known limitations.
 
 Статус:
 
@@ -80,8 +83,8 @@
 
 Следующий stage после merge текущего stage:
 
-`Stage 16. MPMF 1.0 Release Hardening`
+`MPMF 1.0 завершен. Следующий roadmap открывается отдельно.`
 
 После него:
 
-финальная подготовка MPMF 1.0 к завершению.
+`Production Auth And Real Accounts` как первый кандидат следующего блока.

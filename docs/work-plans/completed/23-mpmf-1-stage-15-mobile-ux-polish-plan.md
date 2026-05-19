@@ -2,10 +2,11 @@
 
 ## 0. Статус
 
-- Статус плана: активная реализация.
+- Статус плана: завершен.
 - Ветка: `feat/mpmf-1-stage-15-mobile-ux-polish`.
 - Roadmap: `docs/roadmap/mpmf-1-implementation-roadmap.md`.
-- Предыдущий завершенный stage: `MPMF 1.0 Stage 14. Cross-role Smoke Flow`, смержен в `main`.
+- Stage завершен, закоммичен и смержен в `main` через PR #45.
+- Коммит stage: `e0c8258 Polish mobile UX for stage 15`.
 
 ## 1. Цель
 

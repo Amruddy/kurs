@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
+`24-mpmf-1-stage-16-release-hardening-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/22-mpmf-1-stage-14-cross-role-smoke-flow-plan.md`
+`../completed/23-mpmf-1-stage-15-mobile-ux-polish-plan.md`
 
 Codex перед разработкой должен читать:
 
