@@ -1250,6 +1250,23 @@ td a,
   overflow-wrap: anywhere;
 }
 
+.table-detail {
+  display: grid;
+  gap: 3px;
+  min-width: 150px;
+}
+
+.table-detail strong {
+  color: var(--primary);
+  font-weight: 650;
+}
+
+.table-detail span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .table-wrap th a {
   display: grid;
   gap: 2px;

@@ -121,4 +121,4 @@
 
 Следующий кодовый stage:
 
-`Auth Stage 3. Account Linking And Schema`
+`Auth Stage 4. Admin Invitations`

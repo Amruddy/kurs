@@ -2,6 +2,8 @@ import Link from "next/link";
 import {
   archiveStudent,
   assignStudentToGroupFromStudent,
+  disableStudentAccess,
+  inviteStudentAccess,
   removeStudentFromGroupFromStudent,
   updateStudent,
 } from "@/app/admin/actions";
@@ -17,6 +19,10 @@ type AdminStudentPageProps = {
   params: Promise<{
     studentId: string;
   }>;
+  searchParams: Promise<{
+    accessError?: string;
+    accessMessage?: string;
+  }>;
 };
 
 const studentStatuses = [
@@ -24,6 +30,17 @@ const studentStatuses = [
   { label: "Пауза", value: "paused" },
   { label: "Архив", value: "archived" },
 ];
+
+const accessMessages: Record<string, string> = {
+  access_disabled: "Доступ отключен. Учебная история сохранена.",
+  invite_sent: "Приглашение отправлено через Supabase Auth.",
+};
+
+const accessErrors: Record<string, string> = {
+  disable_failed: "Не удалось отключить доступ. Проверьте Supabase и попробуйте еще раз.",
+  invite_failed: "Не удалось отправить приглашение. Проверьте email, Supabase Auth и попробуйте еще раз.",
+  supabase_failed: "Supabase Auth не выполнил действие. Проверьте настройки Auth, SMTP и Site URL.",
+};
 
 function StudentPaymentDetailsForm({
   payment,
@@ -44,10 +61,40 @@ function StudentPaymentDetailsForm({
   );
 }
 
-export default async function AdminStudentPage({ params }: AdminStudentPageProps) {
+function StudentAccessAction({ data }: { data: AdminStudentDetailData }) {
+  if (data.accessAction === "invite" || data.accessAction === "resend") {
+    return (
+      <form action={inviteStudentAccess.bind(null, data.id)} className="inline-form">
+        <button className="button compact-button" type="submit">
+          {data.accessAction === "resend" ? "Отправить повторно" : "Пригласить"}
+        </button>
+      </form>
+    );
+  }
+
+  if (data.accessAction === "disable") {
+    return (
+      <form action={disableStudentAccess.bind(null, data.id)} className="inline-form">
+        <ConfirmSubmitButton
+          className="danger-button compact-button"
+          message={`Отключить доступ ученика ${data.name}? Учебная история сохранится.`}
+        >
+          Отключить доступ
+        </ConfirmSubmitButton>
+      </form>
+    );
+  }
+
+  return null;
+}
+
+export default async function AdminStudentPage({ params, searchParams }: AdminStudentPageProps) {
   const session = await requireWorkspace("admin");
   const canWritePayments = hasPermission(session, "payments:write");
   const { studentId } = await params;
+  const query = await searchParams;
+  const accessMessage = query.accessMessage ? accessMessages[query.accessMessage] : null;
+  const accessError = query.accessError ? accessErrors[query.accessError] ?? accessErrors.invite_failed : null;
   const result = await getAdminStudentDetail(session.organizationId, studentId);
 
   return (
@@ -63,6 +110,17 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
 
         return (
           <>
+            {accessMessage ? (
+              <div className="success-message" role="status">
+                {accessMessage}
+              </div>
+            ) : null}
+            {accessError ? (
+              <div className="error-message" role="alert">
+                {accessError}
+              </div>
+            ) : null}
+
             <MetricGrid items={data.metrics} />
 
             <section className="admin-detail-grid">
@@ -192,11 +250,17 @@ export default async function AdminStudentPage({ params }: AdminStudentPageProps
                     <span>Email</span>
                     <strong>{data.email || "не заполнен"}</strong>
                   </div>
+                  <div className="info-row">
+                    <span>Доступ</span>
+                    <strong>{data.accessStatus}</strong>
+                    <p>{data.accessDetail}</p>
+                  </div>
                 </div>
                 <div className="button-row">
                   <Link className="secondary-button compact-button" href="/admin/students">
                     К списку учеников
                   </Link>
+                  <StudentAccessAction data={data} />
                   {data.statusValue !== "archived" ? (
                     <form action={archiveStudentAction} className="inline-form">
                       <ConfirmSubmitButton className="danger-button compact-button" message={`Архивировать ученика ${data.name}?`}>

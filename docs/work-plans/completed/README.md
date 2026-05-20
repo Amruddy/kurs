@@ -29,6 +29,7 @@
 - `25-production-auth-real-accounts-plan.md` - подготовка production-auth блока: specs, roadmap, real Supabase invite flow и решения по реальным аккаунтам.
 - `26-release-1-roadmap-setup-plan.md` - оформление `Release 1.0` как верхнего релизного блока, перенос active plan и фиксация будущего финального UI/UX stage.
 - `27-auth-stage-2-supabase-auth-session-foundation-plan.md` - основа Supabase Auth session: SSR/client helpers, callback, login/logout/password reset, profile, dev-auth fallback по флагу и таймауты Supabase.
+- `28-auth-stage-3-account-linking-schema-plan.md` - связь Supabase Auth user с доменной таблицей `users`: `auth_user_id`, `auth_status`, SQL-инструкция, seed/dev users и session resolver через активный профиль и членство.
 - `01-initial-product-implementation-plan.md` - исторический план первой рабочей реализации.
 - `02-system-a-ui-implementation-plan.md` - исторический план UI-направления System A.
 

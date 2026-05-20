@@ -35,6 +35,30 @@ type CreateTeacherInput = {
   phone: string | null;
 };
 
+type InviteAdminTeacherAccessInput = {
+  organizationId: string;
+  redirectTo: string;
+  userId: string;
+};
+
+type InviteAdminStudentAccessInput = {
+  organizationId: string;
+  redirectTo: string;
+  studentId: string;
+};
+
+type DisableAdminTeacherAccessInput = {
+  actorUserId: string;
+  organizationId: string;
+  userId: string;
+};
+
+type DisableAdminStudentAccessInput = {
+  actorUserId: string;
+  organizationId: string;
+  studentId: string;
+};
+
 type UpdateStudentInput = {
   organizationId: string;
   studentId: string;
@@ -121,9 +145,33 @@ type LessonIdRow = {
 };
 
 type OrganizationMemberRoleRow = {
+  permissions?: unknown;
   roles: unknown;
   status: string | null;
 };
+
+type UserAuthAccessRow = {
+  auth_status: string | null;
+  auth_user_id: string | null;
+  email: string;
+  id: string;
+  name: string;
+  phone: string | null;
+  status: string;
+};
+
+type StudentAuthAccessRow = {
+  email: string | null;
+  id: string;
+  name: string;
+  phone: string | null;
+  status: string;
+  user_id: string | null;
+};
+
+const userAuthAccessSelect = "id,name,email,phone,status,auth_user_id,auth_status";
+const studentAuthAccessSelect = "id,user_id,name,phone,email,status";
+const longBanDuration = "876000h";
 
 function assertWriteSuccess(error: { message: string } | null, context: string) {
   if (error) {
@@ -135,6 +183,277 @@ function assertAllowedValue(value: string, allowed: string[], label: string) {
   if (!allowed.includes(value)) {
     throw new Error(`${label}: неверное значение.`);
   }
+}
+
+function normalizeEmail(email: string | null | undefined, label: string) {
+  const normalized = email?.trim().toLowerCase();
+
+  if (!normalized) {
+    throw new Error(`${label}: заполните email перед отправкой приглашения.`);
+  }
+
+  return normalized;
+}
+
+function assertActiveUserForAccess(user: UserAuthAccessRow, context: string) {
+  if (user.status !== "active") {
+    throw new Error(`${context}: профиль пользователя не активен.`);
+  }
+
+  if (user.auth_status === "disabled") {
+    throw new Error(`${context}: доступ пользователя уже отключен.`);
+  }
+
+  if (user.auth_status === "active") {
+    throw new Error(`${context}: доступ пользователя уже активен.`);
+  }
+}
+
+function authAdminErrorMessage(error: { message: string } | null, context: string) {
+  if (!error) {
+    return;
+  }
+
+  throw new Error(`${context}: ${error.message}`);
+}
+
+async function getOrganizationMember(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  organizationId: string,
+  userId: string,
+  context: string,
+) {
+  const memberResult = await client
+    .from("organization_members")
+    .select("roles,permissions,status")
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  assertWriteSuccess(memberResult.error, context);
+
+  return memberResult.data as OrganizationMemberRoleRow | null;
+}
+
+async function getUserForRole(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  organizationId: string,
+  userId: string,
+  role: "student" | "teacher",
+  context: string,
+) {
+  const [userResult, member] = await Promise.all([
+    client.from("users").select(userAuthAccessSelect).eq("id", userId).maybeSingle(),
+    getOrganizationMember(client, organizationId, userId, `${context}: проверка роли`),
+  ]);
+
+  assertWriteSuccess(userResult.error, context);
+
+  const user = userResult.data as UserAuthAccessRow | null;
+  const roles = Array.isArray(member?.roles) ? member.roles : [];
+
+  if (!user || !member || member.status !== "active" || !roles.includes(role)) {
+    throw new Error(`${context}: пользователь не найден в текущей организации.`);
+  }
+
+  return user;
+}
+
+async function sendSupabaseInvite(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  input: {
+    organizationId: string;
+    redirectTo: string;
+    role: "student" | "teacher";
+    user: UserAuthAccessRow;
+  },
+) {
+  const email = normalizeEmail(input.user.email, "Приглашение");
+  const inviteResult = await client.auth.admin.inviteUserByEmail(email, {
+    data: {
+      app_user_id: input.user.id,
+      name: input.user.name,
+      organization_id: input.organizationId,
+      role: input.role,
+    },
+    redirectTo: input.redirectTo,
+  });
+
+  authAdminErrorMessage(inviteResult.error, "Supabase Auth приглашение");
+
+  const authUserId = inviteResult.data.user?.id;
+
+  if (!authUserId) {
+    throw new Error("Supabase Auth приглашение: Supabase не вернул id auth-пользователя.");
+  }
+
+  return authUserId;
+}
+
+async function markUserInvited(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+  authUserId: string,
+  context: string,
+) {
+  const result = await client
+    .from("users")
+    .update({
+      auth_status: "invited",
+      auth_user_id: authUserId,
+      invited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, context);
+
+  if (!result.data) {
+    throw new Error(`${context}: пользователь не найден.`);
+  }
+}
+
+async function disableAuthUserIfLinked(client: ReturnType<typeof createSupabaseAdminClient>, user: UserAuthAccessRow) {
+  if (!user.auth_user_id) {
+    return;
+  }
+
+  const result = await client.auth.admin.updateUserById(user.auth_user_id, {
+    ban_duration: longBanDuration,
+  });
+
+  authAdminErrorMessage(result.error, "Supabase Auth отключение доступа");
+}
+
+async function markUserDisabled(client: ReturnType<typeof createSupabaseAdminClient>, userId: string, context: string) {
+  const result = await client
+    .from("users")
+    .update({
+      auth_status: "disabled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(result.error, context);
+
+  if (!result.data) {
+    throw new Error(`${context}: пользователь не найден.`);
+  }
+}
+
+async function ensureStudentUserProfile(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  organizationId: string,
+  student: StudentAuthAccessRow,
+) {
+  const email = normalizeEmail(student.email, "Приглашение ученика");
+
+  if (student.status === "archived") {
+    throw new Error("Приглашение ученика: архивного ученика нельзя приглашать.");
+  }
+
+  if (student.user_id) {
+    const userResult = await client.from("users").select(userAuthAccessSelect).eq("id", student.user_id).maybeSingle();
+    assertWriteSuccess(userResult.error, "Профиль ученика");
+
+    const user = userResult.data as UserAuthAccessRow | null;
+
+    if (!user) {
+      throw new Error("Профиль ученика: связанный пользователь не найден.");
+    }
+
+    return user;
+  }
+
+  const existingUserResult = await client.from("users").select(userAuthAccessSelect).eq("email", email).maybeSingle();
+  assertWriteSuccess(existingUserResult.error, "Проверка пользователя ученика");
+
+  let user = existingUserResult.data as UserAuthAccessRow | null;
+
+  if (!user) {
+    const createUserResult = await client
+      .from("users")
+      .insert({
+        auth_status: "profile_only",
+        email,
+        name: student.name,
+        phone: student.phone,
+        status: "active",
+      })
+      .select(userAuthAccessSelect)
+      .single();
+
+    assertWriteSuccess(createUserResult.error, "Создание пользователя ученика");
+    user = createUserResult.data as UserAuthAccessRow | null;
+  } else {
+    const updateUserResult = await client
+      .from("users")
+      .update({
+        name: student.name,
+        phone: student.phone,
+        status: "active",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id)
+      .select(userAuthAccessSelect)
+      .maybeSingle();
+
+    assertWriteSuccess(updateUserResult.error, "Обновление пользователя ученика");
+    user = updateUserResult.data as UserAuthAccessRow | null;
+  }
+
+  if (!user) {
+    throw new Error("Профиль ученика: Supabase не вернул пользователя.");
+  }
+
+  const studentLinkResult = await client
+    .from("students")
+    .update({
+      user_id: user.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", student.id)
+    .eq("organization_id", organizationId)
+    .select("id")
+    .maybeSingle();
+
+  assertWriteSuccess(studentLinkResult.error, "Связь ученика с пользователем");
+
+  if (!studentLinkResult.data) {
+    throw new Error("Связь ученика с пользователем: ученик не найден.");
+  }
+
+  return user;
+}
+
+async function ensureOrganizationRole(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  organizationId: string,
+  userId: string,
+  role: "student" | "teacher",
+) {
+  const existingMember = await getOrganizationMember(client, organizationId, userId, "Проверка роли доступа");
+  const existingRoles = Array.isArray(existingMember?.roles) ? existingMember.roles : [];
+  const existingPermissions = Array.isArray(existingMember?.permissions) ? existingMember.permissions : [];
+  const roles = existingRoles.includes(role) ? existingRoles : [...existingRoles, role];
+
+  const memberResult = await client.from("organization_members").upsert(
+    {
+      organization_id: organizationId,
+      permissions: existingPermissions,
+      roles,
+      status: "active",
+      updated_at: new Date().toISOString(),
+      user_id: userId,
+    },
+    { onConflict: "organization_id,user_id" },
+  );
+
+  assertWriteSuccess(memberResult.error, "Роль доступа");
 }
 
 function assertDateString(value: string, label: string) {
@@ -498,6 +817,96 @@ export async function createAdminTeacher(input: CreateTeacherInput) {
   );
 
   assertWriteSuccess(memberResult.error, "Роль преподавателя");
+}
+
+export async function inviteAdminTeacherAccess(input: InviteAdminTeacherAccessInput) {
+  const supabase = createSupabaseAdminClient();
+  const user = await getUserForRole(supabase, input.organizationId, input.userId, "teacher", "Приглашение преподавателя");
+
+  assertActiveUserForAccess(user, "Приглашение преподавателя");
+
+  const authUserId = await sendSupabaseInvite(supabase, {
+    organizationId: input.organizationId,
+    redirectTo: input.redirectTo,
+    role: "teacher",
+    user,
+  });
+
+  await markUserInvited(supabase, user.id, authUserId, "Обновление доступа преподавателя");
+}
+
+export async function inviteAdminStudentAccess(input: InviteAdminStudentAccessInput) {
+  const supabase = createSupabaseAdminClient();
+  const studentResult = await supabase
+    .from("students")
+    .select(studentAuthAccessSelect)
+    .eq("id", input.studentId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(studentResult.error, "Приглашение ученика");
+
+  const student = studentResult.data as StudentAuthAccessRow | null;
+
+  if (!student) {
+    throw new Error("Приглашение ученика: ученик не найден.");
+  }
+
+  const user = await ensureStudentUserProfile(supabase, input.organizationId, student);
+  assertActiveUserForAccess(user, "Приглашение ученика");
+  await ensureOrganizationRole(supabase, input.organizationId, user.id, "student");
+
+  const authUserId = await sendSupabaseInvite(supabase, {
+    organizationId: input.organizationId,
+    redirectTo: input.redirectTo,
+    role: "student",
+    user,
+  });
+
+  await markUserInvited(supabase, user.id, authUserId, "Обновление доступа ученика");
+}
+
+export async function disableAdminTeacherAccess(input: DisableAdminTeacherAccessInput) {
+  if (input.userId === input.actorUserId) {
+    throw new Error("Отключение доступа: нельзя отключить доступ текущего администратора.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const user = await getUserForRole(supabase, input.organizationId, input.userId, "teacher", "Отключение преподавателя");
+
+  await disableAuthUserIfLinked(supabase, user);
+  await markUserDisabled(supabase, user.id, "Отключение преподавателя");
+}
+
+export async function disableAdminStudentAccess(input: DisableAdminStudentAccessInput) {
+  const supabase = createSupabaseAdminClient();
+  const studentResult = await supabase
+    .from("students")
+    .select(studentAuthAccessSelect)
+    .eq("id", input.studentId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+
+  assertWriteSuccess(studentResult.error, "Отключение ученика");
+
+  const student = studentResult.data as StudentAuthAccessRow | null;
+
+  if (!student) {
+    throw new Error("Отключение ученика: ученик не найден.");
+  }
+
+  if (!student.user_id) {
+    throw new Error("Отключение ученика: у ученика еще нет профиля доступа.");
+  }
+
+  if (student.user_id === input.actorUserId) {
+    throw new Error("Отключение доступа: нельзя отключить доступ текущего администратора.");
+  }
+
+  const user = await getUserForRole(supabase, input.organizationId, student.user_id, "student", "Отключение ученика");
+
+  await disableAuthUserIfLinked(supabase, user);
+  await markUserDisabled(supabase, user.id, "Отключение ученика");
 }
 
 export async function createAdminGroup(input: CreateGroupInput) {

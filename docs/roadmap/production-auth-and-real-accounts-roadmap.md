@@ -71,7 +71,7 @@
 
 Статус:
 
-активный stage.
+завершен, PR #50.
 
 Цель:
 
@@ -90,6 +90,10 @@
 - multi-tenant self-service.
 
 ### Auth Stage 4. Admin Invitations
+
+Статус:
+
+активный stage.
 
 Цель:
 
@@ -129,6 +133,6 @@
 
 ## 4. Первый implementation stage
 
-После завершения Auth Stage 2 текущим кодовым stage должен стать:
+После завершения Auth Stage 3 текущим кодовым stage должен стать:
 
-`Auth Stage 3. Account Linking And Schema`
+`Auth Stage 4. Admin Invitations`
