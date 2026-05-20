@@ -54,11 +54,14 @@ const errorMessages: Record<string, string> = {
   auth_callback_missing_code: "Ссылка входа неполная. Запросите новую ссылку.",
   dev_auth_disabled: "Dev-вход доступен только при включенном локальном флаге DESHAR_ENABLE_DEV_AUTH=1.",
   invalid_credentials: "Email или пароль неверные.",
+  membership_not_found: "Профиль найден, но активная рабочая область Deshar для него не настроена.",
   missing_credentials: "Введите email и пароль.",
   missing_reset_email: "Введите email для восстановления доступа.",
+  profile_disabled: "Доступ для этого профиля отключен. Обратитесь к администратору.",
   profile_not_found: "Аккаунт найден, но профиль Deshar для этого email еще не подключен.",
   reset_failed: "Не удалось отправить письмо восстановления. Проверьте email и настройки Supabase.",
   supabase_not_configured: "Supabase Auth еще не настроен для этого окружения.",
+  workspace_not_available: "Для этого профиля нет доступной рабочей области.",
 };
 
 const messageTexts: Record<string, string> = {

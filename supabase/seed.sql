@@ -21,6 +21,10 @@ on conflict (id) do update set
   status = excluded.status,
   updated_at = now();
 
+update users
+set auth_status = 'profile_only'
+where auth_status is null;
+
 insert into organization_members (id, organization_id, user_id, roles, permissions, status)
 values
   (

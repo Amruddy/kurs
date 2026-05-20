@@ -2,13 +2,15 @@
 
 ## 0. Статус
 
-- Статус плана: активный следующий кодовый stage.
+- Статус плана: завершен, смержен в `main` через PR #49.
 - Большой блок: `Release 1.0`.
 - Подблок: `Production Auth And Real Accounts`.
 - Планируемая ветка: `feat/auth-stage-2-supabase-session-foundation`.
 - Roadmap релиза: `docs/roadmap/release-1-roadmap.md`.
 - Roadmap auth-блока: `docs/roadmap/production-auth-and-real-accounts-roadmap.md`.
 - Предыдущий завершенный plan: `docs/work-plans/completed/26-release-1-roadmap-setup-plan.md`.
+- Коммит stage: `311b91e Implement auth stage 2 Supabase session foundation`.
+- Merge commit: `6d87cfc Merge pull request #49 from Amruddy/feat/auth-stage-2-supabase-session-foundation`.
 
 ## 1. Цель
 

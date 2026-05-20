@@ -110,6 +110,8 @@ type WorkspaceAccessSubject = {
 };
 
 type AppUserRow = {
+  auth_status: string | null;
+  auth_user_id: string | null;
   email: string;
   id: string;
   name: string;
@@ -127,6 +129,28 @@ type AppOrganizationRow = {
   name: string;
   status: string;
 };
+
+export type SupabaseAuthIdentity = {
+  authUserId: string;
+  email: string;
+};
+
+export type SessionResolutionFailure =
+  | "membership_not_found"
+  | "profile_disabled"
+  | "profile_not_found"
+  | "signed_out"
+  | "workspace_not_available";
+
+export type SessionResolutionResult =
+  | {
+      failure: null;
+      session: AppSession;
+    }
+  | {
+      failure: SessionResolutionFailure;
+      session: null;
+    };
 
 export const activeWorkspaceCookieName = "deshar_workspace";
 export const devUserCookieName = "dev_user_email";
@@ -278,27 +302,114 @@ function getRows<T>(result: { data: T[] | null; error: { message: string } | nul
   return result.data ?? [];
 }
 
-export async function resolveSessionByEmail(email: string, requestedWorkspace?: WorkspaceRole): Promise<AppSession | null> {
+function readySession(session: AppSession): SessionResolutionResult {
+  return { failure: null, session };
+}
+
+function failedSession(failure: SessionResolutionFailure): SessionResolutionResult {
+  return { failure, session: null };
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+const appUserSelect = "id,name,email,status,auth_user_id,auth_status";
+
+async function updateSignedInUser(client: ReturnType<typeof createSupabaseAdminClient>, user: AppUserRow, authUserId?: string) {
+  const update: Partial<Pick<AppUserRow, "auth_status" | "auth_user_id">> & { last_sign_in_at: string } = {
+    auth_status: "active",
+    last_sign_in_at: new Date().toISOString(),
+  };
+
+  if (authUserId && !user.auth_user_id) {
+    update.auth_user_id = authUserId;
+  }
+
+  return getSingleRow(
+    await client.from("users").update(update).eq("id", user.id).select(appUserSelect).maybeSingle(),
+    "Обновление auth-профиля пользователя",
+  ) as AppUserRow | null;
+}
+
+async function findOrLinkUserByAuthIdentity(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  identity: SupabaseAuthIdentity,
+): Promise<AppUserRow | SessionResolutionFailure> {
+  const userByAuthId = getSingleRow(
+    await client.from("users").select(appUserSelect).eq("auth_user_id", identity.authUserId).maybeSingle(),
+    "Профиль пользователя по Supabase Auth",
+  ) as AppUserRow | null;
+
+  if (userByAuthId) {
+    return userByAuthId;
+  }
+
+  const userByEmail = getSingleRow(
+    await client.from("users").select(appUserSelect).eq("email", normalizeEmail(identity.email)).maybeSingle(),
+    "Профиль пользователя по email",
+  ) as AppUserRow | null;
+
+  if (!userByEmail || (userByEmail.auth_user_id && userByEmail.auth_user_id !== identity.authUserId)) {
+    return "profile_not_found";
+  }
+
+  const linkedUser = getSingleRow(
+    await client
+      .from("users")
+      .update({
+        auth_status: "active",
+        auth_user_id: identity.authUserId,
+        last_sign_in_at: new Date().toISOString(),
+      })
+      .eq("id", userByEmail.id)
+      .is("auth_user_id", null)
+      .select(appUserSelect)
+      .maybeSingle(),
+    "Связь профиля пользователя с Supabase Auth",
+  ) as AppUserRow | null;
+
+  if (linkedUser) {
+    return linkedUser;
+  }
+
+  return (
+    (getSingleRow(
+      await client.from("users").select(appUserSelect).eq("auth_user_id", identity.authUserId).maybeSingle(),
+      "Профиль пользователя после связи Supabase Auth",
+    ) as AppUserRow | null) ?? "profile_not_found"
+  );
+}
+
+async function buildSessionForUser(
+  client: ReturnType<typeof createSupabaseAdminClient>,
+  user: AppUserRow,
+  requestedWorkspace?: WorkspaceRole,
+  authUserId?: string,
+): Promise<SessionResolutionResult> {
+  if (user.status !== "active" || user.auth_status === "disabled") {
+    return failedSession("profile_disabled");
+  }
+
+  const activeUser = authUserId ? await updateSignedInUser(client, user, authUserId) : user;
+
+  if (!activeUser) {
+    return failedSession("profile_not_found");
+  }
+
   try {
-    const client = createSupabaseAdminClient();
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = getSingleRow(
-      await client.from("users").select("id,name,email,status").eq("email", normalizedEmail).maybeSingle(),
-      "Профиль пользователя",
-    ) as AppUserRow | null;
-
-    if (!user || user.status !== "active") {
-      return null;
-    }
-
     const members = getRows(
       await client
         .from("organization_members")
         .select("organization_id,roles,permissions,status")
-        .eq("user_id", user.id)
+        .eq("user_id", activeUser.id)
         .eq("status", "active"),
       "Рабочие области пользователя",
     ) as AppMemberRow[];
+
+    if (members.length === 0) {
+      return failedSession("membership_not_found");
+    }
 
     for (const member of members) {
       const roles = parseWorkspaceRoles(member.roles);
@@ -319,21 +430,68 @@ export async function resolveSessionByEmail(email: string, requestedWorkspace?: 
       }
 
       return {
-        activeWorkspace,
-        email: user.email,
-        name: user.name,
-        organizationId: member.organization_id,
-        organizationName: organization.name,
-        permissions,
-        roles,
-        userId: user.id,
+        failure: null,
+        session: {
+          activeWorkspace,
+          email: activeUser.email,
+          name: activeUser.name,
+          organizationId: member.organization_id,
+          organizationName: organization.name,
+          permissions,
+          roles,
+          userId: activeUser.id,
+        },
       };
     }
 
-    return null;
+    return failedSession("workspace_not_available");
+  } catch (error) {
+    if (error instanceof SupabaseServerConfigError) {
+      return failedSession("profile_not_found");
+    }
+
+    throw error;
+  }
+}
+
+export async function resolveSessionByEmail(email: string, requestedWorkspace?: WorkspaceRole): Promise<AppSession | null> {
+  try {
+    const client = createSupabaseAdminClient();
+    const user = getSingleRow(
+      await client.from("users").select(appUserSelect).eq("email", normalizeEmail(email)).maybeSingle(),
+      "Профиль пользователя",
+    ) as AppUserRow | null;
+
+    if (!user) {
+      return null;
+    }
+
+    return (await buildSessionForUser(client, user, requestedWorkspace)).session;
   } catch (error) {
     if (error instanceof SupabaseServerConfigError) {
       return null;
+    }
+
+    throw error;
+  }
+}
+
+export async function resolveSessionByAuthIdentity(
+  identity: SupabaseAuthIdentity,
+  requestedWorkspace?: WorkspaceRole,
+): Promise<SessionResolutionResult> {
+  try {
+    const client = createSupabaseAdminClient();
+    const userOrFailure = await findOrLinkUserByAuthIdentity(client, identity);
+
+    if (typeof userOrFailure === "string") {
+      return failedSession(userOrFailure);
+    }
+
+    return buildSessionForUser(client, userOrFailure, requestedWorkspace, identity.authUserId);
+  } catch (error) {
+    if (error instanceof SupabaseServerConfigError) {
+      return failedSession("profile_not_found");
     }
 
     throw error;
@@ -380,17 +538,23 @@ async function getDevCookieSession(): Promise<DevSession | null> {
 }
 
 export async function getAppSession(): Promise<AppSession | null> {
+  return (await getAppSessionResult()).session;
+}
+
+export async function getAppSessionResult(): Promise<SessionResolutionResult> {
   const supabaseIdentity = await getSupabaseAuthIdentity();
 
   if (supabaseIdentity) {
-    return resolveSessionByEmail(supabaseIdentity.email, await readSelectedWorkspaceCookie());
+    return resolveSessionByAuthIdentity(supabaseIdentity, await readSelectedWorkspaceCookie());
   }
 
   if (!isDevAuthEnabled()) {
-    return null;
+    return failedSession("signed_out");
   }
 
-  return getDevCookieSession();
+  const session = await getDevCookieSession();
+
+  return session ? readySession(session) : failedSession("signed_out");
 }
 
 export async function getDevSession(): Promise<DevSession | null> {
@@ -398,10 +562,11 @@ export async function getDevSession(): Promise<DevSession | null> {
 }
 
 export async function requireWorkspace(requiredWorkspace: WorkspaceRole) {
-  const session = await getAppSession();
+  const result = await getAppSessionResult();
+  const session = result.session;
 
   if (!session) {
-    redirect("/login");
+    redirect(result.failure === "signed_out" ? "/login" : `/login?error=${result.failure}`);
   }
 
   if (!hasWorkspaceAccess(session, requiredWorkspace) || session.activeWorkspace !== requiredWorkspace) {

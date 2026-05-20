@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`27-auth-stage-2-supabase-auth-session-foundation-plan.md`
+`28-auth-stage-3-account-linking-schema-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/26-release-1-roadmap-setup-plan.md`
+`../completed/27-auth-stage-2-supabase-auth-session-foundation-plan.md`
 
 Codex перед разработкой должен читать:
 
