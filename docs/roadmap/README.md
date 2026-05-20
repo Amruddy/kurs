@@ -18,10 +18,10 @@
 ## 1. Текущий статус
 
 - Текущий большой блок: `Release 1.0`.
-- Последний documentation stage: `Release Roadmap Setup`.
-- Активный stage: `Auth Stage 2. Supabase Auth Session Foundation`.
-- Активный план: `docs/work-plans/active/27-auth-stage-2-supabase-auth-session-foundation-plan.md`.
-- Планируемая ветка следующего кодового stage: `feat/auth-stage-2-supabase-session-foundation`.
+- Последний завершенный кодовый stage: `Auth Stage 2. Supabase Auth Session Foundation`.
+- Активный stage: `Auth Stage 3. Account Linking And Schema`.
+- Активный план: `docs/work-plans/active/28-auth-stage-3-account-linking-schema-plan.md`.
+- Планируемая ветка текущего кодового stage: `feat/auth-stage-3-account-linking-schema`.
 - Предыдущий блок: `MPMF 1.0`, завершен и смержен в `main`.
 - Запись завершения MPMF 1.0: `docs/release/mpmf-1-release-readiness.md`.
 
@@ -92,15 +92,15 @@ Roadmap:
 
 Активный stage:
 
-`Auth Stage 2. Supabase Auth Session Foundation`
+`Auth Stage 3. Account Linking And Schema`
 
 Активный work plan:
 
-`docs/work-plans/active/27-auth-stage-2-supabase-auth-session-foundation-plan.md`
+`docs/work-plans/active/28-auth-stage-3-account-linking-schema-plan.md`
 
 После него:
 
-`Auth Stage 3. Account Linking And Schema`
+`Auth Stage 4. Admin Invitations`
 
 ## 6. Следующие крупные stages Release 1.0
 

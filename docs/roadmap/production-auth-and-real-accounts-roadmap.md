@@ -45,6 +45,10 @@
 
 ### Auth Stage 2. Supabase Auth Session Foundation
 
+Статус:
+
+завершен, PR #49.
+
 Цель:
 
 подключить настоящую Supabase Auth session к Next.js app.
@@ -64,6 +68,10 @@
 - сложная страница управления пользователями.
 
 ### Auth Stage 3. Account Linking And Schema
+
+Статус:
+
+активный stage.
 
 Цель:
 
@@ -121,6 +129,6 @@
 
 ## 4. Первый implementation stage
 
-После утверждения этого roadmap первым кодовым stage должен стать:
+После завершения Auth Stage 2 текущим кодовым stage должен стать:
 
-`Auth Stage 2. Supabase Auth Session Foundation`
+`Auth Stage 3. Account Linking And Schema`

@@ -19,3 +19,12 @@
 Скрипт проверяет `public.groups`, показывает индексы, политики и блокировки,
 создает недостающие индексы для групповых страниц и обновляет статистику
 планировщика.
+
+## Auth Stage 3
+
+Для существующего Supabase-проекта перед проверкой реального входа выполнить в
+Supabase SQL Editor `auth-stage-3-account-linking.sql`.
+
+Скрипт добавляет `users.auth_user_id`, `users.auth_status`, `users.invited_at`,
+`users.last_sign_in_at`, ограничения и индексы для связи Supabase Auth user с
+доменным профилем Deshar.

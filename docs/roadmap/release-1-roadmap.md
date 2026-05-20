@@ -121,4 +121,4 @@
 
 Следующий кодовый stage:
 
-`Auth Stage 2. Supabase Auth Session Foundation`
+`Auth Stage 3. Account Linking And Schema`

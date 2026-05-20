@@ -14,7 +14,7 @@ import {
   hasWorkspaceAccess,
   isDevAuthEnabled,
   legacyDevWorkspaceCookieName,
-  resolveSessionByEmail,
+  resolveSessionByAuthIdentity,
   setActiveWorkspaceCookie,
   workspaceConfig,
   type DevUserKey,
@@ -91,11 +91,15 @@ export async function loginWithPassword(formData: FormData) {
       loginRedirect({ error: "invalid_credentials" });
     }
 
-    const session = await resolveSessionByEmail(result.data.user.email);
+    const resolved = await resolveSessionByAuthIdentity({
+      authUserId: result.data.user.id,
+      email: result.data.user.email,
+    });
+    const session = resolved.session;
 
     if (!session) {
       await supabase.auth.signOut();
-      loginRedirect({ error: "profile_not_found" });
+      loginRedirect({ error: resolved.failure ?? "profile_not_found" });
     }
 
     await setActiveWorkspaceCookie(session.activeWorkspace);

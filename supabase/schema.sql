@@ -12,13 +12,35 @@ create table if not exists organizations (
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid,
   name text not null,
   email text not null unique,
   phone text,
+  auth_status text not null default 'profile_only',
+  invited_at timestamptz,
+  last_sign_in_at timestamptz,
   status text not null default 'active',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table users add column if not exists auth_user_id uuid;
+alter table users add column if not exists auth_status text not null default 'profile_only';
+alter table users add column if not exists invited_at timestamptz;
+alter table users add column if not exists last_sign_in_at timestamptz;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'users_auth_status_check'
+      and conrelid = 'public.users'::regclass
+  ) then
+    alter table users add constraint users_auth_status_check
+      check (auth_status in ('profile_only', 'invited', 'active', 'disabled'));
+  end if;
+end $$;
 
 create table if not exists organization_members (
   id uuid primary key default gen_random_uuid(),
@@ -283,6 +305,8 @@ create table if not exists payment_history (
 );
 
 create index if not exists idx_courses_organization_id on courses(organization_id);
+create unique index if not exists idx_users_auth_user_id on users(auth_user_id) where auth_user_id is not null;
+create index if not exists idx_users_auth_status on users(auth_status);
 create index if not exists idx_groups_organization_id on groups(organization_id);
 create index if not exists idx_groups_course_id on groups(course_id);
 create index if not exists idx_groups_teacher_id on groups(teacher_id);
