@@ -284,8 +284,16 @@ create table if not exists payment_history (
 
 create index if not exists idx_courses_organization_id on courses(organization_id);
 create index if not exists idx_groups_organization_id on groups(organization_id);
+create index if not exists idx_groups_course_id on groups(course_id);
 create index if not exists idx_groups_teacher_id on groups(teacher_id);
+create index if not exists idx_group_students_group_id on group_students(group_id);
+create index if not exists idx_group_students_student_id on group_students(student_id);
 create index if not exists idx_students_organization_id on students(organization_id);
 create index if not exists idx_lessons_organization_starts_at on lessons(organization_id, starts_at);
+create index if not exists idx_lessons_group_starts_at on lessons(group_id, starts_at);
+create index if not exists idx_schedule_rules_group_target on schedule_rules(organization_id, target_type, target_id, status);
+create index if not exists idx_homework_group_id on homework(group_id);
+create index if not exists idx_materials_group_id on materials(group_id);
+create index if not exists idx_payments_group_id on payments(group_id);
 create index if not exists idx_payments_organization_status on payments(organization_id, status);
 

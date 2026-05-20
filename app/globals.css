@@ -227,6 +227,21 @@ button {
   line-height: 1.45;
 }
 
+.sidebar-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sidebar-card-actions form {
+  min-width: 0;
+}
+
+.sidebar-card-actions .secondary-button {
+  width: 100%;
+}
+
 .workspace {
   display: flex;
   min-width: 0;
@@ -378,6 +393,71 @@ button {
 
 .login-side-panel .info-row {
   grid-template-columns: 1fr;
+}
+
+.single-column-form {
+  grid-template-columns: 1fr;
+}
+
+.auth-form {
+  margin-top: 0;
+}
+
+.auth-page-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 28px;
+}
+
+.auth-page-card {
+  display: grid;
+  width: min(680px, 100%);
+  gap: 18px;
+}
+
+.auth-page-card h1,
+.auth-page-card p {
+  margin: 0;
+}
+
+.auth-page-card h1 {
+  margin-top: 8px;
+  font-size: 34px;
+  line-height: 1.12;
+}
+
+.auth-page-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.profile-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.profile-list div {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  padding: 12px;
+}
+
+.profile-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.profile-list dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 800;
 }
 
 .public-shell {

@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { hasSupabaseAuthStorageCookie, SupabasePublicConfigError, readSupabasePublicEnv } from "@/app/lib/supabase/env";
+import { createSupabaseAdminClient, createSupabaseServerClient, SupabaseServerConfigError } from "@/app/lib/supabase/server";
 
 export type WorkspaceRole = "admin" | "teacher" | "student";
 
@@ -100,10 +102,37 @@ export type DevSession = {
   activeWorkspace: WorkspaceRole;
 };
 
+export type AppSession = DevSession;
+
 type WorkspaceAccessSubject = {
   roles: readonly WorkspaceRole[];
   permissions: readonly Permission[];
 };
+
+type AppUserRow = {
+  email: string;
+  id: string;
+  name: string;
+  status: string;
+};
+
+type AppMemberRow = {
+  organization_id: string;
+  permissions: unknown;
+  roles: unknown;
+  status: string;
+};
+
+type AppOrganizationRow = {
+  name: string;
+  status: string;
+};
+
+export const activeWorkspaceCookieName = "deshar_workspace";
+export const devUserCookieName = "dev_user_email";
+export const legacyDevWorkspaceCookieName = "dev_workspace";
+
+const workspacePriority: WorkspaceRole[] = ["admin", "teacher", "student"];
 
 function isWorkspaceRole(value: string | undefined): value is WorkspaceRole {
   return value === "admin" || value === "teacher" || value === "student";
@@ -125,10 +154,196 @@ export function hasPermission(subject: { permissions: readonly Permission[] }, p
   return subject.permissions.includes(permission);
 }
 
-export async function getDevSession(): Promise<DevSession | null> {
+export function isDevAuthEnabled() {
+  return process.env.NODE_ENV !== "production" && process.env.DESHAR_ENABLE_DEV_AUTH === "1";
+}
+
+function parseWorkspaceRoles(value: unknown): WorkspaceRole[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is WorkspaceRole => typeof item === "string" && isWorkspaceRole(item));
+}
+
+function parsePermissions(value: unknown): Permission[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const knownPermissions: Permission[] = [
+    "admin:access",
+    "courses:write",
+    "groups:write",
+    "journal:write:any",
+    "materials:write",
+    "payments:write",
+    "students:write",
+  ];
+
+  return value.filter((item): item is Permission => typeof item === "string" && knownPermissions.includes(item as Permission));
+}
+
+function getAccessibleWorkspaces(subject: WorkspaceAccessSubject): WorkspaceRole[] {
+  return workspacePriority.filter((workspace) => hasWorkspaceAccess(subject, workspace));
+}
+
+function chooseWorkspace(subject: WorkspaceAccessSubject, requestedWorkspace?: WorkspaceRole) {
+  if (requestedWorkspace && hasWorkspaceAccess(subject, requestedWorkspace)) {
+    return requestedWorkspace;
+  }
+
+  return getAccessibleWorkspaces(subject)[0] ?? null;
+}
+
+async function readSelectedWorkspaceCookie() {
   const cookieStore = await cookies();
-  const email = cookieStore.get("dev_user_email")?.value;
-  const activeWorkspace = cookieStore.get("dev_workspace")?.value;
+  const value =
+    cookieStore.get(activeWorkspaceCookieName)?.value ?? cookieStore.get(legacyDevWorkspaceCookieName)?.value ?? undefined;
+
+  return isWorkspaceRole(value) ? value : undefined;
+}
+
+export async function setActiveWorkspaceCookie(workspace: WorkspaceRole) {
+  const cookieStore = await cookies();
+
+  cookieStore.set(activeWorkspaceCookieName, workspace, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+  });
+}
+
+export async function clearLocalAuthCookies() {
+  const cookieStore = await cookies();
+
+  cookieStore.delete(activeWorkspaceCookieName);
+  cookieStore.delete(devUserCookieName);
+  cookieStore.delete(legacyDevWorkspaceCookieName);
+}
+
+async function getSupabaseAuthIdentity() {
+  try {
+    const publicEnv = readSupabasePublicEnv();
+    const cookieStore = await cookies();
+
+    if (!hasSupabaseAuthStorageCookie(cookieStore.getAll(), publicEnv.url)) {
+      return null;
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const claimsResult = await supabase.auth.getClaims();
+
+    if (claimsResult.error || !claimsResult.data?.claims?.sub) {
+      return null;
+    }
+
+    let email = typeof claimsResult.data.claims.email === "string" ? claimsResult.data.claims.email : null;
+
+    if (!email) {
+      const userResult = await supabase.auth.getUser();
+      email = userResult.data.user?.email ?? null;
+    }
+
+    if (!email) {
+      return null;
+    }
+
+    return {
+      authUserId: claimsResult.data.claims.sub,
+      email: email.trim().toLowerCase(),
+    };
+  } catch (error) {
+    if (error instanceof SupabasePublicConfigError) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function getSingleRow<T>(result: { data: T | null; error: { message: string } | null }, context: string) {
+  if (result.error) {
+    throw new Error(`${context}: ${result.error.message}`);
+  }
+
+  return result.data;
+}
+
+function getRows<T>(result: { data: T[] | null; error: { message: string } | null }, context: string) {
+  if (result.error) {
+    throw new Error(`${context}: ${result.error.message}`);
+  }
+
+  return result.data ?? [];
+}
+
+export async function resolveSessionByEmail(email: string, requestedWorkspace?: WorkspaceRole): Promise<AppSession | null> {
+  try {
+    const client = createSupabaseAdminClient();
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = getSingleRow(
+      await client.from("users").select("id,name,email,status").eq("email", normalizedEmail).maybeSingle(),
+      "Профиль пользователя",
+    ) as AppUserRow | null;
+
+    if (!user || user.status !== "active") {
+      return null;
+    }
+
+    const members = getRows(
+      await client
+        .from("organization_members")
+        .select("organization_id,roles,permissions,status")
+        .eq("user_id", user.id)
+        .eq("status", "active"),
+      "Рабочие области пользователя",
+    ) as AppMemberRow[];
+
+    for (const member of members) {
+      const roles = parseWorkspaceRoles(member.roles);
+      const permissions = parsePermissions(member.permissions);
+      const activeWorkspace = chooseWorkspace({ permissions, roles }, requestedWorkspace);
+
+      if (!activeWorkspace) {
+        continue;
+      }
+
+      const organization = getSingleRow(
+        await client.from("organizations").select("name,status").eq("id", member.organization_id).maybeSingle(),
+        "Организация пользователя",
+      ) as AppOrganizationRow | null;
+
+      if (!organization || organization.status !== "active") {
+        continue;
+      }
+
+      return {
+        activeWorkspace,
+        email: user.email,
+        name: user.name,
+        organizationId: member.organization_id,
+        organizationName: organization.name,
+        permissions,
+        roles,
+        userId: user.id,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    if (error instanceof SupabaseServerConfigError) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function getDevCookieSession(): Promise<DevSession | null> {
+  const cookieStore = await cookies();
+  const email = cookieStore.get(devUserCookieName)?.value;
+  const activeWorkspace = cookieStore.get(activeWorkspaceCookieName)?.value ?? cookieStore.get(legacyDevWorkspaceCookieName)?.value;
 
   if (!email) {
     return null;
@@ -164,8 +379,26 @@ export async function getDevSession(): Promise<DevSession | null> {
   };
 }
 
+export async function getAppSession(): Promise<AppSession | null> {
+  const supabaseIdentity = await getSupabaseAuthIdentity();
+
+  if (supabaseIdentity) {
+    return resolveSessionByEmail(supabaseIdentity.email, await readSelectedWorkspaceCookie());
+  }
+
+  if (!isDevAuthEnabled()) {
+    return null;
+  }
+
+  return getDevCookieSession();
+}
+
+export async function getDevSession(): Promise<DevSession | null> {
+  return getAppSession();
+}
+
 export async function requireWorkspace(requiredWorkspace: WorkspaceRole) {
-  const session = await getDevSession();
+  const session = await getAppSession();
 
   if (!session) {
     redirect("/login");

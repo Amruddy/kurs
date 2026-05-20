@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppNavLink, type NavIcon } from "@/app/components/app-nav-link";
-import { getDevSession, workspaceConfig, type DevSession, type WorkspaceRole } from "@/app/lib/dev-auth";
-import { switchWorkspace } from "@/app/login/actions";
+import { getAppSession, workspaceConfig, type AppSession, type WorkspaceRole } from "@/app/lib/dev-auth";
+import { logout, switchWorkspace } from "@/app/login/actions";
 
 type NavItem = {
   href: string;
@@ -41,7 +41,7 @@ const navByWorkspace: Record<WorkspaceRole, NavItem[]> = {
 
 const publicNav: NavItem[] = [{ href: "/", icon: "login", label: "Вход" }];
 
-function WorkspaceSwitcher({ session }: { session: DevSession }) {
+function WorkspaceSwitcher({ session }: { session: AppSession }) {
   if (session.roles.length < 2) {
     return null;
   }
@@ -62,7 +62,7 @@ function WorkspaceSwitcher({ session }: { session: DevSession }) {
   );
 }
 
-function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | null }) {
+function Sidebar({ items, session }: { items: NavItem[]; session: AppSession | null }) {
   const homePath = session ? workspaceConfig[session.activeWorkspace].homePath : "/";
   const workspaceLabel = session ? workspaceConfig[session.activeWorkspace].label : "Dev-вход";
 
@@ -90,6 +90,16 @@ function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | n
           <>
             <strong>{session.name}</strong>
             <p>{session.organizationName}</p>
+            <div className="sidebar-card-actions">
+              <Link className="secondary-button compact-button" href="/profile">
+                Профиль
+              </Link>
+              <form action={logout}>
+                <button className="secondary-button compact-button" type="submit">
+                  Выйти
+                </button>
+              </form>
+            </div>
           </>
         ) : (
           <>
@@ -102,7 +112,7 @@ function Sidebar({ items, session }: { items: NavItem[]; session: DevSession | n
   );
 }
 
-function WorkspaceTopbar({ session }: { session: DevSession | null }) {
+function WorkspaceTopbar({ session }: { session: AppSession | null }) {
   const title = session && session.activeWorkspace !== "student" ? workspaceConfig[session.activeWorkspace].label : "Вход";
   const subtitle = session ? session.email : "Тестовая авторизация";
 
@@ -128,7 +138,7 @@ function MobileNav({ items }: { items: NavItem[] }) {
 }
 
 export async function AppShell({ children }: { children: ReactNode }) {
-  const session = await getDevSession();
+  const session = await getAppSession();
   const items = session ? navByWorkspace[session.activeWorkspace] : publicNav;
 
   if (!session) {

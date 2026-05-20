@@ -38,7 +38,8 @@ Codex must use the project specifications as the source of truth before making c
 - Prefer existing project patterns once the application code exists.
 - Run available checks after changes.
 - After automated checks, Codex should run a basic smoke-check itself whenever the project can be checked locally.
-- Before committing and pushing a stage, summarize in Russian what Codex already checked and provide a short optional manual smoke-check checklist for the user.
+- Before committing and pushing a stage, summarize in Russian what Codex already checked, then explicitly ask whether the user wants to do a manual check before commit/push.
+- The manual check prompt must include concrete paths or URLs to open, the exact user actions to try, and what result should be expected for the current stage.
 - The user may skip manual review and explicitly tell Codex to continue. If the user asks to review manually, do not commit, push, or move to the next MPMF 1.0 stage until the user explicitly confirms to continue.
 - When the user gives permission to finish the stage after checks, Codex should commit and push the stage branch. Codex does not open the pull request unless the user explicitly asks.
 - Do not revert user changes unless explicitly requested.
@@ -55,7 +56,7 @@ Codex must use the project specifications as the source of truth before making c
 - Когда пользователь явно говорит начать код для stage, нужно создать отдельную ветку от актуального `main`.
 - В ветку stage коммитится только завершенная и проверенная работа этого stage.
 - После автоматической проверки Codex сам выполняет базовую smoke-проверку stage, если это возможно локально.
-- После своей smoke-проверки Codex кратко пишет пользователю, что уже проверено, и дает ручной smoke-чеклист только как необязательную финальную проверку.
+- После своей smoke-проверки Codex кратко пишет пользователю, что уже проверено, явно спрашивает, хочет ли пользователь ручную проверку перед commit/push, и дает конкретный ручной smoke-маршрут с URL/путями, действиями и ожидаемым результатом.
 - Ветка stage коммитится и пушится после явной команды пользователя продолжать; ручная проверка пользователя не обязательна, если пользователь ее пропускает.
 - Сообщение пользователя `готово` после отчета Codex о проверках считается явной командой продолжать: Codex сам коммитит и пушит текущую stage-ветку.
 - Pull request открывает пользователь. После merge пользователь сообщает Codex, Codex возвращается на `main`, обновляет его из GitHub и только потом начинает следующую stage-ветку.
