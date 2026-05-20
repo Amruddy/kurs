@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createSupabaseAdminClient, SupabaseServerConfigError } from "@/app/lib/supabase/server";
+import {
+  createSupabaseAdminClient,
+  readSupabaseRequestTimeoutMs,
+  SupabaseRequestTimeoutError,
+  SupabaseServerConfigError,
+} from "@/app/lib/supabase/server";
 
 export type DataResult<T> =
   | {
@@ -836,7 +841,7 @@ export type StudentMaterialsData = {
 async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T>): Promise<DataResult<T>> {
   try {
     const client = createSupabaseAdminClient();
-    const data = await reader(client);
+    const data = await withSupabaseTimeout(reader(client));
 
     return { state: "ready", data };
   } catch (error) {
@@ -848,6 +853,22 @@ async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T
       state: "error",
       message: error instanceof Error ? error.message : "Не удалось прочитать данные Supabase.",
     };
+  }
+}
+
+async function withSupabaseTimeout<T>(operation: Promise<T>): Promise<T> {
+  const timeoutMs = readSupabaseRequestTimeoutMs();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new SupabaseRequestTimeoutError(timeoutMs)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -1560,7 +1581,7 @@ function summarizeScheduleRules(scheduleRules: ScheduleRuleRow[]) {
 }
 
 async function getBaseOrganizationData(client: SupabaseClient, organizationId: string) {
-  const [organizationResult, coursesResult, groupsResult, studentsResult, usersResult, membersResult] =
+  const [organizationResult, coursesResult, groupsResult, studentsResult, membersResult] =
     await Promise.all([
       client.from("organizations").select("id,name,timezone").eq("id", organizationId).maybeSingle(),
       client
@@ -1569,23 +1590,49 @@ async function getBaseOrganizationData(client: SupabaseClient, organizationId: s
         .eq("organization_id", organizationId),
       client.from("groups").select("id,course_id,teacher_id,name,status").eq("organization_id", organizationId),
       client.from("students").select("id,user_id,name,phone,email,status").eq("organization_id", organizationId),
-      client.from("users").select("id,name,email,phone,status"),
       client.from("organization_members").select("id,user_id,roles,permissions").eq("organization_id", organizationId),
     ]);
+
+  const students = rows<StudentRow>(studentsResult, "Ученики");
+  const members = rows<MemberRow>(membersResult, "Роли");
+  const userIds = Array.from(
+    new Set([
+      ...members.map((member) => member.user_id),
+      ...students.map((student) => student.user_id).filter((userId): userId is string => Boolean(userId)),
+    ]),
+  );
+  const users =
+    userIds.length > 0
+      ? rows<UserRow>(await client.from("users").select("id,name,email,phone,status").in("id", userIds), "Пользователи")
+      : [];
 
   return {
     organization: single<OrganizationRow>(organizationResult, "Организация"),
     courses: rows<CourseRow>(coursesResult, "Курсы"),
     groups: rows<GroupRow>(groupsResult, "Группы"),
-    students: rows<StudentRow>(studentsResult, "Ученики"),
-    users: rows<UserRow>(usersResult, "Пользователи"),
-    members: rows<MemberRow>(membersResult, "Роли"),
+    students,
+    users,
+    members,
   };
 }
 
 export async function getAdminOverview(organizationId: string) {
   return readSupabaseData<AdminOverviewData>(async (client) => {
-    const { organization, courses, groups, students, members } = await getBaseOrganizationData(client, organizationId);
+    const [organizationResult, coursesResult, groupsResult, studentsResult, membersResult] = await Promise.all([
+      client.from("organizations").select("id,name,timezone").eq("id", organizationId).maybeSingle(),
+      client
+        .from("courses")
+        .select("id,name,description,type,format,lesson_mark_scale,status")
+        .eq("organization_id", organizationId),
+      client.from("groups").select("id,course_id,teacher_id,name,status").eq("organization_id", organizationId),
+      client.from("students").select("id,user_id,name,phone,email,status").eq("organization_id", organizationId),
+      client.from("organization_members").select("id,user_id,roles,permissions").eq("organization_id", organizationId),
+    ]);
+    const organization = single<OrganizationRow>(organizationResult, "Организация");
+    const courses = rows<CourseRow>(coursesResult, "Курсы");
+    const groups = rows<GroupRow>(groupsResult, "Группы");
+    const students = rows<StudentRow>(studentsResult, "Ученики");
+    const members = rows<MemberRow>(membersResult, "Роли");
     const now = new Date().toISOString();
     const [lessonsResult, paymentsResult] = await Promise.all([
       client
@@ -1624,7 +1671,15 @@ export async function getAdminOverview(organizationId: string) {
 
 export async function getAdminCourses(organizationId: string) {
   return readSupabaseData<{ courses: AdminCourseItem[] }>(async (client) => {
-    const { courses, groups } = await getBaseOrganizationData(client, organizationId);
+    const [coursesResult, groupsResult] = await Promise.all([
+      client
+        .from("courses")
+        .select("id,name,description,type,format,lesson_mark_scale,status")
+        .eq("organization_id", organizationId),
+      client.from("groups").select("id,course_id,teacher_id,name,status").eq("organization_id", organizationId),
+    ]);
+    const courses = rows<CourseRow>(coursesResult, "Курсы");
+    const groups = rows<GroupRow>(groupsResult, "Группы");
 
     return {
       courses: courses.map((course) => ({
