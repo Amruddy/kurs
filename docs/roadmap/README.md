@@ -18,10 +18,10 @@
 ## 1. Текущий статус
 
 - Текущий большой блок: `Release 1.0`.
-- Последний завершенный кодовый stage: `Auth Stage 3. Account Linking And Schema`.
-- Активный stage: `Auth Stage 4. Admin Invitations`.
-- Активный план: `docs/work-plans/active/29-auth-stage-4-admin-invitations-plan.md`.
-- Планируемая ветка текущего кодового stage: `feat/auth-stage-4-admin-invitations`.
+- Последний завершенный кодовый stage: `Auth Stage 4. Admin Invitations`.
+- Активный stage: `Auth Stage 5. Auth Smoke And Hardening`.
+- Активный план: `docs/work-plans/active/30-auth-stage-5-auth-smoke-hardening-plan.md`.
+- Планируемая ветка текущего кодового stage: `feat/auth-stage-5-auth-smoke-hardening`.
 - Предыдущий блок: `MPMF 1.0`, завершен и смержен в `main`.
 - Запись завершения MPMF 1.0: `docs/release/mpmf-1-release-readiness.md`.
 
@@ -92,15 +92,15 @@ Roadmap:
 
 Активный stage:
 
-`Auth Stage 4. Admin Invitations`
+`Auth Stage 5. Auth Smoke And Hardening`
 
 Активный work plan:
 
-`docs/work-plans/active/29-auth-stage-4-admin-invitations-plan.md`
+`docs/work-plans/active/30-auth-stage-5-auth-smoke-hardening-plan.md`
 
 После него:
 
-`Auth Stage 5. Auth Smoke And Hardening`
+`Final Design System And UX Polish`
 
 ## 6. Следующие крупные stages Release 1.0
 
