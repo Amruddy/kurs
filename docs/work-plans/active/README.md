@@ -4,11 +4,11 @@
 
 Текущий активный технический план:
 
-`29-auth-stage-4-admin-invitations-plan.md`
+`30-auth-stage-5-auth-smoke-hardening-plan.md`
 
 Завершенный предыдущий stage:
 
-`../completed/28-auth-stage-3-account-linking-schema-plan.md`
+`../completed/29-auth-stage-4-admin-invitations-plan.md`
 
 Codex перед разработкой должен читать:
 

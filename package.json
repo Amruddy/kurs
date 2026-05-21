@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "smoke:auth": "node scripts/auth-smoke.mjs",
     "smoke:roles": "node scripts/cross-role-smoke.mjs",
     "lint": "eslint ."
   },

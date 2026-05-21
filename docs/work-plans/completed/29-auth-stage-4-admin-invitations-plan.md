@@ -2,10 +2,12 @@
 
 ## 0. Статус
 
-- Статус плана: активный кодовый stage.
+- Статус плана: завершен, PR #51.
 - Большой блок: `Release 1.0`.
 - Подблок: `Production Auth And Real Accounts`.
 - Планируемая ветка: `feat/auth-stage-4-admin-invitations`.
+- Коммит stage: `c40dfff`.
+- Merge commit в `main`: `532d2ec`.
 - Roadmap релиза: `docs/roadmap/release-1-roadmap.md`.
 - Roadmap auth-блока: `docs/roadmap/production-auth-and-real-accounts-roadmap.md`.
 - Предыдущий завершенный plan: `docs/work-plans/completed/28-auth-stage-3-account-linking-schema-plan.md`.

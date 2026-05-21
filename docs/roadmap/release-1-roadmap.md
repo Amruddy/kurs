@@ -121,4 +121,4 @@
 
 Следующий кодовый stage:
 
-`Auth Stage 4. Admin Invitations`
+`Auth Stage 5. Auth Smoke And Hardening`

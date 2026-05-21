@@ -93,7 +93,7 @@
 
 Статус:
 
-активный stage.
+завершен, PR #51.
 
 Цель:
 
@@ -114,6 +114,10 @@
 
 ### Auth Stage 5. Auth Smoke And Hardening
 
+Статус:
+
+активный stage.
+
 Цель:
 
 проверить весь auth-flow через реальные аккаунты.
@@ -133,6 +137,6 @@
 
 ## 4. Первый implementation stage
 
-После завершения Auth Stage 3 текущим кодовым stage должен стать:
+После завершения Auth Stage 4 текущим кодовым stage должен стать:
 
-`Auth Stage 4. Admin Invitations`
+`Auth Stage 5. Auth Smoke And Hardening`
