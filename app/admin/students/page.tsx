@@ -56,6 +56,7 @@ export default async function AdminStudentsPage() {
               { header: "Группы", render: (student) => student.groups },
               { header: "Оплата", render: (student) => student.payment },
               { header: "Статус", render: (student) => student.status },
+              { header: "Доступ", render: (student) => student.access },
             ]}
           />
         </section>

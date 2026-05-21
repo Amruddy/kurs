@@ -37,7 +37,11 @@ type OrganizationRow = {
 };
 
 type UserRow = {
+  auth_status: string | null;
+  auth_user_id: string | null;
   id: string;
+  invited_at?: string | null;
+  last_sign_in_at?: string | null;
   name: string;
   email: string;
   phone?: string | null;
@@ -430,6 +434,7 @@ export type AdminGroupDetailData = {
 };
 
 export type AdminStudentItem = {
+  access: string;
   id: string;
   name: string;
   contacts: string;
@@ -460,6 +465,10 @@ export type AdminStudentLessonHistoryItem = {
 };
 
 export type AdminStudentDetailData = {
+  accessAction: string | null;
+  accessDetail: string;
+  accessStatus: string;
+  accessStatusValue: string;
   contacts: string;
   email: string;
   errors: ProgressErrorItem[];
@@ -481,6 +490,9 @@ export type AdminStudentDetailData = {
 
 export type AdminTeacherItem = {
   activeGroups: string;
+  access: string;
+  accessAction: string | null;
+  accessDetail: string;
   contacts: string;
   groups: string;
   id: string;
@@ -857,7 +869,7 @@ async function readSupabaseData<T>(reader: (client: SupabaseClient) => Promise<T
 }
 
 async function withSupabaseTimeout<T>(operation: Promise<T>): Promise<T> {
-  const timeoutMs = readSupabaseRequestTimeoutMs();
+  const timeoutMs = readSupabaseRequestTimeoutMs() * 3 + 1_000;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => reject(new SupabaseRequestTimeoutError(timeoutMs)), timeoutMs);
@@ -1030,6 +1042,64 @@ function statusLabel(status: string) {
   };
 
   return labels[status] ?? status;
+}
+
+function authStatusValue(user: UserRow | null | undefined) {
+  const value = user?.auth_status;
+
+  return value === "invited" || value === "active" || value === "disabled" ? value : "profile_only";
+}
+
+function authAccessLabel(user: UserRow | null | undefined) {
+  const labels: Record<string, string> = {
+    active: "доступ активен",
+    disabled: "доступ отключен",
+    invited: "приглашение отправлено",
+    profile_only: "без входа",
+  };
+
+  return labels[authStatusValue(user)];
+}
+
+function authAccessDetail(user: UserRow | null | undefined, email: string | null | undefined) {
+  const status = authStatusValue(user);
+  const emailLabel = email?.trim() || user?.email || "email не заполнен";
+
+  if (status === "active") {
+    return user?.last_sign_in_at ? `последний вход ${formatDateTime(user.last_sign_in_at)}` : `аккаунт связан: ${emailLabel}`;
+  }
+
+  if (status === "invited") {
+    return user?.invited_at ? `отправлено ${formatDateTime(user.invited_at)}` : `ожидает входа: ${emailLabel}`;
+  }
+
+  if (status === "disabled") {
+    return "учебная история сохранена";
+  }
+
+  return emailLabel === "email не заполнен" ? "для приглашения нужен email" : `можно пригласить: ${emailLabel}`;
+}
+
+function authAccessAction(user: UserRow | null | undefined, email: string | null | undefined) {
+  const status = authStatusValue(user);
+
+  if (!email?.trim()) {
+    return null;
+  }
+
+  if (status === "profile_only") {
+    return "invite";
+  }
+
+  if (status === "invited") {
+    return "resend";
+  }
+
+  if (status === "active") {
+    return "disable";
+  }
+
+  return null;
 }
 
 function groupStatusLabel(status: string) {
@@ -1408,7 +1478,11 @@ async function getOrganization(client: SupabaseClient, organizationId: string) {
 }
 
 async function getUserByEmail(client: SupabaseClient, email: string) {
-  const result = await client.from("users").select("id,name,email,phone,status").eq("email", email).maybeSingle();
+  const result = await client
+    .from("users")
+    .select("id,name,email,phone,status,auth_user_id,auth_status,invited_at,last_sign_in_at")
+    .eq("email", email)
+    .maybeSingle();
 
   return single<UserRow>(result, `Пользователь ${email}`);
 }
@@ -1603,7 +1677,13 @@ async function getBaseOrganizationData(client: SupabaseClient, organizationId: s
   );
   const users =
     userIds.length > 0
-      ? rows<UserRow>(await client.from("users").select("id,name,email,phone,status").in("id", userIds), "Пользователи")
+      ? rows<UserRow>(
+          await client
+            .from("users")
+            .select("id,name,email,phone,status,auth_user_id,auth_status,invited_at,last_sign_in_at")
+            .in("id", userIds),
+          "Пользователи",
+        )
       : [];
 
   return {
@@ -1981,7 +2061,7 @@ export async function getAdminGroupDetail(organizationId: string, groupId: strin
 
 export async function getAdminStudents(organizationId: string) {
   return readSupabaseData<{ students: AdminStudentItem[] }>(async (client) => {
-    const { courses, groups, students } = await getBaseOrganizationData(client, organizationId);
+    const { courses, groups, students, users } = await getBaseOrganizationData(client, organizationId);
     const studentIds = students.map((student) => student.id);
     const [groupStudentsResult, paymentsResult] = await Promise.all([
       studentIds.length > 0
@@ -1998,9 +2078,11 @@ export async function getAdminStudents(organizationId: string) {
     const payments = rows<PaymentRow>(paymentsResult, "Оплата учеников");
     const courseMap = byId(courses);
     const groupMap = byId(groups);
+    const userMap = byId(users);
 
     return {
       students: students.map((student) => {
+        const user = student.user_id ? userMap.get(student.user_id) : null;
         const studentGroupIds = groupStudents
           .filter((item) => item.student_id === student.id && item.status === "active")
           .map((item) => item.group_id);
@@ -2008,6 +2090,7 @@ export async function getAdminStudents(organizationId: string) {
         const attentionPayment = studentPayments.find(isPaymentAttention) ?? studentPayments[0];
 
         return {
+          access: authAccessLabel(user),
           id: student.id,
           name: student.name,
           contacts: [student.phone, student.email].filter(Boolean).join(", ") || "контакты не заполнены",
@@ -2126,6 +2209,7 @@ export async function getAdminStudentDetail(organizationId: string, studentId: s
     const courseMap = byId(courses);
     const groupMap = byId(groups);
     const userMap = byId(users);
+    const studentUser = student.user_id ? userMap.get(student.user_id) : null;
     const lessonMap = byId(lessons);
     const entryMap = new Map(entries.map((entry) => [entry.lesson_id, entry]));
     const availableGroupOptions = groups
@@ -2140,6 +2224,10 @@ export async function getAdminStudentDetail(organizationId: string, studentId: s
     const absentCount = entries.filter((entry) => entry.attendance_mark === "absent").length;
 
     return {
+      accessAction: authAccessAction(studentUser, student.email),
+      accessDetail: authAccessDetail(studentUser, student.email),
+      accessStatus: authAccessLabel(studentUser),
+      accessStatusValue: authStatusValue(studentUser),
       contacts: [student.phone, student.email].filter(Boolean).join(", ") || "контакты не заполнены",
       email: student.email ?? "",
       errors: errors.map((item) => ({
@@ -2279,6 +2367,9 @@ export async function getAdminTeachers(organizationId: string) {
 
         return {
           activeGroups: String(activeGroupCount),
+          access: authAccessLabel(teacher),
+          accessAction: authAccessAction(teacher, teacher.email),
+          accessDetail: authAccessDetail(teacher, teacher.email),
           contacts: [teacher.phone, teacher.email].filter(Boolean).join(", ") || "контакты не заполнены",
           groups: String(teacherGroups.length),
           id: teacher.id,

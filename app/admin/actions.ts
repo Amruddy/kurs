@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   archiveAdminCourse,
@@ -12,7 +13,11 @@ import {
   createAdminStudent,
   createAdminTeacher,
   deleteAdminGroupScheduleRule,
+  disableAdminStudentAccess,
+  disableAdminTeacherAccess,
   generateAdminGroupLessons,
+  inviteAdminStudentAccess,
+  inviteAdminTeacherAccess,
   removeAdminStudentFromGroup,
   type LessonGenerationHorizon,
   updateAdminCourse,
@@ -76,6 +81,22 @@ function lessonGenerationHorizon(formData: FormData): LessonGenerationHorizon {
   }
 
   throw new Error("Срок создания занятий: неверное значение.");
+}
+
+function actionErrorCode(error: unknown, fallback: string) {
+  return error instanceof Error && error.message.includes("Supabase") ? "supabase_failed" : fallback;
+}
+
+function redirectWithParams(path: string, params: Record<string, string>): never {
+  const searchParams = new URLSearchParams(params);
+  redirect(`${path}?${searchParams.toString()}`);
+}
+
+async function inviteRedirectTo() {
+  const headersList = await headers();
+  const origin = headersList.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  return `${origin}/auth/callback?next=/auth/reset-password`;
 }
 
 export async function createCourse(formData: FormData) {
@@ -143,6 +164,42 @@ export async function createTeacher(formData: FormData) {
   redirect("/admin/teachers");
 }
 
+export async function inviteTeacherAccess(userId: string) {
+  const session = await requireAdmin();
+
+  try {
+    await inviteAdminTeacherAccess({
+      organizationId: session.organizationId,
+      redirectTo: await inviteRedirectTo(),
+      userId,
+    });
+  } catch (error) {
+    redirectWithParams("/admin/teachers", { accessError: actionErrorCode(error, "invite_failed") });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/teachers");
+  redirectWithParams("/admin/teachers", { accessMessage: "invite_sent" });
+}
+
+export async function disableTeacherAccess(userId: string) {
+  const session = await requireAdmin();
+
+  try {
+    await disableAdminTeacherAccess({
+      actorUserId: session.userId,
+      organizationId: session.organizationId,
+      userId,
+    });
+  } catch (error) {
+    redirectWithParams("/admin/teachers", { accessError: actionErrorCode(error, "disable_failed") });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/teachers");
+  redirectWithParams("/admin/teachers", { accessMessage: "access_disabled" });
+}
+
 export async function createStudent(formData: FormData) {
   const session = await requireAdmin("students:write");
 
@@ -188,6 +245,44 @@ export async function archiveStudent(studentId: string) {
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${studentId}`);
   redirect(`/admin/students/${studentId}`);
+}
+
+export async function inviteStudentAccess(studentId: string) {
+  const session = await requireAdmin("students:write");
+
+  try {
+    await inviteAdminStudentAccess({
+      organizationId: session.organizationId,
+      redirectTo: await inviteRedirectTo(),
+      studentId,
+    });
+  } catch (error) {
+    redirectWithParams(`/admin/students/${studentId}`, { accessError: actionErrorCode(error, "invite_failed") });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${studentId}`);
+  redirectWithParams(`/admin/students/${studentId}`, { accessMessage: "invite_sent" });
+}
+
+export async function disableStudentAccess(studentId: string) {
+  const session = await requireAdmin("students:write");
+
+  try {
+    await disableAdminStudentAccess({
+      actorUserId: session.userId,
+      organizationId: session.organizationId,
+      studentId,
+    });
+  } catch (error) {
+    redirectWithParams(`/admin/students/${studentId}`, { accessError: actionErrorCode(error, "disable_failed") });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/students");
+  revalidatePath(`/admin/students/${studentId}`);
+  redirectWithParams(`/admin/students/${studentId}`, { accessMessage: "access_disabled" });
 }
 
 export async function createGroup(formData: FormData) {

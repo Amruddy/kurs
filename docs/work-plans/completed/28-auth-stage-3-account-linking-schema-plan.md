@@ -2,10 +2,12 @@
 
 ## 0. Статус
 
-- Статус плана: активный кодовый stage.
+- Статус плана: завершен, PR #50.
 - Большой блок: `Release 1.0`.
 - Подблок: `Production Auth And Real Accounts`.
 - Планируемая ветка: `feat/auth-stage-3-account-linking-schema`.
+- Коммит stage: `4ba9ceb`.
+- Merge commit в `main`: `8898208`.
 - Roadmap релиза: `docs/roadmap/release-1-roadmap.md`.
 - Roadmap auth-блока: `docs/roadmap/production-auth-and-real-accounts-roadmap.md`.
 - Предыдущий завершенный plan: `docs/work-plans/completed/27-auth-stage-2-supabase-auth-session-foundation-plan.md`.

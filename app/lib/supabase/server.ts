@@ -21,7 +21,11 @@ export function readSupabaseRequestTimeoutMs() {
   return Number.isFinite(value) && value > 0 ? value : defaultSupabaseFetchTimeoutMs;
 }
 
-const noStoreFetch: typeof fetch = async (input, init) => {
+function requestMethod(init?: RequestInit) {
+  return (init?.method ?? "GET").toUpperCase();
+}
+
+async function fetchWithTimeout(input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) {
   const timeoutMs = readSupabaseRequestTimeoutMs();
   const controller = new AbortController();
   const callerSignal = init?.signal;
@@ -39,7 +43,10 @@ const noStoreFetch: typeof fetch = async (input, init) => {
   }
 
   try {
-    return await fetch(input, { ...init, cache: "no-store", signal: controller.signal });
+    const headers = new Headers(init?.headers);
+    headers.set("connection", "close");
+
+    return await fetch(input, { ...init, cache: "no-store", headers, signal: controller.signal });
   } catch (error) {
     if (timedOut) {
       throw new SupabaseRequestTimeoutError(timeoutMs);
@@ -50,6 +57,25 @@ const noStoreFetch: typeof fetch = async (input, init) => {
     clearTimeout(timeoutId);
     callerSignal?.removeEventListener("abort", abortFromCaller);
   }
+}
+
+const noStoreFetch: typeof fetch = async (input, init) => {
+  const maxAttempts = ["GET", "HEAD"].includes(requestMethod(init)) ? 3 : 1;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await fetchWithTimeout(input, init);
+    } catch (error) {
+      lastError = error;
+
+      if (!(error instanceof SupabaseRequestTimeoutError) || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
 };
 
 export class SupabaseServerConfigError extends Error {
